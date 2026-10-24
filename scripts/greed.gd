@@ -75,9 +75,9 @@ func _draw() -> void:
 
 func _create_ground() -> void:
 	# Ground sections - leaving gaps for platforms
-	_create_ground_section(Vector2(-500, 610), Vector2(800, 80), "GreedGround1")
+	_create_ground_section(Vector2(300, 610), Vector2(600, 80), "GreedGround1")
 	_create_ground_section(Vector2(700, 610), Vector2(600, 80), "GreedGround2")
-	_create_ground_section(Vector2(1300, 610), Vector2(800, 80), "GreedGround3")
+	_create_ground_section(Vector2(1500, 610), Vector2(1000, 80), "GreedGround3")
 
 	# Platforms
 	_create_platform(Vector2(500, 500), Vector2(120, 20))
@@ -399,7 +399,7 @@ func unlock_featherweight() -> void:
 	if not featherweight_found:
 		featherweight_found = true
 		has_featherweight = true
-		player.can_double_jump = true
+		player.set("can_double_jump", true)
 		_update_hud()
 		_show_status("FEATHERWEIGHT CHARM FOUND! PRESS JUMP IN MID-AIR TO DOUBLE JUMP!")
 
