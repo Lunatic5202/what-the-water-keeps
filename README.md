@@ -1,27 +1,120 @@
 # What the Water Keeps
 
-A dreamy 2D action-platformer about Lumi, a lantern-carrying wanderer learning to let go.
+A dreamy 2D Souls-like platformer. Cute on the surface, with a much deeper meaning underneath.
 
-## Prototype 01
+Lumi, a small lantern-carrying wanderer, wakes beside a still pond. Seven doors lead to seven lands, each built from one of the seven sins. Every boss was once something kind. The last boss is Lumi's own reflection, and the only way to win is to stop fighting.
 
-The first milestone is a small Godot 4 playable slice: movement, jumping, lantern swing, dash, health/healing, and the Little Jelly tutorial enemy. Visuals are placeholders until the core game feel is tested.
+Target: a playable game on itch.io, in the spirit of Hollow Knight and Blasphemous, but soft, pastel and storybook.
 
-## Requirements
+## For AI agents: start here
 
-- Godot 4.3 or newer
-- Windows or Linux (including Arch Linux)
+1. Read this README fully.
+2. Read `docs/game-bible.md`. It is the source of truth for story, dialogue, regions, bosses, movesets, UI and tone. Do not invent lore or rename things. If the bible and the code disagree, ask the user which is right.
+3. Work on a branch, never directly on `main`. Keep commits small.
+4. Be honest about verification. If you could not run the game in Godot, say so. Do not claim something works unless it was tested.
+5. Ask before large changes (new systems, remapping controls, restructuring files).
 
-## Controls
+### Hard rules from the user
 
-- A / D: move
-- Space: jump
-- J: lantern swing
-- Left Shift: dash
-- Q: heal
-- E: interact (reserved for tutorial objects)
+- **Sign dialogue behaviour is intended and final.** Pressing E near a sign opens its dialogue, and walking away closes it automatically. Do not change this.
+- The game has **no buffs**. Mechanics punish you with debuffs when you ignore a region's lesson. Do not add stat-boost pickups.
+- Keep the tone gentle. Quiet over loud. Sad, never edgy. Lust is portrayed as obsessive longing only, nothing sexual.
+- Keep code short and readable. Wrap long lines.
 
-## Run
+## Current status: Prototype 01 (Wake tutorial)
 
-Open `project.godot` in Godot Project Manager and press F5.
+Implemented:
+- Movement, jump, dash, lantern swing (J), health and heal charges
+- Little Jelly tutorial enemy
+- Four tutorial signs (E to read, auto-close when walking away)
+- Wind Ribbon pickup with Nim's line
+- A gap that needs a jump plus dash, and the Greed door at the end (placeholder dialogue only)
+- Pit killbox with checkpoint respawn, level boundary walls, camera limits
 
-Prototype values and primitive art are temporary and should be playtested before being treated as final design.
+Not implemented yet:
+- Transition from the Greed door into the Greed region
+- The hub (The Still Pond), the Mirror Gate and the final boss
+- Old Moss (tutorial boss), any region boss, any NPC or side quest
+- Fighting styles, gadgets other than dash, debuff systems
+- Real art, music and sound (everything is drawn with code primitives)
+- Saving, menus, settings
+
+Nothing has been verified by running in Godot except by the user's own playtests. Treat all values as tunable.
+
+## Tech
+
+- Godot 4.3 or newer, GDScript, GL Compatibility renderer, 1280x720
+- No imported assets yet. All visuals use `_draw()` primitives, and the level is built in code.
+- Windows or Linux
+
+Run: open `project.godot` in the Godot Project Manager and press F5.
+
+## Project layout
+
+| Path | What it does |
+|------|--------------|
+| `project.godot` | Settings and input map |
+| `scenes/main.tscn` | One node with `main.gd` attached. Everything else is created in code |
+| `scripts/main.gd` | Level building, HUD, dialogue, interactables, killbox, camera limits, checkpoint |
+| `scripts/player.gd` | Lumi: movement, dash, attack, heal, damage, drawing |
+| `scripts/little_jelly.gd` | Tutorial enemy: patrol, contact damage, knockback |
+| `docs/game-bible.md` | Full design reference (story, regions, bosses, movesets, art, sound, UI) |
+
+## Controls (prototype)
+
+| Key | Action |
+|-----|--------|
+| A / D | Move |
+| Space | Jump |
+| Left Shift | Dash |
+| J | Lantern swing |
+| Q | Heal |
+| E | Interact |
+
+The bible's final control scheme differs (heal on H, Q cycles fighting styles, plus heavy attack, guard and more). Ask before remapping.
+
+## Level reference (Wake)
+
+World units are pixels. Ground top is y=610.
+
+| Thing | Position |
+|-------|----------|
+| Player start / first respawn | (240, 570) |
+| Signs | x = 355, 465, 735, 850 |
+| Wind Ribbon (and checkpoint) | x = 985 |
+| Gap | x = 1100 to 1350 |
+| Greed door | x = 1540 |
+| Boundary walls | x = 55 and x = 1780 |
+| Killbox | y > 900 |
+
+## How the code works
+
+- `main.gd` keeps a list of `interactables` (dictionaries with `node`, `message`, `kind`, `used`). `_process` finds the nearest one within 95px, shows the E prompt and handles opening and closing dialogue.
+- New interactables go through `_make_marker()` and `interactables.append(...)`.
+- Status messages go through `_show_status()`. Only the newest message restores the HUD.
+- `player.gd` emits `health_changed`, `heals_changed` and `status_changed`. `main.gd` listens and updates the HUD.
+- Enemies join the damage system by having a `take_damage(amount)` method. The player's attack area calls it.
+
+## Roadmap (suggested order)
+
+1. Finish the Wake: Old Moss tutorial boss, real Greed door transition.
+2. Build the hub, The Still Pond, with the door ring and the Altar of Hands.
+3. Greed region: weight debuff, shrines, the four monsters, The Collector, Double Jump, Offering Style.
+4. Repeat per region in the order in the bible. Each region's gadget unlocks the next.
+5. Memory Path, the final fight, both endings.
+6. Side quests, lore tablets and Memory Petals.
+7. Art, music, sound and polish.
+
+## Design pillars (short version)
+
+- Every mechanic is also a moral lesson. Ignore it and the world answers back.
+- Each artifact is the virtue that answers its sin, and unlocks a distinct fighting style.
+- Cute on the surface. Small uncanny details grow as the game goes on.
+- The final fight is unwinnable by fighting. Standing still for about 8 seconds lets the player accept themselves (good ending). Striking during the 5 to 6 second cutscene window leads to the bad ending.
+
+## Testing notes for agents
+
+- Godot is often not installed in agent sandboxes. If it is not, say so, and do a syntax check instead, for example `pip install gdtoolkit` then `gdparse scripts/*.gd`.
+- Ask the user to playtest and report exact errors or feel problems.
+- Known rough spots: the dash gap width is tight and may need tuning.
+- Player death respawn in `player.gd` still uses the fixed start point rather than the checkpoint.
