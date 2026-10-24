@@ -6,6 +6,7 @@ var stats_label: Label
 var prompt_label: Label
 var dialogue_panel: ColorRect
 var dialogue_label: Label
+var dialogue_target: Node2D
 var interactables: Array[Dictionary] = []
 var dialogue_open := false
 var has_wind_ribbon := false
@@ -31,12 +32,23 @@ func _ready() -> void:
     _update_hud()
 
 func _process(_delta: float) -> void:
+    # Falling below the level sends Lumi safely back to the shore.
+    if player.global_position.y > 900.0:
+        player.global_position = Vector2(240, 570)
+        player.velocity = Vector2.ZERO
+        _show_status("THE WATER CATCHES LUMI. BACK TO THE SHORE.")
+
     if dialogue_open:
-        prompt_label.text = "E  •  close"
-        if Input.is_action_just_pressed("interact"):
+        var walked_away := not is_instance_valid(dialogue_target)
+        if is_instance_valid(dialogue_target):
+            walked_away = player.global_position.distance_to(dialogue_target.global_position) > 110.0
+        if walked_away or Input.is_action_just_pressed("interact"):
             dialogue_panel.visible = false
             dialogue_open = false
-        return
+            dialogue_target = null
+        else:
+            prompt_label.text = ""
+            return
 
     var nearest: Dictionary = {}
     var nearest_distance := 95.0
@@ -74,6 +86,20 @@ func _draw() -> void:
 func _create_ground() -> void:
     _create_ground_section(Vector2(-950, 650), Vector2(4100, 80), "GroundLeft")
     _create_ground_section(Vector2(3175, 650), Vector2(3650, 80), "GroundRight")
+    # Invisible solid walls keep Lumi inside the Wake tutorial area.
+    _create_boundary(Vector2(55, 0), "StartBoundary")
+    _create_boundary(Vector2(1780, 0), "EndBoundary")
+
+func _create_boundary(at: Vector2, boundary_name: String) -> void:
+    var wall := StaticBody2D.new()
+    wall.name = boundary_name
+    wall.position = at
+    var collision := CollisionShape2D.new()
+    var shape := RectangleShape2D.new()
+    shape.size = Vector2(40, 1600)
+    collision.shape = shape
+    wall.add_child(collision)
+    add_child(wall)
 
 func _create_ground_section(at: Vector2, size: Vector2, section_name: String) -> void:
     var ground := StaticBody2D.new()
@@ -206,8 +232,9 @@ func _make_marker(marker_text: String, at: Vector2, tint: Color) -> Node2D:
 
 func _interact(item: Dictionary) -> void:
     var kind: String = item["kind"]
+    var target: Node2D = item["node"]
     if kind == "door" and not has_wind_ribbon:
-        _show_dialogue("The golden door hums, but the gap before it is too wide. Look for something light enough to ride the breeze.")
+        _show_dialogue("The golden door hums, but the gap before it is too wide. Look for something light enough to ride the breeze.", target)
         return
     if kind == "ribbon":
         has_wind_ribbon = true
@@ -217,12 +244,13 @@ func _interact(item: Dictionary) -> void:
     elif kind == "door":
         reached_greed = true
         item["used"] = true
-    _show_dialogue(item["message"])
+    _show_dialogue(item["message"], target)
 
-func _show_dialogue(message: String) -> void:
+func _show_dialogue(message: String, target: Node2D = null) -> void:
     dialogue_label.text = message
     dialogue_panel.visible = true
     dialogue_open = true
+    dialogue_target = target
 
 func _update_hud(_value: int = 0) -> void:
     if not is_instance_valid(player) or not is_instance_valid(stats_label):
