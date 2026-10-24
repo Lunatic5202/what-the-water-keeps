@@ -41,7 +41,7 @@ func _process(_delta: float) -> void:
     if dialogue_open:
         var walked_away := not is_instance_valid(dialogue_target)
         if is_instance_valid(dialogue_target):
-            walked_away = player.global_position.distance_to(dialogue_target.global_position) > 110.0
+            walked_away = player.global_position.distance_to(dialogue_target.global_position) > 95.0
         if walked_away or Input.is_action_just_pressed("interact"):
             dialogue_panel.visible = false
             dialogue_open = false
@@ -239,7 +239,6 @@ func _interact(item: Dictionary) -> void:
     if kind == "ribbon":
         has_wind_ribbon = true
         item["used"] = true
-        var target: Node2D = item["node"]
         target.visible = false
     elif kind == "door":
         reached_greed = true
