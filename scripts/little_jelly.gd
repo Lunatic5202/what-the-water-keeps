@@ -9,6 +9,7 @@ var patrol_direction := -1
 var patrol_timer := 0.0
 var attack_cooldown := 0.0
 var dead := false
+var knockback_timer := 0.0
 
 func _ready() -> void:
     start_x = global_position.x
@@ -24,7 +25,11 @@ func _physics_process(delta: float) -> void:
     if patrol_timer > 1.4:
         patrol_timer = 0.0
         patrol_direction *= -1
-    velocity.x = patrol_direction * 38.0
+    knockback_timer = maxf(0.0, knockback_timer - delta)
+    if knockback_timer <= 0.0:
+        velocity.x = patrol_direction * 38.0
+    else:
+        velocity.x = move_toward(velocity.x, 0.0, 400.0 * delta)
     if absf(global_position.x - start_x) > 85.0:
         patrol_direction = -1 if global_position.x > start_x else 1
     attack_cooldown = maxf(0.0, attack_cooldown - delta)
@@ -50,6 +55,7 @@ func take_damage(amount: int) -> void:
         if player:
             velocity.x = sign(global_position.x - player.global_position.x) * 160.0
             velocity.y = -110.0
+            knockback_timer = 0.25
 
 func _draw() -> void:
     draw_circle(Vector2(0, 1), 19, Color(0.55, 0.79, 0.82, 0.24))
