@@ -4,6 +4,7 @@ var player: CharacterBody2D
 var jelly: CharacterBody2D
 var old_moss: CharacterBody2D
 var stats_label: Label
+var hud_layer: CanvasLayer
 var prompt_label: Label
 var dialogue_panel: ColorRect
 var dialogue_label: Label
@@ -113,9 +114,9 @@ func _draw() -> void:
 	# The Wind Ribbon is before the dash gap.
 	draw_rect(Rect2(3400, 610, 500, 150), Color(0.80, 0.92, 0.76, 1))
 	draw_rect(Rect2(3400, 610, 500, 4), Color(0.88, 0.96, 0.85, 1))
-	draw_rect(Rect2(4100, 610, 700, 150), Color(0.80, 0.92, 0.76, 1))
-	draw_rect(Rect2(4100, 610, 700, 4), Color(0.88, 0.96, 0.85, 1))
-	draw_rect(Rect2(3900, 610, 200, 150), Color(0.57, 0.77, 0.86, 0.75))
+	draw_rect(Rect2(4170, 610, 630, 150), Color(0.80, 0.92, 0.76, 1))
+	draw_rect(Rect2(4170, 610, 630, 4), Color(0.88, 0.96, 0.85, 1))
+	draw_rect(Rect2(3900, 610, 270, 150), Color(0.57, 0.77, 0.86, 0.75))
 
 	# Boundary posts
 	draw_rect(Rect2(35, 475, 40, 135), Color(0.56, 0.62, 0.54, 1))
@@ -132,7 +133,7 @@ func _create_ground() -> void:
 
 	# Post-boss path split by a gap that needs jump + Wind Ribbon dash.
 	_create_ground_section(Vector2(3650, 650), Vector2(500, 80), "RibbonPath")
-	_create_ground_section(Vector2(4450, 650), Vector2(700, 80), "GreedApproach")
+	_create_ground_section(Vector2(4485, 650), Vector2(630, 80), "GreedApproach")
 
 	# Invisible walls
 	_create_boundary(Vector2(55, 0), "StartBoundary")
@@ -188,7 +189,7 @@ func _create_player() -> void:
 	combat_feedback.add_to_group("combat_feedback")
 	combat_feedback.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(combat_feedback)
-	player.respawn_point = respawn_point
+	player.set("respawn_point", respawn_point)
 
 func _create_jelly() -> void:
 	jelly = CharacterBody2D.new()
@@ -215,8 +216,9 @@ func _create_old_moss() -> void:
 	add_child(old_moss)
 
 func _create_hud() -> void:
-	var hud := CanvasLayer.new()
-	add_child(hud)
+	hud_layer = CanvasLayer.new()
+	add_child(hud_layer)
+	var hud := hud_layer
 
 	var title := Label.new()
 	title.position = Vector2(24, 18)
@@ -359,15 +361,16 @@ func _transition_to_hub() -> void:
 	hub_scene = Node2D.new()
 	hub_scene.set_script(load("res://scripts/hub.gd"))
 	hub_scene.set("player", player)
-	hub_scene.region_entered.connect(_on_hub_region_entered)
+	hub_scene.connect("region_entered", Callable(self, "_on_hub_region_entered"))
 	get_parent().add_child(hub_scene)
 
 	remove_child(player)
 	hub_scene.add_child(player)
 	player.position = hub_scene.get("respawn_point")
-	player.respawn_point = hub_scene.get("respawn_point")
+	player.set("respawn_point", hub_scene.get("respawn_point"))
 	_set_camera_limits(-200, 3000, 100, 850)
 	visible = false
+	hud_layer.visible = false
 	process_mode = Node.PROCESS_MODE_DISABLED
 
 func _on_hub_region_entered(region_name: String) -> void:
@@ -385,8 +388,8 @@ func _transition_to_greed() -> void:
 		greed_scene = Node2D.new()
 		greed_scene.set_script(load("res://scripts/greed.gd"))
 		greed_scene.set("player", player)
-		greed_scene.return_to_hub.connect(_return_to_hub)
-		greed_scene.region_cleared.connect(_on_region_cleared)
+		greed_scene.connect("return_to_hub", Callable(self, "_return_to_hub"))
+		greed_scene.connect("region_cleared", Callable(self, "_on_region_cleared"))
 		get_parent().add_child(greed_scene)
 	else:
 		greed_scene.visible = true
@@ -396,7 +399,7 @@ func _transition_to_greed() -> void:
 	hub_scene.remove_child(player)
 	greed_scene.add_child(player)
 	player.position = greed_scene.get("respawn_point")
-	player.respawn_point = greed_scene.get("respawn_point")
+	player.set("respawn_point", greed_scene.get("respawn_point"))
 	_set_camera_limits(0, 2100, 100, 750)
 	current_region = "greed"
 
@@ -419,7 +422,7 @@ func _return_to_hub() -> void:
 
 func _on_region_cleared(region_name: String) -> void:
 	if is_instance_valid(hub_scene):
-		hub_scene.unlock_region(region_name)
+		hub_scene.call("unlock_region", region_name)
 	_return_to_hub()
 
 func _set_camera_limits(left: int, right: int, top: int, bottom: int) -> void:
