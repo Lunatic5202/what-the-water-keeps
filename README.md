@@ -33,6 +33,7 @@ Implemented in code:
 - The Still Pond hub with seven doors, bench, altar, Memory Tree, Mirror Gate placeholder, Marl and Orrin
 - Greed region with coins, weight penalties, offering shrines, lore tablets and a Featherweight Charm pickup that unlocks double jump
 - Wake → Hub → Greed → Hub handoff using the same Lumi instance
+- Hub arrival positioned beside the Greed door without the bench/NPC stealing the first interaction
 - Pit recovery, checkpoint-aware death respawn, visible Wake boundaries, hit-stop and camera-shake feedback
 
 Still incomplete:
