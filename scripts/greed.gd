@@ -6,6 +6,7 @@ signal collectible_found(collectible_type: String)
 
 var player: CharacterBody2D
 var stats_label: Label
+var hud_layer: CanvasLayer
 var prompt_label: Label
 var dialogue_panel: ColorRect
 var dialogue_label: Label
@@ -150,8 +151,9 @@ func _create_player() -> void:
 	player.add_child(camera)
 
 func _create_hud() -> void:
-	var hud := CanvasLayer.new()
-	add_child(hud)
+	hud_layer = CanvasLayer.new()
+	add_child(hud_layer)
+	var hud := hud_layer
 
 	var title := Label.new()
 	title.position = Vector2(24, 18)
@@ -259,6 +261,12 @@ func _make_interactable(marker_text: String, at: Vector2, tint: Color) -> Node2D
 	marker.add_child(label)
 	add_child(marker)
 	return marker
+
+func set_region_active(active: bool) -> void:
+	visible = active
+	hud_layer.visible = active
+	set_process(active)
+	set_physics_process(active)
 
 func _connect_signals() -> void:
 	player.health_changed.connect(_update_hud)
