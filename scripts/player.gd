@@ -39,6 +39,7 @@ var can_ground_pound := false  # Ember Boots
 var can_glide := false  # Halo Cloak
 
 var has_double_jumped := false
+var respawn_point := Vector2(240, 570)
 
 # Animation state
 var is_attacking := false
@@ -142,11 +143,10 @@ func _on_attack_body_entered(body: Node2D) -> void:
 	if attack_timer <= 0.0 or attack_has_hit:
 		return
 	if body.has_method("take_damage"):
-		# Impact feedback
-		var scene_root = get_tree().root.get_child(0)
-		if scene_root and scene_root.has_method("apply_hit_freeze"):
-			scene_root.apply_hit_freeze(ATTACK_IMPACT_FRAMES)
-			scene_root.screenshake(0.5, 0.08)
+		var feedback := get_tree().get_first_node_in_group("combat_feedback")
+		if is_instance_valid(feedback):
+			feedback.apply_hit_freeze(ATTACK_IMPACT_FRAMES)
+			feedback.screenshake(0.5, 0.08)
 
 		body.take_damage(ATTACK_DAMAGE)
 		attack_has_hit = true
@@ -161,7 +161,7 @@ func take_damage(amount: int) -> void:
 	if health <= 0:
 		health = max_health
 		heals = maxi(0, heals - 1)
-		global_position = Vector2(240, 570)
+		global_position = respawn_point
 		velocity = Vector2.ZERO
 		health_changed.emit(health)
 		heals_changed.emit(heals)
