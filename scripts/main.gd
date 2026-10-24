@@ -395,7 +395,7 @@ func _transition_to_greed() -> void:
 	greed_scene.add_child(player)
 	player.position = greed_scene.get("respawn_point")
 	player.set("respawn_point", greed_scene.get("respawn_point"))
-	_set_camera_limits(0, 2100, 100, 750)
+	_set_camera_limits(0, 2850, 100, 750)
 	current_region = "greed"
 
 func _return_to_hub() -> void:

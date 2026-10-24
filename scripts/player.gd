@@ -57,6 +57,7 @@ func _ready() -> void:
 	attack_area.name = "AttackArea"
 	attack_area.position = Vector2(28, 0)
 	attack_area.monitoring = false
+	attack_area.collision_mask = 3  # layer 1 (enemies) and layer 2 (The Collector)
 	attack_shape = CollisionShape2D.new()
 	var shape := CircleShape2D.new()
 	shape.radius = 28.0

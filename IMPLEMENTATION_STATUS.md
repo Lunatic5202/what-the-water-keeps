@@ -23,7 +23,8 @@
 
 ### The Gilded Garden (Greed)
 - Coins, carried-gold weight penalty, shrines and three lore tablets
-- Collector encounter placeholder (boss fight is not implemented)
+- The Collector boss: three phases (Coin Rain and belly slam, Feast growth with a shrinking arena, Hunger purse grab), offering bowls that hurt and shrink him, and the bible's intro, mid-fight and defeat lines
+- Greed clear: defeating him sets the Open Hand and Gold Key flags, emits `region_cleared`, and the hub counts the key
 - Featherweight Charm pickup sets the player's double-jump ability
 - Return-to-hub signal that does not falsely count Greed as cleared
 
@@ -33,7 +34,7 @@
 - Hit-stop and camera shake through a dedicated feedback node that only releases pauses it owns
 
 ## Still incomplete
-- The Collector boss fight, actual Greed clear condition, and Greed rewards beyond Featherweight
+- Open Hand (Offering Style) as a real fighting style. It is only a flag today
 - Unlocking further regions from completed boss clears
 - Other six regions, fighting styles, Memory Petals, save/load, menus and endings
 - Final art, animation, music and sound
@@ -46,6 +47,8 @@ The repository has been updated through source changes, but the game has **not**
 3. Greed → Hub return without falsely unlocking Greed
 4. Dash-gap reachability and checkpoint respawn after damage/falling
 5. Featherweight double jump and hit-stop recovery
+6. The Collector fight start to finish: intro, coin rain, slam, feast (mountain disappears, he grows), purse grab with and without gold, bowls, defeat, return to hub with the key counted
+7. Dying mid-fight resets him and removes the lock wall
 
 ## Engine version
 

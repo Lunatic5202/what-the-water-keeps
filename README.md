@@ -32,12 +32,13 @@ Implemented in code:
 - A post-boss gap intended to require jump + dash before the first door
 - The Still Pond hub with seven doors, bench, altar, Memory Tree, Mirror Gate placeholder, Marl and Orrin
 - Greed region with coins, weight penalties, offering shrines, lore tablets and a Featherweight Charm pickup that unlocks double jump
+- The Collector boss (never run, values are guesses): Coin Rain and belly slam, then below 66% health he swallows his coin mountain and grows (faster if Lumi carries gold) while the arena's left wall creeps inward, then below 33% he lunges for Lumi's purse. A grab with gold steals it all and heals him; with empty hands it whiffs and leaves him open. Offering bowls hurt and shrink him. Defeat plays the bible's lines, sets the Open Hand and Gold Key flags and clears Greed, which returns Lumi to the hub with one more key
 - Wake → Hub → Greed → Hub handoff using the same Lumi instance
 - Hub arrival positioned beside the Greed door without the bench/NPC stealing the first interaction
 - Pit recovery, checkpoint-aware death respawn, visible Wake boundaries, hit-stop and camera-shake feedback
 
 Still incomplete:
-- The Collector boss fight and actual Greed clear/reward progression
+- Playtesting and tuning The Collector. The Open Hand and Gold Key are only flags: there are no fighting styles yet
 - Other region implementations, full fighting styles, memory petals, saves, menus, music and imported art
 - Full hub-door progression and final Mirror Gate
 - Runtime verification of the current transition loop and combat feedback
@@ -61,6 +62,9 @@ Run: open `project.godot` in the Godot Project Manager and press F5.
 | `scripts/main.gd` | Level building, HUD, dialogue, interactables, killbox, camera limits, checkpoint |
 | `scripts/player.gd` | Lumi: movement, dash, attack, heal, damage, drawing |
 | `scripts/little_jelly.gd` | Tutorial enemy: patrol, contact damage, knockback |
+| `scripts/greed.gd` | The Gilded Garden: level, gold and weight, shrines and bowls, Collector fight flow and rewards |
+| `scripts/collector.gd` | The Collector boss: phases, attacks, growth, purse grab, drawing |
+| `scripts/collector_coin.gd` | Coins he throws: they hurt while falling, then become gold pickups |
 | `docs/game-bible.md` | Full design reference (story, regions, bosses, movesets, art, sound, UI) |
 
 ## Controls (prototype)
@@ -90,6 +94,16 @@ World units are pixels. Ground top is y=610.
 | Boundary walls | x = 55 and x = 4600 |
 | Killbox | y > 900 |
 
+## Level reference (Greed arena)
+
+| Thing | Position |
+|-------|----------|
+| Start marker for the fight | x = 2130 (E to approach) |
+| Left lock wall during the fight | x = 2000, creeps inward as he grows (up to 150px) |
+| Offering bowls | x = 2230 and x = 2660 |
+| The Collector / his coin mountain | x = 2500 / x = 2580 |
+| End wall | x = 2750 |
+
 ## How the code works
 
 - `main.gd` keeps a list of `interactables` (dictionaries with `node`, `message`, `kind`, `used`). `_process` finds the nearest one within 95px, shows the E prompt and handles opening and closing dialogue.
@@ -97,11 +111,13 @@ World units are pixels. Ground top is y=610.
 - Status messages go through `_show_status()`. Only the newest message restores the HUD.
 - `player.gd` emits `health_changed`, `heals_changed` and `status_changed`. `main.gd` listens and updates the HUD.
 - Enemies join the damage system by having a `take_damage(amount)` method. The player's attack area calls it.
+- The Collector is on collision layer 2 with no mask and is moved by code, so he never shoves Lumi. Lumi's attack area looks at layers 1 and 2.
+- `greed.gd` owns gold. `collector.gd` calls `steal_all_gold()` and reads `carried_gold` on it, and falling coins call `add_gold()`.
 
 ## Roadmap (suggested order)
 
 1. Playtest and stabilize Wake → Still Pond → Greed → Still Pond.
-2. Implement The Collector boss fight and the actual Greed clear/reward condition.
+2. Playtest and tune The Collector (implemented, never run), then turn the Open Hand into a real fighting style.
 3. Connect region-clear rewards to hub door unlocks and gadget progression.
 4. Build the remaining six regions and their bosses, keeping the game bible as the source of truth.
 5. Add the Mirror Gate, Memory Path, final fight and both endings.
@@ -118,5 +134,5 @@ World units are pixels. Ground top is y=610.
 
 - Godot is often not installed in agent sandboxes. If it is not, say so, and do a syntax check instead, for example `pip install gdtoolkit` then `gdparse scripts/*.gd`.
 - Ask the user to playtest and report exact errors or feel problems.
-- Known rough spots: the dash gap width is tight and may need tuning.
+- Known rough spots: the dash gap width is tight and may need tuning. The Collector's health (360), timings, growth rate and squeeze are untested guesses.
 - Runtime testing is still required after the progression and transition changes.
