@@ -1698,7 +1698,7 @@ Idle, walk, run, jump, fall, land, double jump, dash, super dash charge and rele
 - **Dust Bunny:** HP 12. Fast, charges in a straight line. Damage 5. Teaches dash and dodge.
 
 ### Tutorial boss: Old Moss
-A slow, ancient, mossy turtle. HP 120, damage 8 to 10. Attacks: a slow head bump (telegraphed), a rolling shell (jump over), and a spore puff (dash through). Teaches reading telegraphs and healing under pressure. He is protecting the Wind Ribbon, which is all that's left of the wind he used to ride.
+A slow, ancient, mossy turtle. HP 120, damage 8 to 10. Attacks: a slow, telegraphed head bump that lunges forward; a rolling shell (jump over); and a fan of spores (dash through or weave between). Below half health, he quickens his recovery and adds a short aimed spore burst. Each attack has a visible wind-up so the tutorial teaches reading tells, jumping, dashing, and healing under pressure. He is protecting the Wind Ribbon, which is all that's left of the wind he used to ride.
 
 *(Pre-fight)*
 OLD MOSS: Little light... that ribbon is all I have left of the wind.
