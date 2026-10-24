@@ -9,6 +9,8 @@ const DASH_TIME := 0.16
 
 # COMBAT VALUES (per combat doc)
 const ATTACK_DAMAGE := 8  # Light attack base
+const OFFERING_DAMAGE := 24
+const OFFERING_HOLD_TIME := 0.6
 const HEAL_AMOUNT := 2  # Per charge
 const ATTACK_IMPACT_FRAMES := 6  # Freeze on hit
 
@@ -21,8 +23,16 @@ var attack_timer := 0.0
 var hurt_cooldown := 0.0
 var dash_cooldown := 0.0
 var attack_has_hit := false
+var has_open_hand := false
+var offering_attack := false
+var heavy_hold_time := 0.0
+var heavy_was_held := false
+var attack_damage := ATTACK_DAMAGE
+var attack_duration := 0.18
+var attack_targets: Array[Node2D] = []
 var attack_area: Area2D
 var attack_shape: CollisionShape2D
+var attack_circle: CircleShape2D
 
 # Movement modifiers
 var move_speed_mod := 1.0
@@ -62,6 +72,7 @@ func _ready() -> void:
 	var shape := CircleShape2D.new()
 	shape.radius = 28.0
 	attack_shape.shape = shape
+	attack_circle = shape
 	attack_shape.disabled = true
 	attack_area.add_child(attack_shape)
 	add_child(attack_area)
@@ -103,16 +114,28 @@ func _physics_process(delta: float) -> void:
 		if Input.is_action_just_pressed("attack"):
 			_start_attack()
 
+		if has_open_hand and Input.is_action_pressed("heavy_attack") and attack_timer <= 0.0:
+			heavy_hold_time += delta
+			heavy_was_held = true
+		elif heavy_was_held and not Input.is_action_pressed("heavy_attack"):
+			if heavy_hold_time >= OFFERING_HOLD_TIME:
+				_start_offering_attack()
+			heavy_hold_time = 0.0
+			heavy_was_held = false
+
 		if Input.is_action_just_pressed("heal"):
 			_heal()
 
 	if attack_timer > 0.0:
 		attack_timer -= delta
-		attack_progress = 1.0 - (attack_timer / 0.18)
+		attack_progress = 1.0 - (attack_timer / attack_duration)
 		if attack_timer <= 0.0:
 			attack_shape.set_deferred("disabled", true)
 			attack_area.set_deferred("monitoring", false)
 			is_attacking = false
+			offering_attack = false
+			attack_circle.radius = 28.0
+			attack_area.position.x = 28.0 * facing
 
 	move_and_slide()
 	queue_redraw()
@@ -123,6 +146,10 @@ func _start_attack() -> void:
 	attack_timer = 0.18
 	attack_progress = 0.0
 	attack_has_hit = false
+	attack_targets.clear()
+	attack_damage = ATTACK_DAMAGE
+	attack_duration = 0.18
+	offering_attack = false
 	is_attacking = true
 	attack_area.position.x = 28.0 * facing
 
@@ -138,19 +165,49 @@ func _start_attack() -> void:
 	attack_area.set_deferred("monitoring", true)
 	status_changed.emit("LANTERN SWING!")
 
+func _start_offering_attack() -> void:
+	if attack_timer > 0.0 or not has_open_hand:
+		return
+	var spent_gold := 0
+	var greed := get_parent()
+	if is_instance_valid(greed) and greed.has_method("spend_offering_gold"):
+		spent_gold = int(greed.call("spend_offering_gold", 100))
+	attack_timer = 0.42
+	attack_duration = 0.42
+	attack_progress = 0.0
+	attack_has_hit = false
+	attack_targets.clear()
+	offering_attack = true
+	attack_damage = OFFERING_DAMAGE + int(spent_gold / 10)
+	is_attacking = true
+	attack_area.position.x = 42.0 * facing
+	attack_circle.radius = 68.0
+	attack_shape.set_deferred("disabled", false)
+	attack_area.set_deferred("monitoring", true)
+	status_changed.emit("WIDE OFFERING!  GOLD GIVEN: %d" % spent_gold)
+
 func _on_attack_body_entered(body: Node2D) -> void:
 	if body == self:
 		return
-	if attack_timer <= 0.0 or attack_has_hit:
+	if attack_timer <= 0.0:
 		return
+	if offering_attack:
+		if attack_targets.has(body):
+			return
+	else:
+		if attack_has_hit:
+			return
 	if body.has_method("take_damage"):
 		var feedback := get_tree().get_first_node_in_group("combat_feedback")
 		if is_instance_valid(feedback):
 			feedback.call("apply_hit_freeze", ATTACK_IMPACT_FRAMES)
 			feedback.call("screenshake", 0.5, 0.08)
 
-		body.take_damage(ATTACK_DAMAGE)
-		attack_has_hit = true
+		body.take_damage(attack_damage)
+		if offering_attack:
+			attack_targets.append(body)
+		else:
+			attack_has_hit = true
 
 func take_damage(amount: int) -> void:
 	if hurt_cooldown > 0.0:
@@ -202,6 +259,14 @@ func _draw() -> void:
 	# Better sword swing animation
 	if is_attacking and attack_timer > 0.0:
 		var ease_progress := ease(attack_progress, -2.0)  # Ease out
+		if offering_attack:
+			var wave_radius := lerpf(18.0, 76.0, ease_progress)
+			draw_arc(Vector2(34 * facing, -8), wave_radius, -1.1, 1.1, 24,
+				Color(1.0, 0.84, 0.46, (1.0 - ease_progress) * 0.9), 7.0)
+			if ease_progress > 0.55:
+				draw_arc(Vector2(34 * facing, -8), wave_radius + 8.0, -1.1, 1.1, 24,
+					Color(1.0, 0.95, 0.72, (1.0 - ease_progress) * 0.65), 3.0)
+			return
 		var current_arc_start := lerpf(swing_arc_start, swing_arc_start + 2.3, ease_progress)
 		var current_arc_end := lerpf(swing_arc_end, swing_arc_end - 2.3, ease_progress)
 

@@ -210,7 +210,7 @@ func _create_hud() -> void:
 	help.position = Vector2(24, 670)
 	help.add_theme_font_size_override("font_size", 16)
 	help.add_theme_color_override("font_color", Color(0.82, 0.83, 0.9))
-	help.text = "A/D move   SPACE jump   J lantern swing   LEFT SHIFT dash   Q heal   E interact"
+	help.text = "A/D move   SPACE jump   J lantern swing   K hold 0.6s: Open Hand   LEFT SHIFT dash   Q heal   E interact"
 	hud.add_child(help)
 
 	prompt_label = Label.new()
@@ -480,6 +480,15 @@ func steal_all_gold() -> int:
 	_update_hud()
 	return amount
 
+func spend_offering_gold(max_amount: int) -> int:
+	var spent := mini(carried_gold, maxi(0, max_amount))
+	if spent <= 0:
+		return 0
+	carried_gold -= spent
+	_update_weight()
+	_update_hud()
+	return spent
+
 func _create_collector() -> void:
 	collector = CharacterBody2D.new()
 	collector.name = "TheCollector"
@@ -619,6 +628,8 @@ func _on_collector_defeated() -> void:
 			return
 	has_open_hand = true
 	has_gold_key = true
+	if is_instance_valid(player):
+		player.set("has_open_hand", true)
 	collectible_found.emit("open_hand")
 	collectible_found.emit("gold_key")
 	region_cleared.emit("greed")
