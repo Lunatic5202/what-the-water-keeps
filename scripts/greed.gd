@@ -132,6 +132,7 @@ func _create_player() -> void:
 	player.name = "Lumi"
 	player.position = respawn_point
 	player.set_script(load("res://scripts/player.gd"))
+	player.set("respawn_point", respawn_point)
 	var collision := CollisionShape2D.new()
 	var shape := CapsuleShape2D.new()
 	shape.radius = 13.0
