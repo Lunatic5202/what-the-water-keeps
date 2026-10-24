@@ -363,8 +363,9 @@ func _interact(item: Dictionary) -> void:
 
 	match kind:
 		"bench":
+			player.respawn_point = respawn_point
 			player.health = player.max_health
-			player.heals = 2
+			player.heals = 3
 			player.health_changed.emit(player.health)
 			player.heals_changed.emit(player.heals)
 			_show_dialogue("Lumi rests at the bench. The world is quiet. Health and heals restored.", target)
