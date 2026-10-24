@@ -28,9 +28,11 @@ var offering_attack := false
 var heavy_hold_time := 0.0
 var heavy_was_held := false
 var attack_damage := ATTACK_DAMAGE
+var attack_duration := 0.18
 var attack_targets: Array[Node2D] = []
 var attack_area: Area2D
 var attack_shape: CollisionShape2D
+var attack_circle: CircleShape2D
 
 # Movement modifiers
 var move_speed_mod := 1.0
@@ -70,6 +72,7 @@ func _ready() -> void:
 	var shape := CircleShape2D.new()
 	shape.radius = 28.0
 	attack_shape.shape = shape
+	attack_circle = shape
 	attack_shape.disabled = true
 	attack_area.add_child(attack_shape)
 	add_child(attack_area)
@@ -125,13 +128,13 @@ func _physics_process(delta: float) -> void:
 
 	if attack_timer > 0.0:
 		attack_timer -= delta
-		attack_progress = 1.0 - (attack_timer / 0.18)
+		attack_progress = 1.0 - (attack_timer / attack_duration)
 		if attack_timer <= 0.0:
 			attack_shape.set_deferred("disabled", true)
 			attack_area.set_deferred("monitoring", false)
 			is_attacking = false
 			offering_attack = false
-			attack_shape.shape.radius = 28.0
+			attack_circle.radius = 28.0
 			attack_area.position.x = 28.0 * facing
 
 	move_and_slide()
@@ -145,6 +148,7 @@ func _start_attack() -> void:
 	attack_has_hit = false
 	attack_targets.clear()
 	attack_damage = ATTACK_DAMAGE
+	attack_duration = 0.18
 	offering_attack = false
 	is_attacking = true
 	attack_area.position.x = 28.0 * facing
@@ -169,6 +173,7 @@ func _start_offering_attack() -> void:
 	if is_instance_valid(greed) and greed.has_method("spend_offering_gold"):
 		spent_gold = int(greed.call("spend_offering_gold", 100))
 	attack_timer = 0.42
+	attack_duration = 0.42
 	attack_progress = 0.0
 	attack_has_hit = false
 	attack_targets.clear()
@@ -176,7 +181,7 @@ func _start_offering_attack() -> void:
 	attack_damage = OFFERING_DAMAGE + int(spent_gold / 10)
 	is_attacking = true
 	attack_area.position.x = 42.0 * facing
-	attack_shape.shape.radius = 68.0
+	attack_circle.radius = 68.0
 	attack_shape.set_deferred("disabled", false)
 	attack_area.set_deferred("monitoring", true)
 	status_changed.emit("WIDE OFFERING!  GOLD GIVEN: %d" % spent_gold)
@@ -260,7 +265,7 @@ func _draw() -> void:
 				Color(1.0, 0.84, 0.46, (1.0 - ease_progress) * 0.9), 7.0)
 			if ease_progress > 0.55:
 				draw_arc(Vector2(34 * facing, -8), wave_radius + 8.0, -1.1, 1.1, 24,
-					Color(1.0, 0.95, 0.72, (1.0 - ease_progress) * 0.65), 3.0
+					Color(1.0, 0.95, 0.72, (1.0 - ease_progress) * 0.65), 3.0)
 			return
 		var current_arc_start := lerpf(swing_arc_start, swing_arc_start + 2.3, ease_progress)
 		var current_arc_end := lerpf(swing_arc_end, swing_arc_end - 2.3, ease_progress)
