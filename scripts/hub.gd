@@ -363,7 +363,7 @@ func _interact(item: Dictionary) -> void:
 
 	match kind:
 		"bench":
-			player.respawn_point = respawn_point
+			player.set("respawn_point", respawn_point)
 			player.health = player.max_health
 			player.heals = 3
 			player.health_changed.emit(player.health)
