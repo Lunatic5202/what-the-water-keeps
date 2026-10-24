@@ -98,13 +98,12 @@ World units are pixels. Ground top is y=610.
 
 ## Roadmap (suggested order)
 
-1. Finish the Wake: Old Moss tutorial boss, real Greed door transition.
-2. Build the hub, The Still Pond, with the door ring and the Altar of Hands.
-3. Greed region: weight debuff, shrines, the four monsters, The Collector, Double Jump, Offering Style.
-4. Repeat per region in the order in the bible. Each region's gadget unlocks the next.
-5. Memory Path, the final fight, both endings.
-6. Side quests, lore tablets and Memory Petals.
-7. Art, music, sound and polish.
+1. Playtest and stabilize Wake → Still Pond → Greed → Still Pond.
+2. Implement The Collector boss fight and the actual Greed clear/reward condition.
+3. Connect region-clear rewards to hub door unlocks and gadget progression.
+4. Build the remaining six regions and their bosses, keeping the game bible as the source of truth.
+5. Add the Mirror Gate, Memory Path, final fight and both endings.
+6. Add saves, side quests, Memory Petals, then polish art, music and sound.
 
 ## Design pillars (short version)
 
