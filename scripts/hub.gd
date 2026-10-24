@@ -4,6 +4,7 @@ signal region_entered(region_name: String)
 
 var player: CharacterBody2D
 var stats_label: Label
+var hud_layer: CanvasLayer
 var prompt_label: Label
 var dialogue_panel: ColorRect
 var dialogue_label: Label
@@ -15,7 +16,8 @@ var status_id := 0
 # World state
 var unlocked_regions: Array[String] = []  # Regions cleared
 var current_region := "wake"
-var respawn_point := Vector2(250, 680)
+# Keep Lumi clear of the bench and Orrin so the Greed door is the first nearby interaction.
+var respawn_point := Vector2(360, 650)
 var regions_unlocked := 0  # How many regions (doors) are open
 
 # Hub elements
@@ -207,7 +209,7 @@ func _create_npcs() -> void:
 
 func _create_doors() -> void:
 	var door_symbols := {
-		"greed": "COIN",
+		"greed": "GREED",
 		"sloth": "MOON",
 		"gluttony": "SPOON",
 		"envy": "WINDOW",
@@ -236,6 +238,7 @@ func _create_player() -> void:
 	player.name = "Lumi"
 	player.position = respawn_point
 	player.set_script(load("res://scripts/player.gd"))
+	player.set("respawn_point", respawn_point)
 	var collision := CollisionShape2D.new()
 	var shape := CapsuleShape2D.new()
 	shape.radius = 13.0
@@ -255,8 +258,9 @@ func _create_player() -> void:
 	player.add_child(camera)
 
 func _create_hud() -> void:
-	var hud := CanvasLayer.new()
-	add_child(hud)
+	hud_layer = CanvasLayer.new()
+	add_child(hud_layer)
+	var hud := hud_layer
 
 	var title := Label.new()
 	title.position = Vector2(24, 18)
@@ -319,6 +323,12 @@ func _make_interactable(marker_text: String, at: Vector2, tint: Color) -> Node2D
 	add_child(marker)
 	return marker
 
+func set_region_active(active: bool) -> void:
+	visible = active
+	hud_layer.visible = active
+	set_process(active)
+	set_physics_process(active)
+
 func _connect_signals() -> void:
 	player.health_changed.connect(_update_hud)
 	player.heals_changed.connect(_update_hud)
@@ -363,8 +373,9 @@ func _interact(item: Dictionary) -> void:
 
 	match kind:
 		"bench":
+			player.set("respawn_point", respawn_point)
 			player.health = player.max_health
-			player.heals = 2
+			player.heals = 3
 			player.health_changed.emit(player.health)
 			player.heals_changed.emit(player.heals)
 			_show_dialogue("Lumi rests at the bench. The world is quiet. Health and heals restored.", target)

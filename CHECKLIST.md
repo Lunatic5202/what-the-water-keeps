@@ -23,7 +23,7 @@
 - [ ] Minimal text, crayon signs only
 
 ### Tutorial (Wake) Structure
-- [ ] 8 rooms per spec: Waking Meadow → Puddle Path → Jelly Glen → Resting Stone → Dust Hollow → Old Moss Clearing → Wind Ribbon Shrine → First Door
+- [ ] Full 8-room layout per spec; current prototype compresses the tutorial path, Old Moss arena, Wind Ribbon and dash gap
 - [x] Old Moss boss (120 HP, 8-10 damage)
 - [ ] Missing: Puddle Sprite (HP 15, dmg 5), Dust Bunny (HP 12, dmg 5)
 - [x] Little Jelly (HP 10, dmg 1 - tutorial scaled)
@@ -55,3 +55,14 @@
 - Fixed Wake→Hub transition (player ownership handoff)
 - Created Puddle Sprite (15 HP, 5 dmg, hop/puddle behavior)
 - Created Dust Bunny (12 HP, 5 dmg, flee behavior, puff visual)
+
+
+## Progression fixes in progress (2026-10-24)
+- [x] Restore the post-Ribbon dash gap before the first door
+- [x] Replace frame-polled T transition with per-frame input handling
+- [x] Wire Wake → Hub → Greed → Hub handoffs
+- [x] Keep region return separate from region-clear progression
+- [x] Make player death use the current checkpoint
+- [x] Connect Featherweight pickup to actual double-jump ability
+- [x] Integrate hit-stop/camera shake without a pause deadlock
+- [ ] Run the full loop in Godot and fix any runtime errors

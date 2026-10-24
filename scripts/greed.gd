@@ -1,10 +1,12 @@
 extends Node2D
 
 signal region_cleared(region_name: String)
+signal return_to_hub
 signal collectible_found(collectible_type: String)
 
 var player: CharacterBody2D
 var stats_label: Label
+var hud_layer: CanvasLayer
 var prompt_label: Label
 var dialogue_panel: ColorRect
 var dialogue_label: Label
@@ -35,7 +37,8 @@ const GRAVITY := 1200.0
 func _ready() -> void:
 	_create_background()
 	_create_ground()
-	_create_player()
+	if not is_instance_valid(player):
+		_create_player()
 	_create_hud()
 	_create_greed_level()
 	_connect_signals()
@@ -73,9 +76,9 @@ func _draw() -> void:
 
 func _create_ground() -> void:
 	# Ground sections - leaving gaps for platforms
-	_create_ground_section(Vector2(-500, 610), Vector2(800, 80), "GreedGround1")
+	_create_ground_section(Vector2(300, 610), Vector2(600, 80), "GreedGround1")
 	_create_ground_section(Vector2(700, 610), Vector2(600, 80), "GreedGround2")
-	_create_ground_section(Vector2(1300, 610), Vector2(800, 80), "GreedGround3")
+	_create_ground_section(Vector2(1500, 610), Vector2(1000, 80), "GreedGround3")
 
 	# Platforms
 	_create_platform(Vector2(500, 500), Vector2(120, 20))
@@ -129,6 +132,7 @@ func _create_player() -> void:
 	player.name = "Lumi"
 	player.position = respawn_point
 	player.set_script(load("res://scripts/player.gd"))
+	player.set("respawn_point", respawn_point)
 	var collision := CollisionShape2D.new()
 	var shape := CapsuleShape2D.new()
 	shape.radius = 13.0
@@ -148,8 +152,9 @@ func _create_player() -> void:
 	player.add_child(camera)
 
 func _create_hud() -> void:
-	var hud := CanvasLayer.new()
-	add_child(hud)
+	hud_layer = CanvasLayer.new()
+	add_child(hud_layer)
+	var hud := hud_layer
 
 	var title := Label.new()
 	title.position = Vector2(24, 18)
@@ -220,6 +225,15 @@ func _create_greed_level() -> void:
 		var coin := _make_interactable("COIN", coin_positions[i], Color(1.0, 0.85, 0.3))
 		interactables.append({"node": coin, "message": "A gleaming gold coin. It feels heavier than it should.\n\n+10 Gold", "kind": "coin", "used": false, "value": 10})
 
+	# The Featherweight Charm unlocks the player's double jump.
+	var charm := _make_interactable("FEATHERWEIGHT\n[E] TAKE", Vector2(1680, 500), Color(0.72, 0.9, 1.0))
+	interactables.append({
+		"node": charm,
+		"message": "A feather-light charm rests among the flowers.\n\nLumi feels able to rise once more in mid-air.",
+		"kind": "featherweight",
+		"used": false
+	})
+
 	# The Collector boss area
 	var boss_area := _make_interactable("THE COLLECTOR\n[E] APPROACH", Vector2(1850, 520), Color(0.9, 0.75, 0.4))
 	interactables.append({
@@ -248,6 +262,12 @@ func _make_interactable(marker_text: String, at: Vector2, tint: Color) -> Node2D
 	marker.add_child(label)
 	add_child(marker)
 	return marker
+
+func set_region_active(active: bool) -> void:
+	visible = active
+	hud_layer.visible = active
+	set_process(active)
+	set_physics_process(active)
 
 func _connect_signals() -> void:
 	player.health_changed.connect(_update_hud)
@@ -322,11 +342,16 @@ func _interact(item: Dictionary) -> void:
 			_update_weight()
 			collectible_found.emit("coin")
 			_show_dialogue(item["message"], target)
+		"featherweight":
+			item["used"] = true
+			target.visible = false
+			unlock_featherweight()
+			_show_dialogue(item["message"], target)
 		"boss":
 			# Start boss fight - would load boss scene
 			_show_dialogue("THE COLLECTOR: Oh. A visitor. Come, come, sit. Isn't it all lovely? I've kept it all safe.\n\n(Boss fight to be implemented)", target)
 		"exit":
-			region_cleared.emit("greed")
+			return_to_hub.emit()
 		_:
 			_show_dialogue(item["message"], target)
 
@@ -383,6 +408,8 @@ func unlock_featherweight() -> void:
 	if not featherweight_found:
 		featherweight_found = true
 		has_featherweight = true
+		player.set("can_double_jump", true)
+		_update_hud()
 		_show_status("FEATHERWEIGHT CHARM FOUND! PRESS JUMP IN MID-AIR TO DOUBLE JUMP!")
 
 func get_respawn_point() -> Vector2:
