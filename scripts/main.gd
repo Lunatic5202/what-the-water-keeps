@@ -20,6 +20,8 @@ var status_id := 0
 # Region references for scene management
 var hub_scene: Node2D = null
 var greed_scene: Node2D = null
+var pending_transition := ""
+var combat_feedback: Node2D = null
 
 const SIGN_MESSAGES := [
 	"Walk! (it's easy, I believe in you)",
@@ -43,8 +45,12 @@ func _ready() -> void:
 	_update_hud()
 
 func _process(_delta: float) -> void:
+	if pending_transition == "hub" and Input.is_action_just_pressed("enter_region"):
+		_transition_to_hub()
+		return
+
 	# Falling below the level sends Lumi safely back to the shore.
-	if player.global_position.y > 900.0:
+	if is_instance_valid(player) and player.global_position.y > 900.0:
 		player.global_position = respawn_point
 		player.velocity = Vector2.ZERO
 		_show_status("THE WATER CATCHES LUMI. BACK TO SAFE GROUND.")
@@ -57,6 +63,7 @@ func _process(_delta: float) -> void:
 			dialogue_panel.visible = false
 			dialogue_open = false
 			dialogue_target = null
+			pending_transition = ""
 		else:
 			prompt_label.text = ""
 			return
@@ -103,9 +110,12 @@ func _draw() -> void:
 		draw_circle(Vector2(stone_x, 596), 24, Color(0.51, 0.61, 0.48, 1))
 		draw_circle(Vector2(stone_x, 590), 16, Color(0.68, 0.78, 0.62, 1))
 
-	# Post-boss path - lighter meadow
-	draw_rect(Rect2(3600, 610, 1200, 150), Color(0.80, 0.92, 0.76, 1))
-	draw_rect(Rect2(3600, 610, 1200, 4), Color(0.88, 0.96, 0.85, 1))
+	# The Wind Ribbon is before the dash gap.
+	draw_rect(Rect2(3400, 610, 500, 150), Color(0.80, 0.92, 0.76, 1))
+	draw_rect(Rect2(3400, 610, 500, 4), Color(0.88, 0.96, 0.85, 1))
+	draw_rect(Rect2(4100, 610, 700, 150), Color(0.80, 0.92, 0.76, 1))
+	draw_rect(Rect2(4100, 610, 700, 4), Color(0.88, 0.96, 0.85, 1))
+	draw_rect(Rect2(3900, 610, 200, 150), Color(0.57, 0.77, 0.86, 0.75))
 
 	# Boundary posts
 	draw_rect(Rect2(35, 475, 40, 135), Color(0.56, 0.62, 0.54, 1))
@@ -120,8 +130,9 @@ func _create_ground() -> void:
 	# Boss arena (2200 to 3400)
 	_create_ground_section(Vector2(2800, 650), Vector2(1200, 80), "BossArena")
 
-	# Post-boss path (3400 to 4600)
-	_create_ground_section(Vector2(4000, 650), Vector2(1200, 80), "PostBossPath")
+	# Post-boss path split by a gap that needs jump + Wind Ribbon dash.
+	_create_ground_section(Vector2(3650, 650), Vector2(500, 80), "RibbonPath")
+	_create_ground_section(Vector2(4450, 650), Vector2(700, 80), "GreedApproach")
 
 	# Invisible walls
 	_create_boundary(Vector2(55, 0), "StartBoundary")
@@ -170,6 +181,14 @@ func _create_player() -> void:
 	camera.limit_right = 4650
 	camera.limit_bottom = 800
 	player.add_child(camera)
+	camera.add_to_group("game_camera")
+
+	var feedback_script = load("res://scripts/combat_feedback.gd")
+	combat_feedback = feedback_script.new(camera)
+	combat_feedback.add_to_group("combat_feedback")
+	combat_feedback.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(combat_feedback)
+	player.respawn_point = respawn_point
 
 func _create_jelly() -> void:
 	jelly = CharacterBody2D.new()
@@ -319,51 +338,99 @@ func _interact(item: Dictionary) -> void:
 		item["used"] = true
 		target.visible = false
 		respawn_point = Vector2(3750, 570)
+		player.respawn_point = respawn_point
 		player.set("has_dash", true)
 		_show_dialogue(item["message"], target)
 	elif kind == "door":
 		reached_greed = true
 		item["used"] = true
+		pending_transition = "hub"
 		_show_dialogue("Enter the Hub (The Still Pond)?\n\n[T] Press T to continue.", target)
 		prompt_label.text = "T  •  ENTER HUB"
-		_wait_for_enter_hub()
 	else:
 		_show_dialogue(item["message"], target)
 
-func _wait_for_enter_hub() -> void:
-	await get_tree().create_timer(0.1).timeout
-	for i in range(60):
-		await get_tree().create_timer(0.1).timeout
-		if Input.is_action_just_pressed("enter_region"):
-			_transition_to_hub()
-			return
-		if not dialogue_open:
-			return
-
 func _transition_to_hub() -> void:
+	pending_transition = ""
 	dialogue_panel.visible = false
 	dialogue_open = false
 	current_region = "hub"
 
-	var HubScene := load("res://scripts/hub.gd")
 	hub_scene = Node2D.new()
-	hub_scene.set_script(HubScene)
-
-	# Pass player to hub before adding to tree
-	if is_instance_valid(player):
-		hub_scene.set("player", player)
-		remove_child(player)
-
+	hub_scene.set_script(load("res://scripts/hub.gd"))
+	hub_scene.set("player", player)
+	hub_scene.region_entered.connect(_on_hub_region_entered)
 	get_parent().add_child(hub_scene)
 
-	# Hub's _ready will skip creating player since it's set
-	await get_tree().process_frame
-	if is_instance_valid(player) and is_instance_valid(hub_scene):
-		hub_scene.add_child(player)
-		player.global_position = hub_scene.get("respawn_point")
-
+	remove_child(player)
+	hub_scene.add_child(player)
+	player.position = hub_scene.get("respawn_point")
+	player.respawn_point = hub_scene.get("respawn_point")
+	_set_camera_limits(-200, 3000, 100, 850)
 	visible = false
-	set_process(false)
+	process_mode = Node.PROCESS_MODE_DISABLED
+
+func _on_hub_region_entered(region_name: String) -> void:
+	if region_name == "greed":
+		_transition_to_greed()
+
+func _transition_to_greed() -> void:
+	if not is_instance_valid(hub_scene) or not is_instance_valid(player):
+		return
+	hub_scene.visible = false
+	hub_scene.set_process(false)
+	hub_scene.set_physics_process(false)
+
+	if not is_instance_valid(greed_scene):
+		greed_scene = Node2D.new()
+		greed_scene.set_script(load("res://scripts/greed.gd"))
+		greed_scene.set("player", player)
+		greed_scene.return_to_hub.connect(_return_to_hub)
+		greed_scene.region_cleared.connect(_on_region_cleared)
+		get_parent().add_child(greed_scene)
+	else:
+		greed_scene.visible = true
+		greed_scene.set_process(true)
+		greed_scene.set_physics_process(true)
+
+	hub_scene.remove_child(player)
+	greed_scene.add_child(player)
+	player.position = greed_scene.get("respawn_point")
+	player.respawn_point = greed_scene.get("respawn_point")
+	_set_camera_limits(0, 2100, 100, 750)
+	current_region = "greed"
+
+func _return_to_hub() -> void:
+	if not is_instance_valid(hub_scene) or not is_instance_valid(greed_scene):
+		return
+	if player.get_parent() == greed_scene:
+		greed_scene.remove_child(player)
+	greed_scene.visible = false
+	greed_scene.set_process(false)
+	greed_scene.set_physics_process(false)
+	hub_scene.add_child(player)
+	player.position = hub_scene.get("respawn_point")
+	player.respawn_point = hub_scene.get("respawn_point")
+	hub_scene.visible = true
+	hub_scene.set_process(true)
+	hub_scene.set_physics_process(true)
+	_set_camera_limits(-200, 3000, 100, 850)
+	current_region = "hub"
+
+func _on_region_cleared(region_name: String) -> void:
+	if is_instance_valid(hub_scene):
+		hub_scene.unlock_region(region_name)
+	_return_to_hub()
+
+func _set_camera_limits(left: int, right: int, top: int, bottom: int) -> void:
+	var camera := player.get_node_or_null("Camera2D") as Camera2D
+	if camera == null:
+		return
+	camera.position = Vector2(0, -100)
+	camera.limit_left = left
+	camera.limit_right = right
+	camera.limit_top = top
+	camera.limit_bottom = bottom
 
 func _show_dialogue(message: String, target: Node2D = null) -> void:
 	dialogue_label.text = message
