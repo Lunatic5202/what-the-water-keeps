@@ -345,7 +345,6 @@ func _interact(item: Dictionary) -> void:
 		_show_dialogue(item["message"], target)
 	elif kind == "door":
 		reached_greed = true
-		item["used"] = true
 		pending_transition = "hub"
 		_show_dialogue("Enter the Hub (The Still Pond)?\n\n[T] Press T to continue.", target)
 		prompt_label.text = "T  •  ENTER HUB"
