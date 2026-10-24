@@ -1,0 +1,32 @@
+schema_version: 1
+
+framework:
+  version: 1.2.0
+  last_upgraded: 2026-10-24
+
+project:
+  name: "What the Water Keeps"
+  type: game
+  genre: "2D Souls-like Platformer"
+
+engine:
+  name: Godot
+  version: "4.3"
+  renderer: gl_compatibility
+
+paths:
+  code_root: scripts
+  assets_root: assets
+  docs_root: docs
+  production_root: production
+
+modes:
+  rigor: minimal
+  automation: collaborative
+
+naming:
+  scene_files: snake_case
+  script_files: snake_case
+  classes: PascalCase
+  functions: snake_case
+  constants: SCREAMING_SNAKE_CASE
