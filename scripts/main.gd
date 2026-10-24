@@ -456,7 +456,10 @@ func _jelly_defeated() -> void:
 func _moss_defeated() -> void:
 	moss_defeated = true
 	_show_status("OLD MOSS LOWERS HIS HEAD. THE RIBBON GLOWS SOFTLY NEARBY.")
-	await get_tree().create_timer(1.5).timeout
+	await get_tree().create_timer(1.0).timeout
+	if is_instance_valid(player):
+		_show_dialogue("Old Moss lowers his head. For a moment, he looks less like a guardian and more like something that misses the wind.\n\nNim whispers: \"Be gentle with it. It remembers being free.\"", player)
+	await get_tree().create_timer(0.2).timeout
 	# Show the Wind Ribbon after defeating Old Moss
 	for item in interactables:
 		if item["kind"] == "ribbon":
