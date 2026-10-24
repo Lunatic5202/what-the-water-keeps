@@ -210,7 +210,7 @@ func _create_hud() -> void:
 	help.position = Vector2(24, 670)
 	help.add_theme_font_size_override("font_size", 16)
 	help.add_theme_color_override("font_color", Color(0.82, 0.83, 0.9))
-	help.text = "A/D move   SPACE jump   J lantern swing   LEFT SHIFT dash   Q heal   E interact"
+	help.text = "A/D move   SPACE jump   J lantern swing   K hold 0.6s: Open Hand   LEFT SHIFT dash   Q heal   E interact"
 	hud.add_child(help)
 
 	prompt_label = Label.new()
