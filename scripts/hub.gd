@@ -16,7 +16,8 @@ var status_id := 0
 # World state
 var unlocked_regions: Array[String] = []  # Regions cleared
 var current_region := "wake"
-var respawn_point := Vector2(250, 680)
+# Keep Lumi clear of the bench and Orrin so the Greed door is the first nearby interaction.
+var respawn_point := Vector2(360, 650)
 var regions_unlocked := 0  # How many regions (doors) are open
 
 # Hub elements
