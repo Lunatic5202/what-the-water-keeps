@@ -556,6 +556,7 @@ func _reset_collector_fight() -> void:
 	scene_id += 1
 	fight_active = false
 	banner_time = 0.0
+	offering_line_shown = false
 	dialogue_panel.visible = false
 	if is_instance_valid(arena_wall):
 		arena_wall.queue_free()
