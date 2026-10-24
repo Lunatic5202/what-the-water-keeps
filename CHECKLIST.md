@@ -1,0 +1,57 @@
+# Implementation Checklist
+
+## From Design Docs
+
+### Combat (what-the-water-keeps-combat-and-movesets.md)
+- [x] 5 hearts health (user override of doc's 100 HP)
+- [x] 3 heal charges
+- [x] Lantern Swing 8/8/12 damage combo
+- [x] Dash gated behind Wind Ribbon pickup
+- [ ] Glow meter (0-100, +5 per hit, +15 perfect guard)
+- [ ] Heavy attack (K key, 22 damage)
+- [ ] Guard/perfect guard (I key, 0.25s window)
+- [ ] Gadgets properly gated behind artifacts
+
+### Art & UI (what-the-water-keeps-art-sound-ui.md)
+- [x] Hub palette: lavender, peach, mint, deep indigo (#C9B8F0, #FFD9C0, #CFF1E0, #4A3A7A)
+- [x] Wake palette: meadow green, cream, sky (#BFE3B4, #FFF6DC, #CFE8F7)
+- [ ] Lumi: 1.5 heads tall, lavender cloak, paper lantern, hop walk
+- [ ] Lantern flame shrinks with health
+- [ ] Pastel storybook look, no pure black
+- [ ] Glowing particles everywhere
+- [ ] HUD: lantern icon health, 5-petal Glow ring, 3 oil drops
+- [ ] Minimal text, crayon signs only
+
+### Tutorial (Wake) Structure
+- [ ] 8 rooms per spec: Waking Meadow → Puddle Path → Jelly Glen → Resting Stone → Dust Hollow → Old Moss Clearing → Wind Ribbon Shrine → First Door
+- [x] Old Moss boss (120 HP, 8-10 damage)
+- [ ] Missing: Puddle Sprite (HP 15, dmg 5), Dust Bunny (HP 12, dmg 5)
+- [x] Little Jelly (HP 10, dmg 1 - tutorial scaled)
+
+### Hub Requirements
+- [x] Multi-tier platformer layout
+- [x] Seven doors spread across elevations
+- [x] Bench of Rest, Altar of Hands, Memory Tree, Mirror Gate
+- [ ] NPCs with full dialogue (currently stubbed)
+- [ ] Hub music "Still Water" loses one note per region
+
+### Current Violations
+1. ~~Hub never loads~~ - FIXED: main.gd now removes player before hub._ready()
+2. **HUD wrong** - using text hearts not lantern icon with flame
+3. **Missing Glow system** entirely
+4. **No Heavy attack** or Guard
+5. **Dialogue too brief** - art doc says "minimal text" but narrative needs room
+6. **No particles** - spec requires glowing particles everywhere
+7. **Color drift** - some colors don't match hex specs exactly
+
+### Next Priority
+1. ~~Fix hub instantiation~~ - DONE
+2. ~~Add missing Wake enemies~~ - Puddle Sprite and Dust Bunny created
+3. Implement Glow meter and Heavy/Guard moves
+4. Proper HUD with lantern icon
+5. Particle systems
+
+### Just Completed (2026-10-24)
+- Fixed Wake→Hub transition (player ownership handoff)
+- Created Puddle Sprite (15 HP, 5 dmg, hop/puddle behavior)
+- Created Dust Bunny (12 HP, 5 dmg, flee behavior, puff visual)
