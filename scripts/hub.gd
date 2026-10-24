@@ -14,7 +14,8 @@ var dialogue_open := false
 var status_id := 0
 
 # World state
-var unlocked_regions: Array[String] = []  # Regions cleared
+var unlocked_regions: Array[String] = ["greed"]  # Doors available to enter
+var cleared_regions: Array[String] = []  # Regions whose bosses are defeated
 var current_region := "wake"
 # Keep Lumi clear of the bench and Orrin so the Greed door is the first nearby interaction.
 var respawn_point := Vector2(360, 650)
@@ -428,10 +429,22 @@ func _show_status(message: String) -> void:
 		_update_hud()
 
 func unlock_region(region_name: String) -> void:
-	if not unlocked_regions.has(region_name):
-		unlocked_regions.append(region_name)
-		regions_unlocked += 1
-		_update_hud()
+	# Clearing a region grants its key and opens the next door in the chain.
+	if cleared_regions.has(region_name):
+		return
+	cleared_regions.append(region_name)
+	regions_unlocked = cleared_regions.size()
+
+	var region_order: Array[String] = [
+		"greed", "sloth", "gluttony", "envy", "lust", "wrath", "pride"
+	]
+	var cleared_index := region_order.find(region_name)
+	if cleared_index >= 0 and cleared_index + 1 < region_order.size():
+		var next_region := region_order[cleared_index + 1]
+		if not unlocked_regions.has(next_region):
+			unlocked_regions.append(next_region)
+
+	_update_hud()
 
 func get_respawn_point() -> Vector2:
 	return respawn_point
