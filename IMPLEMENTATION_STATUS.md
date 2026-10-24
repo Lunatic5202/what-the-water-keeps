@@ -9,7 +9,8 @@
 - Movement, jump, dash, lantern swing, health and healing
 - Four E-to-read signs; dialogue closes when Lumi walks away
 - Little Jelly tutorial enemy
-- Old Moss tutorial boss and post-defeat Wind Ribbon reveal
+- Old Moss tutorial boss with readable attack wind-ups, head lunge, rolling shell, spore fan and a faster phase-two aimed burst
+- Post-defeat Wind Ribbon reveal
 - Wind Ribbon unlocks dash and establishes the Wake checkpoint
 - Dash-training gap after the Ribbon, before the first door
 - Visible level boundaries, camera limits and pit recovery
