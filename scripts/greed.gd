@@ -630,7 +630,6 @@ func _on_collector_defeated() -> void:
 	has_gold_key = true
 	if is_instance_valid(player):
 		player.set("has_open_hand", true)
-		player.call("status_changed") if false else null
 	collectible_found.emit("open_hand")
 	collectible_found.emit("gold_key")
 	region_cleared.emit("greed")
