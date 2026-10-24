@@ -79,6 +79,11 @@ func _draw() -> void:
     draw_rect(Rect2(-3000, 610, 4100, 5), Color(0.38, 0.48, 0.62, 1))
     draw_rect(Rect2(1350, 610, 3650, 150), Color(0.12, 0.15, 0.24, 1))
     draw_rect(Rect2(1350, 610, 3650, 5), Color(0.38, 0.48, 0.62, 1))
+    # Visible stone posts mark the solid boundaries at both ends of Wake.
+    draw_rect(Rect2(35, 475, 40, 135), Color(0.23, 0.27, 0.39, 1))
+    draw_rect(Rect2(35, 475, 40, 5), Color(0.56, 0.65, 0.82, 1))
+    draw_rect(Rect2(1760, 475, 40, 135), Color(0.23, 0.27, 0.39, 1))
+    draw_rect(Rect2(1760, 475, 40, 5), Color(0.56, 0.65, 0.82, 1))
     # A faint glow marks the gap edges.
     draw_line(Vector2(1100, 610), Vector2(1100, 650), Color(0.55, 0.72, 0.92, 0.8), 3.0)
     draw_line(Vector2(1350, 610), Vector2(1350, 650), Color(0.55, 0.72, 0.92, 0.8), 3.0)
