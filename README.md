@@ -32,13 +32,14 @@ Implemented in code:
 - A post-boss gap intended to require jump + dash before the first door
 - The Still Pond hub with seven doors, bench, altar, Memory Tree, Mirror Gate placeholder, Marl and Orrin
 - Greed region with coins, weight penalties, offering shrines, lore tablets and a Featherweight Charm pickup that unlocks double jump
-- The Collector boss (never run, values are guesses): Coin Rain and belly slam, then below 66% health he swallows his coin mountain and grows (faster if Lumi carries gold) while the arena's left wall creeps inward, then below 33% he lunges for Lumi's purse. A grab with gold steals it all and heals him; with empty hands it whiffs and leaves him open. Offering bowls hurt and shrink him. Defeat plays the bible's lines, sets the Open Hand and Gold Key flags and clears Greed, which returns Lumi to the hub with one more key
+- The Collector boss (never run, values are guesses): Coin Rain and belly slam, then below 66% health he swallows his coin mountain and grows (faster if Lumi carries gold) while the arena's left wall creeps inward, then below 33% he lunges for Lumi's purse. A grab with gold steals it all and heals him; with empty hands it whiffs and leaves him open. Offering bowls hurt and shrink him. Defeat plays the bible's lines, unlocks the Open Hand and Gold Key, and clears Greed, which returns Lumi to the hub with one more key
+- The Open Hand's first move is implemented: hold K for 0.6 seconds and release to send a wide palm wave. It hits multiple enemies, deals 24 base damage, and spends up to 100 carried gold for up to +10 damage while removing that gold's weight. This is a first move, not the complete style/loadout system.
 - Wake → Hub → Greed → Hub handoff using the same Lumi instance
 - Hub arrival positioned beside the Greed door without the bench/NPC stealing the first interaction
 - Pit recovery, checkpoint-aware death respawn, visible Wake boundaries, hit-stop and camera-shake feedback
 
 Still incomplete:
-- Playtesting and tuning The Collector. The Open Hand and Gold Key are only flags: there are no fighting styles yet
+- Playtesting and tuning The Collector and Open Hand's first move. The full fighting-style/loadout system and the rest of the Offering moveset are still incomplete
 - Other region implementations, full fighting styles, memory petals, saves, menus, music and imported art
 - Full hub-door progression and final Mirror Gate
 - Runtime verification of the current transition loop and combat feedback
