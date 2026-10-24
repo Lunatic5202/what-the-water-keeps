@@ -83,7 +83,7 @@ World units are pixels. Ground top is y=610.
 | Player start / first respawn | (240, 570) |
 | Signs | x = 355, 560, 820, 1100 |
 | Wind Ribbon (and checkpoint) | x = 3750 |
-| Dash gap | x = 3900 to 4170 |
+| Dash gap | x = 3900 to 4100 |
 | First door / Hub entrance | x = 4380 |
 | Boundary walls | x = 55 and x = 4600 |
 | Killbox | y > 900 |
