@@ -66,3 +66,14 @@
 - [x] Connect Featherweight pickup to actual double-jump ability
 - [x] Integrate hit-stop/camera shake without a pause deadlock
 - [ ] Run the full loop in Godot and fix any runtime errors
+
+
+## The Collector (2026-10-24, not yet run in Godot)
+- [x] Coin Rain and belly slam (phase 1)
+- [x] Feast: swallows the mountain, grows faster with carried gold, arena shrinks (phase 2)
+- [x] Hunger: purse grab steals gold and heals him; empty hands whiff and stagger him (phase 3)
+- [x] Offering bowls hurt and shrink him
+- [x] Defeat: shrinks to a crying bear with one coin, fades; Open Hand and Gold Key flags; Greed clear unlocks the hub key
+- [ ] Playtest and tune health (360 vs bible 700), timings, growth and squeeze
+- [ ] Open Hand as a real fighting style (Offering Style)
+- [ ] Boss music and sound

@@ -28,6 +28,23 @@ var total_lore := 3
 var boss_defeated := false
 var featherweight_found := false
 
+# The Collector fight
+const COLLECTOR_SCRIPT := preload("res://scripts/collector.gd")
+const ARENA_LOCK_X := 2000.0   # left lock wall while the fight is on (marker is at 2130)
+const ARENA_END_X := 2750.0    # permanent end wall of Greed
+const COLLECTOR_X := 2500.0
+const MOUNTAIN_X := 2580.0
+var collector: CharacterBody2D
+var arena_wall: StaticBody2D
+var boss_item: Dictionary = {}
+var fight_active := false
+var mountain_visible := true
+var offering_line_shown := false
+var banner_time := 0.0
+var scene_id := 0
+var has_open_hand := false
+var has_gold_key := false
+
 # Spawn points
 var respawn_point := Vector2(280, 520)
 var checkpoint_unlocked := false
@@ -74,11 +91,31 @@ func _draw() -> void:
 		draw_circle(Vector2(x - 25, 360), 30, Color(0.8, 0.7, 0.4, 1.0))
 		draw_circle(Vector2(x + 25, 360), 30, Color(0.8, 0.7, 0.4, 1.0))
 
+	if mountain_visible:
+		_draw_mountain()
+
+func _draw_mountain() -> void:
+	# The Collector's mountain of coins. He swallows it in phase two.
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(MOUNTAIN_X - 150, 570), Vector2(MOUNTAIN_X - 60, 470),
+		Vector2(MOUNTAIN_X, 430), Vector2(MOUNTAIN_X + 60, 470),
+		Vector2(MOUNTAIN_X + 150, 570)
+	]), Color(0.86, 0.66, 0.2, 1.0))
+	for i in range(34):
+		var row := i / 7
+		var col := i % 7
+		var cx := MOUNTAIN_X - 105.0 + col * 35.0 + (row % 2) * 14.0 - row * 6.0
+		var cy := 556.0 - row * 24.0
+		if absf(cx - MOUNTAIN_X) < 150.0 - row * 34.0:
+			draw_circle(Vector2(cx, cy), 11, Color(0.94, 0.76, 0.24, 1.0))
+			draw_circle(Vector2(cx, cy), 6.5, Color(1.0, 0.9, 0.5, 1.0))
+
 func _create_ground() -> void:
 	# Ground sections - leaving gaps for platforms
 	_create_ground_section(Vector2(300, 610), Vector2(600, 80), "GreedGround1")
 	_create_ground_section(Vector2(700, 610), Vector2(600, 80), "GreedGround2")
 	_create_ground_section(Vector2(1500, 610), Vector2(1000, 80), "GreedGround3")
+	_create_ground_section(Vector2(2375, 610), Vector2(750, 80), "GreedArena")
 
 	# Platforms
 	_create_platform(Vector2(500, 500), Vector2(120, 20))
@@ -87,7 +124,7 @@ func _create_ground() -> void:
 
 	# Boundary walls
 	_create_boundary(Vector2(50, 0))
-	_create_boundary(Vector2(2000, 0))
+	_create_boundary(Vector2(ARENA_END_X, 0))
 
 	# Killbox at bottom
 	_create_killbox()
@@ -146,7 +183,7 @@ func _create_player() -> void:
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = 5.0
 	camera.limit_left = 0
-	camera.limit_right = 2100
+	camera.limit_right = 2850
 	camera.limit_top = 100
 	camera.limit_bottom = 750
 	player.add_child(camera)
@@ -234,14 +271,19 @@ func _create_greed_level() -> void:
 		"used": false
 	})
 
-	# The Collector boss area
-	var boss_area := _make_interactable("THE COLLECTOR\n[E] APPROACH", Vector2(1850, 520), Color(0.9, 0.75, 0.4))
-	interactables.append({
+	# The Collector's arena: E starts the fight. Two offering bowls sit inside it.
+	var boss_area := _make_interactable("THE COLLECTOR\n[E] APPROACH", Vector2(2130, 570), Color(0.9, 0.75, 0.4))
+	boss_item = {
 		"node": boss_area,
-		"message": "A mountain of golden coins sits before a towering plush bear in a tiny crown.\n\nTHE COLLECTOR: Oh. A visitor. Come, come, sit. Isn't it all lovely?",
+		"message": "A mountain of golden coins sits before a towering plush bear in a tiny crown.",
 		"kind": "boss",
 		"used": false
-	})
+	}
+	interactables.append(boss_item)
+	for bowl_x in [2230.0, 2660.0]:
+		var bowl := _make_interactable("BOWL\n[E] OFFER", Vector2(bowl_x, 570), Color(0.95, 0.85, 0.5))
+		interactables.append({"node": bowl, "message": "An offering bowl.", "kind": "bowl", "used": false})
+	_create_collector()
 
 	# Exit to hub
 	var exit := _make_interactable("EXIT TO HUB\n[E] RETURN", Vector2(100, 520), Color(0.7, 0.8, 0.9))
@@ -274,7 +316,7 @@ func _connect_signals() -> void:
 	player.heals_changed.connect(_update_hud)
 	player.status_changed.connect(_show_status)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	# Apply weight debuff to player
 	if weight_debuff > 0.0:
 		player.set("move_speed_mod", 1.0 - weight_debuff * 0.5)
@@ -288,6 +330,15 @@ func _process(_delta: float) -> void:
 		player.global_position = respawn_point
 		player.velocity = Vector2.ZERO
 		_show_status("THE WEIGHT PULLS LUMI DOWN. BACK TO SAFE GROUND.")
+
+	_update_collector_fight(delta)
+	if banner_time > 0.0:
+		banner_time -= delta
+		if banner_time <= 0.0:
+			dialogue_panel.visible = false
+		else:
+			prompt_label.text = ""
+			return
 
 	if dialogue_open:
 		var walked_away := not is_instance_valid(dialogue_target)
@@ -348,8 +399,12 @@ func _interact(item: Dictionary) -> void:
 			unlock_featherweight()
 			_show_dialogue(item["message"], target)
 		"boss":
-			# Start boss fight - would load boss scene
-			_show_dialogue("THE COLLECTOR: Oh. A visitor. Come, come, sit. Isn't it all lovely? I've kept it all safe.\n\n(Boss fight to be implemented)", target)
+			if boss_defeated:
+				_show_dialogue("The mountain is gone. Only a small, quiet shine is left in the bowl.", target)
+			else:
+				_start_collector_fight()
+		"bowl":
+			_offer_at_bowl(target)
 		"exit":
 			return_to_hub.emit()
 		_:
@@ -411,6 +466,161 @@ func unlock_featherweight() -> void:
 		player.set("can_double_jump", true)
 		_update_hud()
 		_show_status("FEATHERWEIGHT CHARM FOUND! PRESS JUMP IN MID-AIR TO DOUBLE JUMP!")
+
+func add_gold(amount: int) -> void:
+	carried_gold += amount
+	_update_weight()
+	_update_hud()
+	collectible_found.emit("coin")
+
+func steal_all_gold() -> int:
+	var amount := carried_gold
+	carried_gold = 0
+	_update_weight()
+	_update_hud()
+	return amount
+
+func _create_collector() -> void:
+	collector = CharacterBody2D.new()
+	collector.name = "TheCollector"
+	collector.position = Vector2(COLLECTOR_X, 500)
+	collector.set_script(COLLECTOR_SCRIPT)
+	# Layer 2, no mask: Lumi's swing can hit him, but he never blocks her.
+	collector.collision_layer = 2
+	collector.collision_mask = 0
+	var collision := CollisionShape2D.new()
+	var shape := CircleShape2D.new()
+	shape.radius = 70.0
+	collision.shape = shape
+	collector.add_child(collision)
+	add_child(collector)
+	collector.set("mountain_x", MOUNTAIN_X)
+	collector.set("arena_right", ARENA_END_X - 20.0)
+	collector.defeated.connect(_on_collector_defeated)
+	collector.phase_changed.connect(_on_collector_phase)
+	collector.gold_stolen.connect(_on_gold_stolen)
+	collector.grab_whiffed.connect(_on_grab_whiffed)
+	collector.mountain_swallowed.connect(_on_mountain_swallowed)
+
+func _banner(text: String, seconds: float) -> void:
+	dialogue_open = false
+	dialogue_label.text = text
+	dialogue_panel.visible = true
+	banner_time = seconds
+
+func _start_collector_fight() -> void:
+	if fight_active or boss_defeated or not is_instance_valid(collector):
+		return
+	fight_active = true
+	arena_wall = StaticBody2D.new()
+	arena_wall.position = Vector2(ARENA_LOCK_X, 0)
+	var wall_shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(40, 1600)
+	wall_shape.shape = rect
+	arena_wall.add_child(wall_shape)
+	add_child(arena_wall)
+	_collector_intro()
+
+func _collector_intro() -> void:
+	scene_id += 1
+	var my_id := scene_id
+	var lines := [
+		["THE COLLECTOR: Oh. A visitor. Come, come, sit. Isn't it all lovely? I've kept it all safe.", 3.4],
+		["THE COLLECTOR: Nobody takes what's mine anymore. I had a family once. A cozy house. Then the winter came and it all slipped away. So I held on. Tighter.", 5.0],
+		["NIM: He sounds sad.", 1.8],
+		["THE COLLECTOR: Sad? I'm not sad. I'm full. I have so much.", 3.0]
+	]
+	for line in lines:
+		_banner(line[0], line[1])
+		await get_tree().create_timer(line[1]).timeout
+		if my_id != scene_id:
+			return
+	if is_instance_valid(collector):
+		collector.call("start_fight")
+
+func _update_collector_fight(delta: float) -> void:
+	if not fight_active or not is_instance_valid(collector):
+		return
+	# The arena shrinks as he grows: the left wall creeps inward.
+	if is_instance_valid(arena_wall):
+		var size: float = collector.get("body_size")
+		var goal := ARENA_LOCK_X + clampf((size - 1.0) * 200.0, 0.0, 150.0)
+		arena_wall.position.x = move_toward(arena_wall.position.x, goal, 18.0 * delta)
+		collector.set("arena_left", arena_wall.position.x + 20.0)
+	# If Lumi was sent back (death), the fight resets.
+	if player.global_position.x < ARENA_LOCK_X - 60.0:
+		_reset_collector_fight()
+
+func _reset_collector_fight() -> void:
+	scene_id += 1
+	fight_active = false
+	banner_time = 0.0
+	dialogue_panel.visible = false
+	if is_instance_valid(arena_wall):
+		arena_wall.queue_free()
+	for coin in get_tree().get_nodes_in_group("collector_coin"):
+		coin.queue_free()
+	mountain_visible = true
+	queue_redraw()
+	collector.call("reset")
+
+func _offer_at_bowl(target: Node2D) -> void:
+	var offered := _offer_gold()
+	if offered <= 0:
+		_show_dialogue("An offering bowl. \"Give what you carry.\"\n\n(Carry no gold to offer.)", target)
+		return
+	if fight_active and is_instance_valid(collector):
+		collector.call("take_offering", offered)
+		_show_status("LUMI GIVES %d GOLD. THE COLLECTOR SHRINKS." % offered)
+		if not offering_line_shown:
+			offering_line_shown = true
+			_banner("THE COLLECTOR: Why would you... why would you just give it?", 3.0)
+	else:
+		_show_dialogue("Lumi offers %d gold. The bowl glows warmly, and the weight lifts." % offered, target)
+
+func _on_collector_phase(new_phase: int) -> void:
+	if new_phase == 2:
+		_banner("THE COLLECTOR: Give it back! It's mine! It's all I have!", 3.0)
+	elif new_phase == 3:
+		_banner("THE COLLECTOR: If I let go of one thing, I'll let go of everything!", 3.0)
+
+func _on_gold_stolen(amount: int) -> void:
+	_show_status("THE COLLECTOR TAKES %d GOLD AND HEALS." % amount)
+
+func _on_grab_whiffed() -> void:
+	_show_status("EMPTY HANDS. HIS GRAB FINDS NOTHING. HE IS WIDE OPEN!")
+
+func _on_mountain_swallowed() -> void:
+	mountain_visible = false
+	queue_redraw()
+
+func _on_collector_defeated() -> void:
+	boss_defeated = true
+	fight_active = false
+	boss_item["used"] = true
+	boss_item["node"].visible = false
+	if is_instance_valid(arena_wall):
+		arena_wall.queue_free()
+	scene_id += 1
+	var my_id := scene_id
+	var lines := [
+		["THE COLLECTOR: I only wanted to keep them. I only wanted to keep everyone.", 3.6],
+		["NIM: ...You can let go. It's okay.", 2.6],
+		["(He puts the coin in the offering bowl. He fades.)", 3.0],
+		["THE COLLECTOR: It's so light.", 2.6],
+		["THE OPEN HAND (OFFERING STYLE) AND THE GOLD KEY ARE YOURS.", 3.4]
+	]
+	for line in lines:
+		_banner(line[0], line[1])
+		await get_tree().create_timer(line[1]).timeout
+		if my_id != scene_id:
+			return
+	has_open_hand = true
+	has_gold_key = true
+	collectible_found.emit("open_hand")
+	collectible_found.emit("gold_key")
+	region_cleared.emit("greed")
 
 func get_respawn_point() -> Vector2:
 	return respawn_point
