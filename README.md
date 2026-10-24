@@ -21,29 +21,30 @@ Target: a playable game on itch.io, in the spirit of Hollow Knight and Blasphemo
 - Keep the tone gentle. Quiet over loud. Sad, never edgy. Lust is portrayed as obsessive longing only, nothing sexual.
 - Keep code short and readable. Wrap long lines.
 
-## Current status: Prototype 01 (Wake tutorial)
+## Current status: Prototype 02 (Wake → Still Pond → Greed)
 
-Implemented:
-- Movement, jump, dash, lantern swing (J), health and heal charges
-- Little Jelly tutorial enemy
-- Four tutorial signs (E to read, auto-close when walking away)
-- Wind Ribbon pickup with Nim's line
-- A gap that needs a jump plus dash, and the Greed door at the end (placeholder dialogue only)
-- Pit killbox with checkpoint respawn, level boundary walls, camera limits
+Implemented in code:
+- Lumi movement, jump, dash, lantern swing, health and healing
+- Four Wake tutorial signs and the Little Jelly
+- Old Moss tutorial boss; the Wind Ribbon appears after his defeat
+- Wind Ribbon unlocks dash and sets the Wake checkpoint
+- A post-boss gap intended to require jump + dash before the first door
+- The Still Pond hub with seven doors, bench, altar, Memory Tree, Mirror Gate placeholder, Marl and Orrin
+- Greed region with coins, weight penalties, offering shrines, lore tablets and a Featherweight Charm pickup that unlocks double jump
+- Wake → Hub → Greed → Hub handoff using the same Lumi instance
+- Pit recovery, checkpoint-aware death respawn, visible Wake boundaries, hit-stop and camera-shake feedback
 
-Not implemented yet:
-- Transition from the Greed door into the Greed region
-- The hub (The Still Pond), the Mirror Gate and the final boss
-- Old Moss (tutorial boss), any region boss, any NPC or side quest
-- Fighting styles, gadgets other than dash, debuff systems
-- Real art, music and sound (everything is drawn with code primitives)
-- Saving, menus, settings
+Still incomplete:
+- The Collector boss fight and actual Greed clear/reward progression
+- Other region implementations, full fighting styles, memory petals, saves, menus, music and imported art
+- Full hub-door progression and final Mirror Gate
+- Runtime verification of the current transition loop and combat feedback
 
-Nothing has been verified by running in Godot except by the user's own playtests. Treat all values as tunable.
+The scripts build most objects dynamically and visuals are still mostly simple primitives. Treat this as a work-in-progress prototype, not a finished game.
 
 ## Tech
 
-- Godot 4.3 or newer, GDScript, GL Compatibility renderer, 1280x720
+- Godot 4.7 or newer (project feature tag), GDScript, GL Compatibility renderer, 1280x720
 - No imported assets yet. All visuals use `_draw()` primitives, and the level is built in code.
 - Windows or Linux
 
@@ -80,11 +81,11 @@ World units are pixels. Ground top is y=610.
 | Thing | Position |
 |-------|----------|
 | Player start / first respawn | (240, 570) |
-| Signs | x = 355, 465, 735, 850 |
-| Wind Ribbon (and checkpoint) | x = 985 |
-| Gap | x = 1100 to 1350 |
-| Greed door | x = 1540 |
-| Boundary walls | x = 55 and x = 1780 |
+| Signs | x = 355, 560, 820, 1100 |
+| Wind Ribbon (and checkpoint) | x = 3750 |
+| Dash gap | x = 3900 to 4170 |
+| First door / Hub entrance | x = 4380 |
+| Boundary walls | x = 55 and x = 4600 |
 | Killbox | y > 900 |
 
 ## How the code works
@@ -117,4 +118,4 @@ World units are pixels. Ground top is y=610.
 - Godot is often not installed in agent sandboxes. If it is not, say so, and do a syntax check instead, for example `pip install gdtoolkit` then `gdparse scripts/*.gd`.
 - Ask the user to playtest and report exact errors or feel problems.
 - Known rough spots: the dash gap width is tight and may need tuning.
-- Player death respawn in `player.gd` still uses the fixed start point rather than the checkpoint.
+- Runtime testing is still required after the progression and transition changes.
