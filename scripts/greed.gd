@@ -480,6 +480,15 @@ func steal_all_gold() -> int:
 	_update_hud()
 	return amount
 
+func spend_offering_gold(max_amount: int) -> int:
+	var spent := mini(carried_gold, maxi(0, max_amount))
+	if spent <= 0:
+		return 0
+	carried_gold -= spent
+	_update_weight()
+	_update_hud()
+	return spent
+
 func _create_collector() -> void:
 	collector = CharacterBody2D.new()
 	collector.name = "TheCollector"
@@ -619,6 +628,9 @@ func _on_collector_defeated() -> void:
 			return
 	has_open_hand = true
 	has_gold_key = true
+	if is_instance_valid(player):
+		player.set("has_open_hand", true)
+		player.call("status_changed") if false else null
 	collectible_found.emit("open_hand")
 	collectible_found.emit("gold_key")
 	region_cleared.emit("greed")
