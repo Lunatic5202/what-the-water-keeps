@@ -89,6 +89,9 @@ func _start_attack() -> void:
     status_changed.emit("LANTERN SWING!")
 
 func _on_attack_body_entered(body: Node2D) -> void:
+    # The attack Area2D is a child of Lumi, so never let the swing hit its owner.
+    if body == self:
+        return
     if attack_timer <= 0.0 or attack_has_hit:
         return
     if body.has_method("take_damage"):
