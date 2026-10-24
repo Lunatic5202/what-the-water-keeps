@@ -145,8 +145,8 @@ func _on_attack_body_entered(body: Node2D) -> void:
 	if body.has_method("take_damage"):
 		var feedback := get_tree().get_first_node_in_group("combat_feedback")
 		if is_instance_valid(feedback):
-			feedback.apply_hit_freeze(ATTACK_IMPACT_FRAMES)
-			feedback.screenshake(0.5, 0.08)
+			feedback.call("apply_hit_freeze", ATTACK_IMPACT_FRAMES)
+			feedback.call("screenshake", 0.5, 0.08)
 
 		body.take_damage(ATTACK_DAMAGE)
 		attack_has_hit = true
