@@ -114,9 +114,9 @@ func _draw() -> void:
 	# The Wind Ribbon is before the dash gap.
 	draw_rect(Rect2(3400, 610, 500, 150), Color(0.80, 0.92, 0.76, 1))
 	draw_rect(Rect2(3400, 610, 500, 4), Color(0.88, 0.96, 0.85, 1))
-	draw_rect(Rect2(4170, 610, 630, 150), Color(0.80, 0.92, 0.76, 1))
-	draw_rect(Rect2(4170, 610, 630, 4), Color(0.88, 0.96, 0.85, 1))
-	draw_rect(Rect2(3900, 610, 270, 150), Color(0.57, 0.77, 0.86, 0.75))
+	draw_rect(Rect2(4100, 610, 700, 150), Color(0.80, 0.92, 0.76, 1))
+	draw_rect(Rect2(4100, 610, 700, 4), Color(0.88, 0.96, 0.85, 1))
+	draw_rect(Rect2(3900, 610, 200, 150), Color(0.57, 0.77, 0.86, 0.75))
 
 	# Boundary posts
 	draw_rect(Rect2(35, 475, 40, 135), Color(0.56, 0.62, 0.54, 1))
@@ -133,7 +133,7 @@ func _create_ground() -> void:
 
 	# Post-boss path split by a gap that needs jump + Wind Ribbon dash.
 	_create_ground_section(Vector2(3650, 650), Vector2(500, 80), "RibbonPath")
-	_create_ground_section(Vector2(4485, 650), Vector2(630, 80), "GreedApproach")
+	_create_ground_section(Vector2(4450, 650), Vector2(700, 80), "GreedApproach")
 
 	# Invisible walls
 	_create_boundary(Vector2(55, 0), "StartBoundary")
@@ -340,7 +340,7 @@ func _interact(item: Dictionary) -> void:
 		item["used"] = true
 		target.visible = false
 		respawn_point = Vector2(3750, 570)
-		player.respawn_point = respawn_point
+		player.set("respawn_point", respawn_point)
 		player.set("has_dash", true)
 		_show_dialogue(item["message"], target)
 	elif kind == "door":
@@ -380,9 +380,7 @@ func _on_hub_region_entered(region_name: String) -> void:
 func _transition_to_greed() -> void:
 	if not is_instance_valid(hub_scene) or not is_instance_valid(player):
 		return
-	hub_scene.visible = false
-	hub_scene.set_process(false)
-	hub_scene.set_physics_process(false)
+	hub_scene.call("set_region_active", false)
 
 	if not is_instance_valid(greed_scene):
 		greed_scene = Node2D.new()
@@ -392,9 +390,7 @@ func _transition_to_greed() -> void:
 		greed_scene.connect("region_cleared", Callable(self, "_on_region_cleared"))
 		get_parent().add_child(greed_scene)
 	else:
-		greed_scene.visible = true
-		greed_scene.set_process(true)
-		greed_scene.set_physics_process(true)
+		greed_scene.call("set_region_active", true)
 
 	hub_scene.remove_child(player)
 	greed_scene.add_child(player)
@@ -408,15 +404,11 @@ func _return_to_hub() -> void:
 		return
 	if player.get_parent() == greed_scene:
 		greed_scene.remove_child(player)
-	greed_scene.visible = false
-	greed_scene.set_process(false)
-	greed_scene.set_physics_process(false)
+	greed_scene.call("set_region_active", false)
 	hub_scene.add_child(player)
 	player.position = hub_scene.get("respawn_point")
-	player.respawn_point = hub_scene.get("respawn_point")
-	hub_scene.visible = true
-	hub_scene.set_process(true)
-	hub_scene.set_physics_process(true)
+	player.set("respawn_point", hub_scene.get("respawn_point"))
+	hub_scene.call("set_region_active", true)
 	_set_camera_limits(-200, 3000, 100, 850)
 	current_region = "hub"
 
