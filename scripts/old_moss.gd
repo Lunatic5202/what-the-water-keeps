@@ -28,6 +28,7 @@ var tell_timer := 0.0
 var attack_duration := 0.0
 var lunge_timer := 0.0
 var phase_two := false
+var stagger_timer := 0.0
 var player_ref: Node2D
 
 func _ready() -> void:
@@ -53,8 +54,12 @@ func _physics_process(delta: float) -> void:
 
 	hurt_cooldown = maxf(0.0, hurt_cooldown - delta)
 	spore_cooldown = maxf(0.0, spore_cooldown - delta)
+	stagger_timer = maxf(0.0, stagger_timer - delta)
 
-	if attack_state == "tell":
+	if stagger_timer > 0.0:
+		attack_state = "stagger"
+		velocity.x = -direction * 95.0
+	elif attack_state == "tell":
 		tell_timer -= delta
 		velocity.x = 0.0
 		if tell_timer <= 0.0:
@@ -76,6 +81,9 @@ func _physics_process(delta: float) -> void:
 		if attack_duration <= 0.0:
 			_finish_attack(1.2)
 	else:
+		if attack_state == "stagger":
+			attack_state = "idle"
+			attack_timer = 0.55
 		attack_timer -= delta
 		velocity.x = 0.0
 		if attack_timer <= 0.0:
@@ -166,6 +174,10 @@ func take_damage(amount: int) -> void:
 		return
 	health = maxi(0, health - amount)
 	hurt_cooldown = 0.25
+	stagger_timer = 0.12
+	is_rolling = false
+	attack_state = "stagger"
+	velocity.x = -direction * 95.0
 	if health <= 0:
 		_defeat()
 
@@ -208,6 +220,20 @@ func _draw() -> void:
 		var head_x := 28 * direction
 		draw_circle(Vector2(head_x, 12), 10, Color(0.52, 0.58, 0.48, 1.0))
 		draw_circle(Vector2(head_x + 3 * direction, 10), 2, Color(0.12, 0.15, 0.23, 1.0))
+
+	# Tiny leaf flecks make hits feel tactile without adding external assets.
+	if hurt_cooldown > 0.0:
+		for i in range(4):
+			var leaf_x := -direction * (18.0 + float(i) * 9.0) + sin(Time.get_ticks_msec() * 0.025 + i) * 3.0
+			var leaf_y := -18.0 - float((Time.get_ticks_msec() / 35 + i * 7) % 22)
+			draw_line(Vector2(leaf_x, leaf_y), Vector2(leaf_x + 5.0, leaf_y - 3.0), Color(0.79, 0.88, 0.58, 0.9), 2.0)
+
+	# Dust puffs trail behind the shell while Old Moss rolls.
+	if is_rolling:
+		for i in range(4):
+			var dust_x := -direction * (25.0 + float(i) * 12.0)
+			var dust_y := 19.0 + sin(Time.get_ticks_msec() * 0.02 + i) * 3.0
+			draw_circle(Vector2(dust_x, dust_y), 4.0 + float(i % 2), Color(0.79, 0.83, 0.69, 0.35 - float(i) * 0.06))
 
 	# Clear attack telegraph: the shell glows before each move.
 	if attack_state == "tell":
