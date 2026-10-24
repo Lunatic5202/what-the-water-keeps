@@ -26,7 +26,8 @@ Target: a playable game on itch.io, in the spirit of Hollow Knight and Blasphemo
 Implemented in code:
 - Lumi movement, jump, dash, lantern swing, health and healing
 - Four Wake tutorial signs and the Little Jelly
-- Old Moss tutorial boss; the Wind Ribbon appears after his defeat
+- Old Moss tutorial boss with telegraphed head-lunge, rolling shell and spore-fan attacks; below half health he adds an aimed spore burst
+- The Wind Ribbon appears after his defeat
 - Wind Ribbon unlocks dash and sets the Wake checkpoint
 - A post-boss gap intended to require jump + dash before the first door
 - The Still Pond hub with seven doors, bench, altar, Memory Tree, Mirror Gate placeholder, Marl and Orrin
