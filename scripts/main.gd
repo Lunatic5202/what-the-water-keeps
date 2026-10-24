@@ -11,6 +11,8 @@ var interactables: Array[Dictionary] = []
 var dialogue_open := false
 var has_wind_ribbon := false
 var reached_greed := false
+var respawn_point := Vector2(240, 570)
+var status_id := 0
 
 const SIGN_MESSAGES := [
     "Walk! (it's easy, I believe in you)",
@@ -34,9 +36,9 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
     # Falling below the level sends Lumi safely back to the shore.
     if player.global_position.y > 900.0:
-        player.global_position = Vector2(240, 570)
+        player.global_position = respawn_point
         player.velocity = Vector2.ZERO
-        _show_status("THE WATER CATCHES LUMI. BACK TO THE SHORE.")
+        _show_status("THE WATER CATCHES LUMI. BACK TO SAFE GROUND.")
 
     if dialogue_open:
         var walked_away := not is_instance_valid(dialogue_target)
@@ -134,6 +136,10 @@ func _create_player() -> void:
     camera.position = Vector2(0, -100)
     camera.position_smoothing_enabled = true
     camera.position_smoothing_speed = 5.0
+    # Keep the view inside Wake so the void past the walls never shows.
+    camera.limit_left = 0
+    camera.limit_right = 1850
+    camera.limit_bottom = 800
     player.add_child(camera)
 
 func _create_jelly() -> void:
@@ -200,8 +206,8 @@ func _create_hud() -> void:
 func _create_wake_tutorial() -> void:
     var sign_positions := [Vector2(355, 570), Vector2(465, 570), Vector2(735, 570), Vector2(850, 570)]
     for i in range(SIGN_MESSAGES.size()):
-        var sign := _make_marker("SIGN %d\n[E] READ" % (i + 1), sign_positions[i], Color(0.70, 0.78, 0.94))
-        interactables.append({"node": sign, "message": SIGN_MESSAGES[i], "kind": "sign", "used": false})
+        var sign_marker := _make_marker("SIGN %d\n[E] READ" % (i + 1), sign_positions[i], Color(0.70, 0.78, 0.94))
+        interactables.append({"node": sign_marker, "message": SIGN_MESSAGES[i], "kind": "sign", "used": false})
 
     var ribbon := _make_marker("✧\nWIND RIBBON", Vector2(985, 565), Color(0.57, 0.91, 1.0))
     interactables.append({
@@ -245,6 +251,8 @@ func _interact(item: Dictionary) -> void:
         has_wind_ribbon = true
         item["used"] = true
         target.visible = false
+        # Picking up the ribbon sets a checkpoint before the gap.
+        respawn_point = Vector2(985, 570)
     elif kind == "door":
         reached_greed = true
         item["used"] = true
@@ -266,9 +274,13 @@ func _update_hud(_value: int = 0) -> void:
     stats_label.text = "HEARTS: %s    HEALS: %d%s" % [hearts.strip_edges(), player.heals, ribbon_text]
 
 func _show_status(message: String) -> void:
+    status_id += 1
+    var my_id := status_id
     stats_label.text = message
     await get_tree().create_timer(1.6).timeout
-    _update_hud()
+    # Only the newest message restores the HUD, so overlapping ones don't flicker.
+    if my_id == status_id:
+        _update_hud()
 
 func _jelly_defeated() -> void:
     stats_label.text = "THE LITTLE JELLY IS RESTING. (IT WAS VERY FORGIVING.)"
