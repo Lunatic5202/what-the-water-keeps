@@ -209,7 +209,7 @@ func _create_npcs() -> void:
 
 func _create_doors() -> void:
 	var door_symbols := {
-		"greed": "COIN",
+		"greed": "GREED",
 		"sloth": "MOON",
 		"gluttony": "SPOON",
 		"envy": "WINDOW",
