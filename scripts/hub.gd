@@ -26,22 +26,23 @@ var reflection: Node2D = null
 var door_lights: Array[Node2D] = []
 
 # Platforms as Rect2(left, top, width, height). Lumi's jump is about 77px high,
-# so every step up is 55px or less. Never raise a step without checking that.
+# so every step up is 55px or less. Neighbours must touch (no gap): Lumi is
+# 26px wide and gets wedged in any gap narrower than that.
 const PLATFORMS := [
 	Rect2(-200, 690, 800, 60),   # start ground
-	Rect2(625, 635, 100, 30),    # stairs up to the pond
-	Rect2(750, 580, 100, 30),
-	Rect2(875, 525, 100, 30),
-	Rect2(1000, 470, 100, 30),
-	Rect2(1125, 415, 400, 50),   # pond platform
-	Rect2(1550, 360, 100, 20),   # steps to the Mirror Gate
-	Rect2(1425, 305, 100, 20),
-	Rect2(1000, 250, 380, 30),   # Mirror Gate platform
-	Rect2(1550, 470, 100, 30),   # stairs down the right side
-	Rect2(1675, 525, 100, 30),
-	Rect2(1800, 580, 250, 30),
-	Rect2(2075, 635, 100, 30),
-	Rect2(2200, 690, 700, 60),   # far right ground
+	Rect2(600, 635, 125, 30),    # stairs up to the pond
+	Rect2(725, 580, 125, 30),
+	Rect2(850, 525, 125, 30),
+	Rect2(975, 470, 125, 30),
+	Rect2(1100, 415, 425, 50),   # pond platform
+	Rect2(1525, 360, 125, 20),   # steps to the Mirror Gate
+	Rect2(1400, 305, 125, 20),
+	Rect2(1000, 250, 400, 30),   # Mirror Gate platform
+	Rect2(1525, 470, 125, 30),   # stairs down the right side
+	Rect2(1650, 525, 125, 30),
+	Rect2(1775, 580, 275, 30),
+	Rect2(2050, 635, 125, 30),
+	Rect2(2175, 690, 725, 60),   # far right ground
 ]
 
 const DOOR_POSITIONS := {
@@ -247,6 +248,8 @@ func _create_hud() -> void:
 	stats_label.position = Vector2(24, 128)
 	stats_label.add_theme_font_size_override("font_size", 18)
 	stats_label.add_theme_color_override("font_color", Color(0.77, 0.88, 1.0))
+	stats_label.add_theme_color_override("font_outline_color", Color(0.12, 0.10, 0.24))
+	stats_label.add_theme_constant_override("outline_size", 5)
 	hud.add_child(stats_label)
 
 	var meter := Control.new()
@@ -258,6 +261,8 @@ func _create_hud() -> void:
 	help.position = Vector2(24, 670)
 	help.add_theme_font_size_override("font_size", 16)
 	help.add_theme_color_override("font_color", Color(0.82, 0.83, 0.9))
+	help.add_theme_color_override("font_outline_color", Color(0.12, 0.10, 0.24))
+	help.add_theme_constant_override("outline_size", 5)
 	help.text = "A/D move   SPACE jump   J lantern swing   LEFT SHIFT dash   Q heal   E interact   ESC menu"
 	hud.add_child(help)
 
@@ -298,6 +303,8 @@ func _make_interactable(marker_text: String, at: Vector2, tint: Color) -> Node2D
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_size_override("font_size", 15)
 	label.add_theme_color_override("font_color", tint)
+	label.add_theme_color_override("font_outline_color", Color(0.12, 0.10, 0.24))
+	label.add_theme_constant_override("outline_size", 5)
 	marker.add_child(label)
 	add_child(marker)
 	return marker
