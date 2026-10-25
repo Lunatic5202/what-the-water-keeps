@@ -197,14 +197,16 @@ func _create_hud() -> void:
 
 	var title := Label.new()
 	title.position = Vector2(24, 18)
-	title.add_theme_font_size_override("font_size", 24)
+	title.add_theme_font_size_override("font_size", 26)
 	title.add_theme_color_override("font_color", Color(0.91, 0.91, 1.0))
+	title.add_theme_color_override("font_outline_color", Color(0.12, 0.10, 0.24))
+	title.add_theme_constant_override("outline_size", 6)
 	title.text = "WHAT THE WATER KEEPS  •  THE GILDED GARDEN"
 	hud.add_child(title)
 
 	stats_label = Label.new()
 	stats_label.position = Vector2(24, 128)
-	stats_label.add_theme_font_size_override("font_size", 18)
+	stats_label.add_theme_font_size_override("font_size", 20)
 	stats_label.add_theme_color_override("font_color", Color(0.77, 0.88, 1.0))
 	stats_label.add_theme_color_override("font_outline_color", Color(0.12, 0.10, 0.24))
 	stats_label.add_theme_constant_override("outline_size", 5)
@@ -217,7 +219,7 @@ func _create_hud() -> void:
 
 	var help := Label.new()
 	help.position = Vector2(24, 670)
-	help.add_theme_font_size_override("font_size", 16)
+	help.add_theme_font_size_override("font_size", 17)
 	help.add_theme_color_override("font_color", Color(0.82, 0.83, 0.9))
 	help.add_theme_color_override("font_outline_color", Color(0.12, 0.10, 0.24))
 	help.add_theme_constant_override("outline_size", 5)
@@ -228,25 +230,27 @@ func _create_hud() -> void:
 	prompt_label.position = Vector2(0, 610)
 	prompt_label.size = Vector2(1280, 32)
 	prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	prompt_label.add_theme_font_size_override("font_size", 21)
+	prompt_label.add_theme_font_size_override("font_size", 23)
 	prompt_label.add_theme_color_override("font_color", Color(0.80, 0.94, 1.0))
+	prompt_label.add_theme_color_override("font_outline_color", Color(0.12, 0.10, 0.24))
+	prompt_label.add_theme_constant_override("outline_size", 6)
 	hud.add_child(prompt_label)
 
 	dialogue_panel = ColorRect.new()
-	dialogue_panel.position = Vector2(180, 500)
-	dialogue_panel.size = Vector2(920, 105)
-	dialogue_panel.color = Color(0.07, 0.09, 0.17, 0.94)
+	dialogue_panel.position = Vector2(180, 482)
+	dialogue_panel.size = Vector2(920, 124)
+	dialogue_panel.color = Color(0.06, 0.07, 0.15, 0.97)
 	dialogue_panel.visible = false
 	hud.add_child(dialogue_panel)
 
 	dialogue_label = Label.new()
 	dialogue_label.position = Vector2(22, 16)
-	dialogue_label.size = Vector2(876, 74)
+	dialogue_label.size = Vector2(876, 92)
 	dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dialogue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	dialogue_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	dialogue_label.add_theme_font_size_override("font_size", 23)
-	dialogue_label.add_theme_color_override("font_color", Color(0.91, 0.93, 1.0))
+	dialogue_label.add_theme_font_size_override("font_size", 24)
+	dialogue_label.add_theme_color_override("font_color", Color(0.97, 0.97, 1.0))
 	dialogue_panel.add_child(dialogue_label)
 
 func _create_greed_level() -> void:
@@ -305,13 +309,15 @@ func _make_interactable(marker_text: String, at: Vector2, tint: Color) -> Node2D
 	marker.position = at
 	var label := Label.new()
 	label.text = marker_text
-	label.position = Vector2(-55, -78)
-	label.size = Vector2(110, 70)
+	label.position = Vector2(-85, -82)
+	label.size = Vector2(170, 74)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.add_theme_font_size_override("font_size", 15)
+	label.add_theme_font_size_override("font_size", 17)
 	label.add_theme_color_override("font_color", tint)
+	label.add_theme_color_override("font_outline_color", Color(0.12, 0.10, 0.24))
+	label.add_theme_constant_override("outline_size", 5)
 	marker.add_child(label)
 	add_child(marker)
 	return marker

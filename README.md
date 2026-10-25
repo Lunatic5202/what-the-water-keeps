@@ -20,6 +20,7 @@ Target: a playable game on itch.io, in the spirit of Hollow Knight and Blasphemo
 - The game has **no buffs**. Mechanics punish you with debuffs when you ignore a region's lesson. Do not add stat-boost pickups.
 - Keep the tone gentle. Quiet over loud. Sad, never edgy. Lust is portrayed as obsessive longing only, nothing sexual.
 - Keep code short and readable. Wrap long lines.
+- **Everything must be readable at a glance.** All on-screen text uses a dark outline (`font_outline_color` 0.12, 0.10, 0.24) so it works on any background. Minimum sizes: HUD text 17+, world labels 17, dialogue 24, prompt 23. Muted menu text must stay above (0.8, 0.8, 0.9). Do not add pale text on pale sky without an outline.
 
 ## Current status: Prototype 02 (Wake → Still Pond → Greed)
 

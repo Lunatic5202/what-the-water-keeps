@@ -84,9 +84,9 @@ func _draw_bar(frac: float, health: int, max_health: int) -> void:
 	draw_rect(Rect2(bar.position, Vector2(bar.size.x * frac, bar.size.y)), color)
 	var text := "%d / %d" % [health, max_health]
 	var font := ThemeDB.fallback_font
-	var at := Vector2(246, 29)
-	draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, 5, Color(0.12, 0.10, 0.24))
-	draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.95, 0.93, 1.0))
+	var at := Vector2(246, 30)
+	draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, 5, Color(0.12, 0.10, 0.24))
+	draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.95, 0.93, 1.0))
 
 func _draw_drops(heals: int) -> void:
 	for i in range(MAX_DROPS):

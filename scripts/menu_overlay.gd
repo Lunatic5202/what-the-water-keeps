@@ -9,7 +9,7 @@ const Settings := preload("res://scripts/game_settings.gd")
 const INDIGO := Color(0.29, 0.23, 0.48)
 const LAVENDER := Color(0.79, 0.72, 0.94)
 const PEACH := Color(1.0, 0.85, 0.75)
-const MUTED := Color(0.72, 0.72, 0.84)
+const MUTED := Color(0.82, 0.82, 0.93)
 const NIGHT := Color(0.08, 0.09, 0.16)
 
 const CONTROLS := [
@@ -181,8 +181,8 @@ func _build_title() -> Control:
 	box.add_child(_button("Settings", _open_settings.bind(title_panel_ref)))
 	box.add_child(_button("Quit", _on_quit_pressed))
 	box.add_child(_spacer(16))
-	box.add_child(_label("W / S or arrows to move   Enter or Space to choose   Esc to go back", 15, MUTED))
-	box.add_child(_label("Prototype 02", 14, MUTED))
+	box.add_child(_label("W / S or arrows to move   Enter or Space to choose   Esc to go back", 17, MUTED))
+	box.add_child(_label("Prototype 02", 16, MUTED))
 	root.set_meta("first", begin)
 	return root
 
@@ -197,7 +197,7 @@ func _build_pause() -> Control:
 	box.add_child(_button("Settings", _open_settings.bind(pause_panel_ref)))
 	quit_button = _button("Quit game", _on_quit_pressed)
 	box.add_child(quit_button)
-	box.add_child(_label("Progress is not saved yet.", 15, MUTED))
+	box.add_child(_label("Progress is not saved yet.", 17, MUTED))
 	root.set_meta("first", resume)
 	return root
 
@@ -214,7 +214,7 @@ func _build_settings() -> Control:
 		toggle.custom_minimum_size = Vector2(380, 46)
 		toggle.toggled.connect(_on_option_toggled.bind(key))
 		box.add_child(toggle)
-		box.add_child(_label(option[2], 14, MUTED))
+		box.add_child(_label(option[2], 16, MUTED))
 		option_buttons[key] = toggle
 	box.add_child(_spacer(6))
 	var back := _button("Back", _go_back)
