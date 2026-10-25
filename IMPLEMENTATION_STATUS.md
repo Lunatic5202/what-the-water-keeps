@@ -7,6 +7,7 @@
 
 ### The Wake
 - Movement, jump, dash, lantern swing, health and healing
+- Title, pause, settings and controls menus; lantern HUD meter; Reduce Shake, Gentle Mode and Fullscreen options (never run in Godot)
 - Four E-to-read signs; dialogue closes when Lumi walks away
 - Little Jelly tutorial enemy
 - Old Moss tutorial boss with readable attack wind-ups, head lunge, rolling shell, spore fan and a faster phase-two aimed burst
@@ -36,7 +37,7 @@
 ## Still incomplete
 - Open Hand (Offering Style) as a real fighting style. It is only a flag today
 - Unlocking further regions from completed boss clears
-- Other six regions, fighting styles, Memory Petals, save/load, menus and endings
+- Other six regions, fighting styles, Memory Petals, save/load, map/loadout/Memory Tree/keepsake screens, key remapping and endings
 - Final art, animation, music and sound
 
 ## Verification status

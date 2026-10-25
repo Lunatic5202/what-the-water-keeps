@@ -1,4 +1,5 @@
 extends Node2D
+const Settings := preload("res://scripts/game_settings.gd")
 
 signal region_cleared(region_name: String)
 signal return_to_hub
@@ -201,16 +202,21 @@ func _create_hud() -> void:
 	hud.add_child(title)
 
 	stats_label = Label.new()
-	stats_label.position = Vector2(24, 58)
+	stats_label.position = Vector2(24, 128)
 	stats_label.add_theme_font_size_override("font_size", 18)
 	stats_label.add_theme_color_override("font_color", Color(0.77, 0.88, 1.0))
 	hud.add_child(stats_label)
+
+	var meter := Control.new()
+	meter.set_script(load("res://scripts/lantern_meter.gd"))
+	meter.position = Vector2(24, 52)
+	hud.add_child(meter)
 
 	var help := Label.new()
 	help.position = Vector2(24, 670)
 	help.add_theme_font_size_override("font_size", 16)
 	help.add_theme_color_override("font_color", Color(0.82, 0.83, 0.9))
-	help.text = "A/D move   SPACE jump   J lantern swing   LEFT SHIFT dash   Q heal   E interact"
+	help.text = "A/D move   SPACE jump   J lantern swing   LEFT SHIFT dash   Q heal   E interact   ESC menu"
 	hud.add_child(help)
 
 	prompt_label = Label.new()
@@ -319,8 +325,9 @@ func _connect_signals() -> void:
 func _process(delta: float) -> void:
 	# Apply weight debuff to player
 	if weight_debuff > 0.0:
-		player.set("move_speed_mod", 1.0 - weight_debuff * 0.5)
-		player.set("jump_power_mod", 1.0 - weight_debuff * 0.3)
+		var felt := weight_debuff * (0.5 if Settings.gentle_mode else 1.0)
+		player.set("move_speed_mod", 1.0 - felt * 0.5)
+		player.set("jump_power_mod", 1.0 - felt * 0.3)
 	else:
 		player.set("move_speed_mod", 1.0)
 		player.set("jump_power_mod", 1.0)
@@ -433,23 +440,14 @@ func _show_dialogue(message: String, target: Node2D = null) -> void:
 func _update_hud(_value: int = 0) -> void:
 	if not is_instance_valid(player) or not is_instance_valid(stats_label):
 		return
-	var hearts := ""
-	for i in range(player.max_health):
-		hearts += "♥ " if i < player.health else "♡ "
-
-	var gold_text := ""
+	var parts: Array[String] = []
 	if carried_gold > 0:
-		gold_text = "    GOLD: %d" % carried_gold
-
-	var weight_text := ""
+		parts.append("GOLD: %d" % carried_gold)
 	if weight_debuff > 0.3:
-		weight_text = " (WEIGHT: %.0f%%)" % (weight_debuff * 100)
-
-	var gadget_text := ""
+		parts.append("WEIGHT: %.0f%%" % (weight_debuff * 100))
 	if has_featherweight:
-		gadget_text = "    DOUBLE JUMP: UNLOCKED"
-
-	stats_label.text = "HEARTS: %s    HEALS: %d%s%s%s" % [hearts.strip_edges(), player.heals, gold_text, weight_text, gadget_text]
+		parts.append("DOUBLE JUMP: UNLOCKED")
+	stats_label.text = "    ".join(parts)
 
 func _show_status(message: String) -> void:
 	status_id += 1
