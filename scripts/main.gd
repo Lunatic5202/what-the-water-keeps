@@ -450,7 +450,7 @@ func _on_region_cleared(region_name: String) -> void:
 	_return_to_hub()
 
 func _set_camera_limits(left: int, right: int, top: int, bottom: int) -> void:
-	var camera := player.get_node_or_null("Camera2D") as Camera2D
+	var camera := get_tree().get_first_node_in_group("game_camera") as Camera2D
 	if camera == null:
 		return
 	camera.position = Vector2(0, -100)
@@ -481,7 +481,7 @@ func _update_wake_room() -> void:
 			break
 	if index == wake_room:
 		return
-	var camera := player.get_node_or_null("Camera2D") as Camera2D
+	var camera := get_tree().get_first_node_in_group("game_camera") as Camera2D
 	if camera == null:
 		return
 	var room: Dictionary = WAKE_ROOMS[index]

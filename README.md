@@ -125,6 +125,7 @@ Rooms are chosen by Lumi's x. The camera is locked to the room's camera range an
 ## How the code works
 
 - Hub platforms live in `PLATFORMS` in `hub.gd` (used for both collision and drawing). Lumi's jump is about 77px, so keep every step up at 55px or less and leave 50px of headroom under floating platforms.
+- The camera is found through the `game_camera` group. Runtime-created nodes get auto names like `@Camera2D@2`, so `get_node("Camera2D")` returns null; never look it up by name.
 - Wake rooms: `_update_wake_room()` in `main.gd` runs each frame while `current_region == "wake"`. A respawn that jumps rooms snaps the camera instead of sliding. Rooms have no names on screen because the bible gives none.
 - Menus: `main.gd` adds `MenuOverlay` to the root once. Esc opens pause only when the tree is not already paused (hit-freeze owns that pause). Options are read from `game_settings.gd` (`Settings.reduce_shake`, `Settings.gentle_mode`). Return to title is intentionally missing: reloading the scene would orphan the hub/region nodes on the root.
 
