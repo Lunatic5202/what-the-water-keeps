@@ -19,6 +19,11 @@ const CONTROLS := [
 	["Lantern swing", "J"],
 	["Heal", "Q"],
 	["Interact", "E"],
+	["Swap style", "Tab (after Greed)"],
+	["Wide Offering", "K (hold, Open Hand)"],
+	["Skill", "L (Open Hand, 20 Glow)"],
+	["Guard", "I (Open Hand)"],
+	["Overture", "O (Open Hand, full Glow)"],
 	["Enter the hub", "T (at the first door)"],
 	["Menu", "Esc"]
 ]

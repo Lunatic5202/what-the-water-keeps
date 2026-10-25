@@ -6,6 +6,7 @@ var lifetime := 2.5
 var hit_player := false
 
 func _ready() -> void:
+	add_to_group("enemy_projectile")
 	set_process(true)
 
 func _process(delta: float) -> void:

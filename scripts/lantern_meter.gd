@@ -23,6 +23,8 @@ func _draw() -> void:
 	var heals := int(player.get("heals"))
 	var frac := clampf(health / max_health, 0.0, 1.0)
 	_draw_lantern(Vector2(32, 33), frac)
+	_draw_glow_ring(Vector2(32, 33), float(player.get("glow")))
+	_draw_style(str(player.get("style")), player.get("unlocked_styles").size() > 1)
 	_draw_bar(frac, int(health), int(max_health))
 	_draw_drops(heals)
 
@@ -53,6 +55,26 @@ func _draw_lantern(c: Vector2, frac: float) -> void:
 	]), Color(1.0, 0.7, 0.3))
 	draw_circle(core, r, Color(1.0, 0.72, 0.3))
 	draw_circle(core + Vector2(0, 1), r * 0.55, Color(1.0, 0.94, 0.7))
+
+# Five petals around the lantern, filled by Glow (0 to 100, 20 per petal).
+func _draw_glow_ring(c: Vector2, glow: float) -> void:
+	for i in range(5):
+		var a := -PI / 2.0 + TAU * i / 5.0
+		var at := c + Vector2(cos(a), sin(a)) * 31.0
+		var fill := clampf(glow / 20.0 - i, 0.0, 1.0)
+		draw_circle(at, 5.0, Color(0.12, 0.10, 0.24, 0.7))
+		if fill > 0.0:
+			draw_circle(at, 4.0 * fill + 1.0, Color(1.0, 0.85, 0.75))
+		draw_arc(at, 5.0, 0.0, TAU, 12, Color(1.0, 0.85, 0.75, 0.8), 1.2)
+
+func _draw_style(style: String, can_swap: bool) -> void:
+	if not can_swap:
+		return
+	var text := "OPEN HAND" if style == "open_hand" else "LANTERN SWING"
+	var font := ThemeDB.fallback_font
+	var at := Vector2(150, 56)
+	draw_string_outline(font, at, text + "  [TAB]", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, 5, Color(0.12, 0.10, 0.24))
+	draw_string(font, at, text + "  [TAB]", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1.0, 0.9, 0.82))
 
 func _draw_bar(frac: float, health: int, max_health: int) -> void:
 	var bar := Rect2(68, 20, 170, 8)

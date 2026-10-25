@@ -26,6 +26,12 @@ var attack_has_hit := false
 var attack_area: Area2D
 var attack_shape: CollisionShape2D
 
+# Fighting styles (bible 4.3 and 4.4). Lantern Swing is the default.
+const MAX_GLOW := 100.0
+var style := "lantern"
+var unlocked_styles: Array[String] = ["lantern"]
+var glow := 0.0
+
 # Movement modifiers
 var move_speed_mod := 1.0
 var jump_power_mod := 1.0
@@ -55,6 +61,10 @@ signal status_changed(message: String)
 
 func _ready() -> void:
 	add_to_group("player")
+	var hand := Node2D.new()
+	hand.name = "OpenHand"
+	hand.set_script(load("res://scripts/open_hand.gd"))
+	add_child(hand)
 	attack_area = Area2D.new()
 	attack_area.name = "AttackArea"
 	attack_area.position = Vector2(28, 0)
@@ -102,8 +112,16 @@ func _physics_process(delta: float) -> void:
 			dash_cooldown = 0.55
 			velocity.y = 0.0
 
-		if Input.is_action_just_pressed("attack"):
+		if Input.is_action_just_pressed("attack") and style == "lantern":
 			_start_attack()
+
+		if Input.is_action_just_pressed("style_cycle"):
+			_cycle_style()
+
+		if style == "lantern" and unlocked_styles.size() > 1:
+			for action in ["heavy", "skill", "guard", "overture"]:
+				if Input.is_action_just_pressed(action):
+					status_changed.emit("ONLY THE OPEN HAND HAS THAT MOVE FOR NOW. (TAB)")
 
 		if Input.is_action_just_pressed("heal"):
 			_heal()
@@ -152,10 +170,15 @@ func _on_attack_body_entered(body: Node2D) -> void:
 			feedback.call("screenshake", 0.5, 0.08)
 
 		body.take_damage(ATTACK_DAMAGE)
+		add_glow(3.0)
 		attack_has_hit = true
 
 func take_damage(amount: int) -> void:
 	if hurt_cooldown > 0.0:
+		return
+	var hand := get_node_or_null("OpenHand")
+	if hand != null and hand.call("block_hit"):
+		hurt_cooldown = 0.2
 		return
 	amount = Settings.scaled_damage(amount)
 	if amount <= 0:
@@ -174,6 +197,28 @@ func take_damage(amount: int) -> void:
 		health_changed.emit(health)
 		heals_changed.emit(heals)
 		status_changed.emit("LUMI RETURNS TO THE SHORE. ONE HEAL CHARGE LOST.")
+
+func add_glow(amount: float) -> void:
+	glow = clampf(glow + amount, 0.0, MAX_GLOW)
+
+func spend_glow(cost: float) -> bool:
+	if glow < cost:
+		return false
+	glow -= cost
+	return true
+
+func unlock_style(style_name: String) -> void:
+	if not unlocked_styles.has(style_name):
+		unlocked_styles.append(style_name)
+	style = style_name
+	status_changed.emit("OPEN HAND EQUIPPED. TAB SWAPS STYLES.")
+
+func _cycle_style() -> void:
+	if unlocked_styles.size() < 2:
+		return
+	var next := (unlocked_styles.find(style) + 1) % unlocked_styles.size()
+	style = unlocked_styles[next]
+	status_changed.emit("STYLE: " + ("OPEN HAND" if style == "open_hand" else "LANTERN SWING"))
 
 func _heal() -> void:
 	if heals <= 0 or health >= max_health:

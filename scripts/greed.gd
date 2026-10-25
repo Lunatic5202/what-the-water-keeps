@@ -53,6 +53,7 @@ var checkpoint_unlocked := false
 const GRAVITY := 1200.0
 
 func _ready() -> void:
+	add_to_group("gold_holder")
 	_create_background()
 	_create_ground()
 	if not is_instance_valid(player):
@@ -475,6 +476,13 @@ func add_gold(amount: int) -> void:
 	_update_hud()
 	collectible_found.emit("coin")
 
+func spend_gold(amount: int) -> int:
+	var spent := mini(amount, carried_gold)
+	carried_gold -= spent
+	_update_weight()
+	_update_hud()
+	return spent
+
 func steal_all_gold() -> int:
 	var amount := carried_gold
 	carried_gold = 0
@@ -620,6 +628,8 @@ func _on_collector_defeated() -> void:
 		if my_id != scene_id:
 			return
 	has_open_hand = true
+	if is_instance_valid(player):
+		player.call("unlock_style", "open_hand")
 	has_gold_key = true
 	collectible_found.emit("open_hand")
 	collectible_found.emit("gold_key")

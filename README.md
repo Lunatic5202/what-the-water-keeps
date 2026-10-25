@@ -38,10 +38,16 @@ Implemented in code:
 - Title, pause, settings and controls menus (Esc), a lantern HUD meter (flame shrinks with health, oil drops for heals), and saved Reduce Shake / Gentle Mode / Fullscreen options. Never run in Godot
 - Wake split into four rooms with a locked camera that slides to the next room when Lumi crosses the room edge (never run in Godot)
 - Hub: platforms rebuilt so every step is jumpable (55px max, no gaps, nothing hanging over walkways), Mirror Gate marker on the pond platform, hub killbox at y=900
+- The Open Hand (Offering Style) as a real fighting style, full kit, unlocked by beating The Collector (never run in Godot, all numbers are guesses). Tab swaps between Lantern Swing and Open Hand:
+  - Palm Push J,J,J (7/7/10, third hit sends a 6 damage shockwave 3 tiles), wide and slow, 15% faster with an empty purse
+  - Offer: carried gold is spent as coins (10 gold each) for +1 damage per coin (max +10) and loses weight at once
+  - Wide Offering (hold K 0.6s, release, 24), Falling Petals (J in air, 14, landing ring pushes enemies out), Gentle Rush (dash then J, 8, pushes back)
+  - Coin Toss (L, 20 Glow, up to 5 coins at 3 each, or one soft orb), Open Palm guard (I, 0.25s, perfect in the first 0.12s gives Glow and returns Moss spores at 2 damage), Everything Given (O, 100 Glow, hits everything on screen for 12 plus 1 per coin)
+  - Glow: gained from hits and perfect guards, shown as five petals around the HUD lantern
 - Pit recovery, checkpoint-aware death respawn, visible Wake boundaries, hit-stop and camera-shake feedback
 
 Still incomplete:
-- Playtesting and tuning The Collector. The Open Hand and Gold Key are only flags: there are no fighting styles yet
+- Playtesting and tuning The Collector and the Open Hand. The Gold Key is only a flag. Lantern Swing has no heavy, skill, guard or Overture yet. The Open Hand does not yet clean sticky coins off Lumi, return Collector coins with its guard, or use the Altar for swapping
 - Other region implementations, full fighting styles, memory petals, saves, the map/loadout/Memory Tree/keepsake screens, key remapping, audio sliders, music and imported art
 - Full hub-door progression and final Mirror Gate
 - Runtime verification of the current transition loop and combat feedback
@@ -70,6 +76,8 @@ Run: open `project.godot` in the Godot Project Manager and press F5.
 | `scripts/menu_overlay.gd` | Title, pause, settings and controls menus. Lives on the root as `MenuOverlay`, pauses the tree while open |
 | `scripts/game_settings.gd` | Saved options (`user://settings.cfg`), Gentle Mode damage scaling |
 | `scripts/lantern_meter.gd` | HUD health lantern, reads the `player` group |
+| `scripts/open_hand.gd` | Open Hand style: combo, Offer, heavy, air, dash attack, Coin Toss, guard, Overture. Child node `OpenHand` of Lumi |
+| `scripts/palm_shot.gd` | Moving palm waves (shockwave, coins, orbs, reflected spores) |
 | `scripts/collector_coin.gd` | Coins he throws: they hurt while falling, then become gold pickups |
 | `docs/game-bible.md` | Full design reference (story, regions, bosses, movesets, art, sound, UI) |
 
@@ -84,8 +92,13 @@ Run: open `project.godot` in the Godot Project Manager and press F5.
 | Q | Heal |
 | E | Interact |
 | Esc | Pause menu / back |
+| Tab | Swap fighting style (after Greed) |
+| K | Wide Offering, hold 0.6s then release (Open Hand) |
+| L | Coin Toss, 20 Glow (Open Hand) |
+| I | Open Palm guard (Open Hand) |
+| O | Everything Given, 100 Glow (Open Hand) |
 
-The bible's final control scheme differs (heal on H, Q cycles fighting styles, plus heavy attack, guard and more). Ask before remapping.
+The bible's final control scheme differs (heal on H, Q cycles fighting styles). The user chose Tab for style swapping so Q stays Heal. K, L, I and O match the bible. Ask before remapping.
 
 ## Level reference (Wake)
 
@@ -126,6 +139,7 @@ Rooms are chosen by Lumi's x. The camera is locked to the room's camera range an
 
 - Hub platforms live in `PLATFORMS` in `hub.gd` (used for both collision and drawing). Lumi's jump is about 77px, so keep every step up at 55px or less and leave 50px of headroom under floating platforms.
 - The camera is found through the `game_camera` group. Runtime-created nodes get auto names like `@Camera2D@2`, so `get_node("Camera2D")` returns null; never look it up by name.
+- Styles: `player.gd` holds `style`, `unlocked_styles` and `glow`. `greed.gd` calls `unlock_style("open_hand")` after the Collector. While `style == "open_hand"` the `OpenHand` node reads the combat inputs and `player.gd` skips the Lantern swing. Guard works through `player.take_damage` asking `OpenHand.block_hit()`. Gold is read from nodes in the `gold_holder` group (Greed) and spent with `spend_gold()`. Moss spores join the `enemy_projectile` group so a perfect guard can return them.
 - Wake rooms: `_update_wake_room()` in `main.gd` runs each frame while `current_region == "wake"`. A respawn that jumps rooms snaps the camera instead of sliding. Rooms have no names on screen because the bible gives none.
 - Menus: `main.gd` adds `MenuOverlay` to the root once. Esc opens pause only when the tree is not already paused (hit-freeze owns that pause). Options are read from `game_settings.gd` (`Settings.reduce_shake`, `Settings.gentle_mode`). Return to title is intentionally missing: reloading the scene would orphan the hub/region nodes on the root.
 
@@ -140,7 +154,7 @@ Rooms are chosen by Lumi's x. The camera is locked to the room's camera range an
 ## Roadmap (suggested order)
 
 1. Playtest and stabilize Wake → Still Pond → Greed → Still Pond.
-2. Playtest and tune The Collector (implemented, never run), then turn the Open Hand into a real fighting style.
+2. Playtest and tune The Collector and the Open Hand (both never run). Next: give Lantern Swing its own heavy, skill, guard and Overture.
 3. Connect region-clear rewards to hub door unlocks and gadget progression.
 4. Build the remaining six regions and their bosses, keeping the game bible as the source of truth.
 5. Add the Mirror Gate, Memory Path, final fight and both endings.

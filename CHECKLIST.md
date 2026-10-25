@@ -19,7 +19,7 @@
 - [x] Lantern flame shrinks with health (HUD meter; untested in Godot)
 - [ ] Pastel storybook look, no pure black
 - [ ] Glowing particles everywhere
-- [ ] HUD: lantern icon health (done), 3 oil drops (done), 5-petal Glow ring (pending)
+- [x] HUD: lantern icon health, 3 oil drops, 5-petal Glow ring (untested in Godot)
 - [ ] Minimal text, crayon signs only
 
 ### Tutorial (Wake) Structure
@@ -37,7 +37,7 @@
 
 ### Current Violations
 1. ~~Hub never loads~~ - FIXED: main.gd now removes player before hub._ready()
-2. **HUD** - lantern meter added, Glow ring still missing
+2. **HUD** - lantern meter and Glow ring added (untested)
 3. **Missing Glow system** entirely
 4. **No Heavy attack** or Guard
 5. **Dialogue too brief** - art doc says "minimal text" but narrative needs room

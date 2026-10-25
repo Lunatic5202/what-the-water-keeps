@@ -7,6 +7,7 @@
 
 ### The Wake
 - Movement, jump, dash, lantern swing, health and healing
+- Open Hand fighting style (full kit), Glow, Tab style swap, five-petal Glow ring (never run in Godot)
 - Wake rooms with room-locked camera; hub killbox and reachable hub platforms (never run in Godot)
 - Title, pause, settings and controls menus; lantern HUD meter; Reduce Shake, Gentle Mode and Fullscreen options (never run in Godot)
 - Four E-to-read signs; dialogue closes when Lumi walks away
