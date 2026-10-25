@@ -16,10 +16,10 @@
 - [x] Hub palette: lavender, peach, mint, deep indigo (#C9B8F0, #FFD9C0, #CFF1E0, #4A3A7A)
 - [x] Wake palette: meadow green, cream, sky (#BFE3B4, #FFF6DC, #CFE8F7)
 - [ ] Lumi: 1.5 heads tall, lavender cloak, paper lantern, hop walk
-- [ ] Lantern flame shrinks with health
+- [x] Lantern flame shrinks with health (HUD meter; untested in Godot)
 - [ ] Pastel storybook look, no pure black
 - [ ] Glowing particles everywhere
-- [ ] HUD: lantern icon health, 5-petal Glow ring, 3 oil drops
+- [ ] HUD: lantern icon health (done), 3 oil drops (done), 5-petal Glow ring (pending)
 - [ ] Minimal text, crayon signs only
 
 ### Tutorial (Wake) Structure
@@ -37,7 +37,7 @@
 
 ### Current Violations
 1. ~~Hub never loads~~ - FIXED: main.gd now removes player before hub._ready()
-2. **HUD wrong** - using text hearts not lantern icon with flame
+2. **HUD** - lantern meter added, Glow ring still missing
 3. **Missing Glow system** entirely
 4. **No Heavy attack** or Guard
 5. **Dialogue too brief** - art doc says "minimal text" but narrative needs room

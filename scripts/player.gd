@@ -1,5 +1,7 @@
 extends CharacterBody2D
 
+const Settings := preload("res://scripts/game_settings.gd")
+
 # Souls-like: 5 hearts, precise combat
 const SPEED := 260.0
 const JUMP_VELOCITY := -430.0
@@ -154,6 +156,11 @@ func _on_attack_body_entered(body: Node2D) -> void:
 
 func take_damage(amount: int) -> void:
 	if hurt_cooldown > 0.0:
+		return
+	amount = Settings.scaled_damage(amount)
+	if amount <= 0:
+		hurt_cooldown = 0.8
+		status_changed.emit("A SOFTER LANDING.")
 		return
 	health = maxi(0, health - amount)
 	hurt_cooldown = 0.8

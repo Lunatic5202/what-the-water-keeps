@@ -1,6 +1,8 @@
 extends Node2D
 class_name CombatFeedback
 
+const Settings := preload("res://scripts/game_settings.gd")
+
 # This node runs while paused so it can release only the pause it started.
 var parent: Node2D
 var screenshake_timer := 0.0
@@ -35,6 +37,8 @@ func apply_hit_freeze(frames: int = 4) -> void:
 		get_tree().paused = true
 
 func screenshake(intensity: float = 1.0, duration: float = 0.1) -> void:
+	if Settings.reduce_shake:
+		return
 	screenshake_intensity = maxf(0.0, intensity)
 	screenshake_timer = maxf(0.0, duration)
 	_do_screenshake()

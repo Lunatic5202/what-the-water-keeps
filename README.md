@@ -35,11 +35,12 @@ Implemented in code:
 - The Collector boss (never run, values are guesses): Coin Rain and belly slam, then below 66% health he swallows his coin mountain and grows (faster if Lumi carries gold) while the arena's left wall creeps inward, then below 33% he lunges for Lumi's purse. A grab with gold steals it all and heals him; with empty hands it whiffs and leaves him open. Offering bowls hurt and shrink him. Defeat plays the bible's lines, sets the Open Hand and Gold Key flags and clears Greed, which returns Lumi to the hub with one more key
 - Wake → Hub → Greed → Hub handoff using the same Lumi instance
 - Hub arrival positioned beside the Greed door without the bench/NPC stealing the first interaction
+- Title, pause, settings and controls menus (Esc), a lantern HUD meter (flame shrinks with health, oil drops for heals), and saved Reduce Shake / Gentle Mode / Fullscreen options. Never run in Godot
 - Pit recovery, checkpoint-aware death respawn, visible Wake boundaries, hit-stop and camera-shake feedback
 
 Still incomplete:
 - Playtesting and tuning The Collector. The Open Hand and Gold Key are only flags: there are no fighting styles yet
-- Other region implementations, full fighting styles, memory petals, saves, menus, music and imported art
+- Other region implementations, full fighting styles, memory petals, saves, the map/loadout/Memory Tree/keepsake screens, key remapping, audio sliders, music and imported art
 - Full hub-door progression and final Mirror Gate
 - Runtime verification of the current transition loop and combat feedback
 
@@ -64,6 +65,9 @@ Run: open `project.godot` in the Godot Project Manager and press F5.
 | `scripts/little_jelly.gd` | Tutorial enemy: patrol, contact damage, knockback |
 | `scripts/greed.gd` | The Gilded Garden: level, gold and weight, shrines and bowls, Collector fight flow and rewards |
 | `scripts/collector.gd` | The Collector boss: phases, attacks, growth, purse grab, drawing |
+| `scripts/menu_overlay.gd` | Title, pause, settings and controls menus. Lives on the root as `MenuOverlay`, pauses the tree while open |
+| `scripts/game_settings.gd` | Saved options (`user://settings.cfg`), Gentle Mode damage scaling |
+| `scripts/lantern_meter.gd` | HUD health lantern, reads the `player` group |
 | `scripts/collector_coin.gd` | Coins he throws: they hurt while falling, then become gold pickups |
 | `docs/game-bible.md` | Full design reference (story, regions, bosses, movesets, art, sound, UI) |
 
@@ -77,6 +81,7 @@ Run: open `project.godot` in the Godot Project Manager and press F5.
 | J | Lantern swing |
 | Q | Heal |
 | E | Interact |
+| Esc | Pause menu / back |
 
 The bible's final control scheme differs (heal on H, Q cycles fighting styles, plus heavy attack, guard and more). Ask before remapping.
 
@@ -105,6 +110,8 @@ World units are pixels. Ground top is y=610.
 | End wall | x = 2750 |
 
 ## How the code works
+
+- Menus: `main.gd` adds `MenuOverlay` to the root once. Esc opens pause only when the tree is not already paused (hit-freeze owns that pause). Options are read from `game_settings.gd` (`Settings.reduce_shake`, `Settings.gentle_mode`). Return to title is intentionally missing: reloading the scene would orphan the hub/region nodes on the root.
 
 - `main.gd` keeps a list of `interactables` (dictionaries with `node`, `message`, `kind`, `used`). `_process` finds the nearest one within 95px, shows the E prompt and handles opening and closing dialogue.
 - New interactables go through `_make_marker()` and `interactables.append(...)`.

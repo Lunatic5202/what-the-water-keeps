@@ -270,16 +270,21 @@ func _create_hud() -> void:
 	hud.add_child(title)
 
 	stats_label = Label.new()
-	stats_label.position = Vector2(24, 58)
+	stats_label.position = Vector2(24, 128)
 	stats_label.add_theme_font_size_override("font_size", 18)
 	stats_label.add_theme_color_override("font_color", Color(0.77, 0.88, 1.0))
 	hud.add_child(stats_label)
+
+	var meter := Control.new()
+	meter.set_script(load("res://scripts/lantern_meter.gd"))
+	meter.position = Vector2(24, 52)
+	hud.add_child(meter)
 
 	var help := Label.new()
 	help.position = Vector2(24, 670)
 	help.add_theme_font_size_override("font_size", 16)
 	help.add_theme_color_override("font_color", Color(0.82, 0.83, 0.9))
-	help.text = "A/D move   SPACE jump   J lantern swing   LEFT SHIFT dash   Q heal   E interact"
+	help.text = "A/D move   SPACE jump   J lantern swing   LEFT SHIFT dash   Q heal   E interact   ESC menu"
 	hud.add_child(help)
 
 	prompt_label = Label.new()
@@ -413,11 +418,7 @@ func _show_dialogue(message: String, target: Node2D = null) -> void:
 func _update_hud(_value: int = 0) -> void:
 	if not is_instance_valid(player) or not is_instance_valid(stats_label):
 		return
-	var hearts := ""
-	for i in range(player.max_health):
-		hearts += "♥ " if i < player.health else "♡ "
-	var region_text := "    REGIONS CLEARED: %d/7" % regions_unlocked
-	stats_label.text = "HEARTS: %s    HEALS: %d%s" % [hearts.strip_edges(), player.heals, region_text]
+	stats_label.text = "REGIONS CLEARED: %d/7" % regions_unlocked
 
 func _show_status(message: String) -> void:
 	status_id += 1
