@@ -18,7 +18,15 @@ signal defeated()
 func _ready() -> void:
 	hop_timer = randf_range(0.2, HOP_INTERVAL)
 
+var stun_time := 0.0
+
+func stun(seconds: float) -> void:
+	stun_time = maxf(stun_time, seconds)
+
 func _physics_process(delta: float) -> void:
+	if stun_time > 0.0 and not dissolving:
+		stun_time -= delta
+		return
 	if dissolving:
 		dissolve_timer += delta
 		if dissolve_timer >= 0.6:

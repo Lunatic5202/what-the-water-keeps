@@ -17,7 +17,15 @@ var dissolve_alpha := 1.0
 func _ready() -> void:
 	start_x = global_position.x
 
+var stun_time := 0.0
+
+func stun(seconds: float) -> void:
+	stun_time = maxf(stun_time, seconds)
+
 func _physics_process(delta: float) -> void:
+	if stun_time > 0.0 and not dissolving:
+		stun_time -= delta
+		return
 	if dissolving:
 		dissolve_timer += delta
 		dissolve_alpha = maxf(0.0, 1.0 - (dissolve_timer / 0.6))

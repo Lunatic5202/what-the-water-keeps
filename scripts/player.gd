@@ -65,6 +65,10 @@ func _ready() -> void:
 	hand.name = "OpenHand"
 	hand.set_script(load("res://scripts/open_hand.gd"))
 	add_child(hand)
+	var kit := Node2D.new()
+	kit.name = "LanternKit"
+	kit.set_script(load("res://scripts/lantern_kit.gd"))
+	add_child(kit)
 	attack_area = Area2D.new()
 	attack_area.name = "AttackArea"
 	attack_area.position = Vector2(28, 0)
@@ -118,10 +122,6 @@ func _physics_process(delta: float) -> void:
 		if Input.is_action_just_pressed("style_cycle"):
 			_cycle_style()
 
-		if style == "lantern" and unlocked_styles.size() > 1:
-			for action in ["heavy", "skill", "guard", "overture"]:
-				if Input.is_action_just_pressed(action):
-					status_changed.emit("ONLY THE OPEN HAND HAS THAT MOVE FOR NOW. (TAB)")
 
 		if Input.is_action_just_pressed("heal"):
 			_heal()
@@ -176,10 +176,11 @@ func _on_attack_body_entered(body: Node2D) -> void:
 func take_damage(amount: int) -> void:
 	if hurt_cooldown > 0.0:
 		return
-	var hand := get_node_or_null("OpenHand")
-	if hand != null and hand.call("block_hit"):
-		hurt_cooldown = 0.2
-		return
+	for node_name in ["OpenHand", "LanternKit"]:
+		var kit := get_node_or_null(node_name)
+		if kit != null and kit.call("block_hit"):
+			hurt_cooldown = 0.2
+			return
 	amount = Settings.scaled_damage(amount)
 	if amount <= 0:
 		hurt_cooldown = 0.8
