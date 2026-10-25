@@ -36,6 +36,8 @@ Implemented in code:
 - Wake → Hub → Greed → Hub handoff using the same Lumi instance
 - Hub arrival positioned beside the Greed door without the bench/NPC stealing the first interaction
 - Title, pause, settings and controls menus (Esc), a lantern HUD meter (flame shrinks with health, oil drops for heals), and saved Reduce Shake / Gentle Mode / Fullscreen options. Never run in Godot
+- Wake split into four rooms with a locked camera that slides to the next room when Lumi crosses the room edge (never run in Godot)
+- Hub: platforms rebuilt so every step is jumpable (55px max, no gaps, nothing hanging over walkways), Mirror Gate marker on the pond platform, hub killbox at y=900
 - Pit recovery, checkpoint-aware death respawn, visible Wake boundaries, hit-stop and camera-shake feedback
 
 Still incomplete:
@@ -99,6 +101,17 @@ World units are pixels. Ground top is y=610.
 | Boundary walls | x = 55 and x = 4600 |
 | Killbox | y > 900 |
 
+### Wake rooms
+
+Rooms are chosen by Lumi's x. The camera is locked to the room's camera range and slides over on crossing. A camera range must be at least 1280 wide, so short rooms borrow width from a neighbour. Change them in `WAKE_ROOMS` in `main.gd`.
+
+| Room | Lumi is in it for x | Camera range | Holds |
+|------|---------------------|--------------|-------|
+| meadow | 0 to 1280 | 0 to 1280 | signs 1 to 4, Little Jelly |
+| path | 1280 to 2160 | 880 to 2160 | empty walk to the arena |
+| old_moss | 2160 to 3440 | 2160 to 3440 | Old Moss arena |
+| ribbon | 3440 to 4700 | 3420 to 4700 | Wind Ribbon, dash gap, first door |
+
 ## Level reference (Greed arena)
 
 | Thing | Position |
@@ -112,6 +125,7 @@ World units are pixels. Ground top is y=610.
 ## How the code works
 
 - Hub platforms live in `PLATFORMS` in `hub.gd` (used for both collision and drawing). Lumi's jump is about 77px, so keep every step up at 55px or less and leave 50px of headroom under floating platforms.
+- Wake rooms: `_update_wake_room()` in `main.gd` runs each frame while `current_region == "wake"`. A respawn that jumps rooms snaps the camera instead of sliding. Rooms have no names on screen because the bible gives none.
 - Menus: `main.gd` adds `MenuOverlay` to the root once. Esc opens pause only when the tree is not already paused (hit-freeze owns that pause). Options are read from `game_settings.gd` (`Settings.reduce_shake`, `Settings.gentle_mode`). Return to title is intentionally missing: reloading the scene would orphan the hub/region nodes on the root.
 
 - `main.gd` keeps a list of `interactables` (dictionaries with `node`, `message`, `kind`, `used`). `_process` finds the nearest one within 95px, shows the E prompt and handles opening and closing dialogue.

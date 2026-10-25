@@ -24,6 +24,18 @@ var greed_scene: Node2D = null
 var pending_transition := ""
 var combat_feedback: Node2D = null
 
+# Wake rooms. "from"/"to" decide which room Lumi is in (by her x). The camera
+# is locked to "cam_left".."cam_right", which must be at least 1280 wide (the
+# viewport), so a short room borrows some of its neighbour's width.
+const WAKE_ROOMS := [
+	{"id": "meadow", "from": 0.0, "to": 1280.0, "cam_left": 0, "cam_right": 1280},
+	{"id": "path", "from": 1280.0, "to": 2160.0, "cam_left": 880, "cam_right": 2160},
+	{"id": "old_moss", "from": 2160.0, "to": 3440.0, "cam_left": 2160, "cam_right": 3440},
+	{"id": "ribbon", "from": 3440.0, "to": 4700.0, "cam_left": 3420, "cam_right": 4700},
+]
+
+var wake_room := -1
+
 const SIGN_MESSAGES := [
 	"Walk! (it's easy, I believe in you)",
 	"Jump over the tiny puddle.",
@@ -65,6 +77,8 @@ func _process(_delta: float) -> void:
 		player.global_position = respawn_point
 		player.velocity = Vector2.ZERO
 		_show_status("THE WATER CATCHES LUMI. BACK TO SAFE GROUND.")
+
+	_update_wake_room()
 
 	if dialogue_open:
 		var walked_away := not is_instance_valid(dialogue_target)
@@ -455,6 +469,29 @@ func _update_hud(_value: int = 0) -> void:
 	if not is_instance_valid(player) or not is_instance_valid(stats_label):
 		return
 	stats_label.text = "WIND RIBBON: FOUND" if has_wind_ribbon else ""
+
+func _update_wake_room() -> void:
+	if current_region != "wake" or not is_instance_valid(player):
+		return
+	var x := player.global_position.x
+	var index := WAKE_ROOMS.size() - 1
+	for i in range(WAKE_ROOMS.size()):
+		if x < float(WAKE_ROOMS[i]["to"]):
+			index = i
+			break
+	if index == wake_room:
+		return
+	var camera := player.get_node_or_null("Camera2D") as Camera2D
+	if camera == null:
+		return
+	var room: Dictionary = WAKE_ROOMS[index]
+	camera.limit_left = int(room["cam_left"])
+	camera.limit_right = int(room["cam_right"])
+	# Walking into the next room lets the camera slide over; a respawn that
+	# jumps rooms (or the first frame) snaps instead.
+	if wake_room < 0 or absi(index - wake_room) > 1:
+		camera.reset_smoothing()
+	wake_room = index
 
 func _show_status(message: String) -> void:
 	status_id += 1
