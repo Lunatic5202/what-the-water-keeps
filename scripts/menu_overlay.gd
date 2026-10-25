@@ -15,7 +15,7 @@ const NIGHT := Color(0.08, 0.09, 0.16)
 const CONTROLS := [
 	["Move", "A / D"],
 	["Jump", "Space"],
-	["Dash", "Left Shift (after the Wind Ribbon)"],
+	["Dash", "Left Shift (needs Wind Ribbon)"],
 	["Lantern swing", "J"],
 	["Heal", "Q"],
 	["Interact", "E"],
@@ -228,9 +228,14 @@ func _build_controls() -> Control:
 	grid.add_theme_constant_override("v_separation", 8)
 	box.add_child(grid)
 	for row in CONTROLS:
+		# No autowrap here: wrapped labels in a grid collapse to a sliver.
 		var action := _label(row[0], 19, MUTED)
+		action.autowrap_mode = TextServer.AUTOWRAP_OFF
+		action.custom_minimum_size = Vector2(170, 0)
 		action.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		var key := _label(row[1], 19, Color(0.93, 0.90, 1.0))
+		key.autowrap_mode = TextServer.AUTOWRAP_OFF
+		key.custom_minimum_size = Vector2(300, 0)
 		key.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		grid.add_child(action)
 		grid.add_child(key)

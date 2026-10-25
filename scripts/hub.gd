@@ -17,7 +17,7 @@ var status_id := 0
 var unlocked_regions: Array[String] = []  # Regions cleared
 var current_region := "wake"
 # Keep Lumi clear of the bench and Orrin so the Greed door is the first nearby interaction.
-var respawn_point := Vector2(360, 650)
+var respawn_point := Vector2(330, 650)
 var regions_unlocked := 0  # How many regions (doors) are open
 
 # Hub elements
@@ -25,14 +25,33 @@ var doors: Array[Node2D] = []
 var reflection: Node2D = null
 var door_lights: Array[Node2D] = []
 
+# Platforms as Rect2(left, top, width, height). Lumi's jump is about 77px high,
+# so every step up is 55px or less. Never raise a step without checking that.
+const PLATFORMS := [
+	Rect2(-200, 690, 800, 60),   # start ground
+	Rect2(625, 635, 100, 30),    # stairs up to the pond
+	Rect2(750, 580, 100, 30),
+	Rect2(875, 525, 100, 30),
+	Rect2(1000, 470, 100, 30),
+	Rect2(1125, 415, 400, 50),   # pond platform
+	Rect2(1550, 360, 100, 20),   # steps to the Mirror Gate
+	Rect2(1425, 305, 100, 20),
+	Rect2(1000, 250, 380, 30),   # Mirror Gate platform
+	Rect2(1550, 470, 100, 30),   # stairs down the right side
+	Rect2(1675, 525, 100, 30),
+	Rect2(1800, 580, 250, 30),
+	Rect2(2075, 635, 100, 30),
+	Rect2(2200, 690, 700, 60),   # far right ground
+]
+
 const DOOR_POSITIONS := {
-	"greed": Vector2(300, 640),
-	"sloth": Vector2(500, 580),
-	"gluttony": Vector2(850, 480),
-	"envy": Vector2(1500, 380),
-	"lust": Vector2(1950, 480),
-	"wrath": Vector2(2250, 580),
-	"pride": Vector2(2700, 640)
+	"greed": Vector2(440, 650),
+	"sloth": Vector2(675, 595),
+	"gluttony": Vector2(800, 540),
+	"envy": Vector2(1450, 375),
+	"lust": Vector2(2000, 540),
+	"wrath": Vector2(2125, 595),
+	"pride": Vector2(2700, 650)
 }
 
 const DOOR_SYMBOLS := {
@@ -103,66 +122,21 @@ func _draw() -> void:
 		var hill_color := Color(0.81, 0.85, 0.88, 1.0) if i % 2 == 0 else Color(0.82, 0.87, 0.94, 1.0)
 		draw_colored_polygon(hill, hill_color)
 
-	# The Still Pond - center high platform
-	# Soft blues and silvers per spec
-	draw_circle(Vector2(1200, 400), 180, Color(0.73, 0.8, 0.9, 0.5))
-	draw_circle(Vector2(1200, 400), 150, Color(0.75, 0.85, 0.95, 0.6))
-	draw_circle(Vector2(1200, 400), 110, Color(0.68, 0.82, 0.92, 0.75))
+	# The Still Pond, behind the pond platform
+	draw_circle(Vector2(1325, 415), 180, Color(0.73, 0.8, 0.9, 0.5))
+	draw_circle(Vector2(1325, 415), 150, Color(0.75, 0.85, 0.95, 0.6))
+	draw_circle(Vector2(1325, 415), 110, Color(0.68, 0.82, 0.92, 0.75))
 
-	# Platform visuals - deep indigo #4A3A7A
+	# Platforms: deep indigo with a lighter top edge
 	var platform_color := Color(0.29, 0.23, 0.48, 1.0)
 	var platform_highlight := Color(0.51, 0.47, 0.63, 1.0)
-
-	# Bottom ground
-	draw_rect(Rect2(200 - 400, 720 - 30, 800, 60), platform_color)
-	draw_rect(Rect2(200 - 400, 720 - 30, 800, 3), platform_highlight)
-
-	# Mid-left ascending
-	draw_rect(Rect2(450 - 150, 620 - 20, 300, 40), platform_color)
-	draw_rect(Rect2(450 - 150, 620 - 20, 300, 3), platform_highlight)
-	draw_rect(Rect2(700 - 125, 520 - 20, 250, 40), platform_color)
-	draw_rect(Rect2(700 - 125, 520 - 20, 250, 3), platform_highlight)
-
-	# Pond platform
-	draw_rect(Rect2(1200 - 300, 420 - 25, 600, 50), platform_color)
-	draw_rect(Rect2(1200 - 300, 420 - 25, 600, 3), platform_highlight)
-
-	# Right descending
-	draw_rect(Rect2(1850 - 140, 520 - 20, 280, 40), platform_color)
-	draw_rect(Rect2(1850 - 140, 520 - 20, 280, 3), platform_highlight)
-	draw_rect(Rect2(2150 - 175, 620 - 20, 350, 40), platform_color)
-	draw_rect(Rect2(2150 - 175, 620 - 20, 350, 3), platform_highlight)
-
-	# Far right ground
-	draw_rect(Rect2(2600 - 300, 720 - 30, 600, 60), platform_color)
-	draw_rect(Rect2(2600 - 300, 720 - 30, 600, 3), platform_highlight)
-
-	# Mirror Gate platform
-	draw_rect(Rect2(1200 - 200, 280 - 20, 400, 40), platform_color)
-	draw_rect(Rect2(1200 - 200, 280 - 20, 400, 3), platform_highlight)
+	for rect: Rect2 in PLATFORMS:
+		draw_rect(rect, platform_color)
+		draw_rect(Rect2(rect.position, Vector2(rect.size.x, 3)), platform_highlight)
 
 func _create_ground() -> void:
-	# Multi-tier platformer hub with vertical layout
-
-	# Bottom ground - starting area
-	_add_platform(Vector2(200, 720), Vector2(800, 60))
-
-	# Mid-left platforms ascending
-	_add_platform(Vector2(450, 620), Vector2(300, 40))
-	_add_platform(Vector2(700, 520), Vector2(250, 40))
-
-	# Pond level - center high platform
-	_add_platform(Vector2(1200, 420), Vector2(600, 50))
-
-	# Right side descending platforms
-	_add_platform(Vector2(1850, 520), Vector2(280, 40))
-	_add_platform(Vector2(2150, 620), Vector2(350, 40))
-
-	# Far right ground
-	_add_platform(Vector2(2600, 720), Vector2(600, 60))
-
-	# Upper tier for Mirror Gate
-	_add_platform(Vector2(1200, 280), Vector2(400, 40))
+	for rect: Rect2 in PLATFORMS:
+		_add_platform(rect.get_center(), rect.size)
 
 func _add_platform(pos: Vector2, size: Vector2) -> void:
 	var platform := StaticBody2D.new()
@@ -176,11 +150,11 @@ func _add_platform(pos: Vector2, size: Vector2) -> void:
 
 func _create_hub_elements() -> void:
 	# Bench - bottom left
-	var bench := _make_interactable("BENCH\n[E]", Vector2(250, 680), Color(0.6, 0.55, 0.5))
+	var bench := _make_interactable("BENCH\n[E]", Vector2(180, 660), Color(0.6, 0.55, 0.5))
 	interactables.append({"node": bench, "message": "Rest here.", "kind": "bench", "used": false})
 
 	# Altar - mid platform left
-	var altar := _make_interactable("ALTAR\n[E]", Vector2(700, 480), Color(0.9, 0.85, 0.7))
+	var altar := _make_interactable("ALTAR\n[E]", Vector2(1050, 430), Color(0.9, 0.85, 0.7))
 	interactables.append({"node": altar, "message": "Artifact slots.", "kind": "altar", "used": false})
 
 	# Pond at center high platform
@@ -189,22 +163,22 @@ func _create_hub_elements() -> void:
 	add_child(reflection)
 
 	# Memory Tree - right mid platform
-	var tree := _make_interactable("TREE\n[E]", Vector2(1900, 480), Color(0.7, 0.85, 0.65))
+	var tree := _make_interactable("TREE\n[E]", Vector2(1850, 540), Color(0.7, 0.85, 0.65))
 	interactables.append({"node": tree, "message": "Memory tree.", "kind": "tree", "used": false})
 
 	# Nim's Post - far right ground
-	var nim := _make_interactable("NIM\n[E]", Vector2(2650, 680), Color(0.95, 0.9, 0.6))
+	var nim := _make_interactable("NIM\n[E]", Vector2(2400, 650), Color(0.95, 0.9, 0.6))
 	interactables.append({"node": nim, "message": "Nim waits.", "kind": "nim", "used": false})
 
 	# Mirror Gate - top platform
-	var gate := _make_interactable("GATE\n[E]", Vector2(1200, 240), Color(0.85, 0.88, 0.95))
+	var gate := _make_interactable("GATE\n[E]", Vector2(1190, 210), Color(0.85, 0.88, 0.95))
 	interactables.append({"node": gate, "message": "Sealed.", "kind": "gate", "used": false})
 
 func _create_npcs() -> void:
-	var marl := _make_interactable("MARL\n[E]", Vector2(1100, 380), Color(0.95, 0.95, 0.9))
+	var marl := _make_interactable("MARL\n[E]", Vector2(1230, 375), Color(0.95, 0.95, 0.9))
 	interactables.append({"node": marl, "message": "Paper boats.", "kind": "marl", "used": false})
 
-	var orrin := _make_interactable("ORRIN\n[E]", Vector2(250, 660), Color(0.5, 0.55, 0.5))
+	var orrin := _make_interactable("ORRIN\n[E]", Vector2(60, 660), Color(0.5, 0.55, 0.5))
 	interactables.append({"node": orrin, "message": "Stone frog waits.", "kind": "orrin", "used": false})
 
 func _create_doors() -> void:
@@ -342,7 +316,7 @@ func _connect_signals() -> void:
 func _process(_delta: float) -> void:
 	# Reflection follows player with delay
 	if is_instance_valid(reflection) and is_instance_valid(player):
-		var target_pos := Vector2(1200, 585) + Vector2(player.global_position.x - 1200, 0) * 0.3
+		var target_pos := Vector2(1300, 585) + Vector2(player.global_position.x - 1300, 0) * 0.3
 		reflection.position = reflection.position.lerp(target_pos, 0.02)
 
 	if dialogue_open:
