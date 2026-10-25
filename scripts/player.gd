@@ -11,6 +11,10 @@ const DASH_TIME := 0.16
 
 # COMBAT VALUES (per combat doc)
 const ATTACK_DAMAGE := 8  # Light attack base
+const COMBO_DAMAGE := [8, 8, 12]  # Lantern combo (bible 4.3)
+const AIR_DAMAGE := 9
+const DASH_ATTACK_DAMAGE := 10
+const COMBO_WINDOW := 0.45
 const HEAL_AMOUNT := 2  # Per charge
 const ATTACK_IMPACT_FRAMES := 6  # Freeze on hit
 
@@ -23,6 +27,10 @@ var attack_timer := 0.0
 var hurt_cooldown := 0.0
 var dash_cooldown := 0.0
 var attack_has_hit := false
+var attack_damage := ATTACK_DAMAGE
+var attack_step := 0
+var combo_timer := 0.0
+var lunge_timer := 0.0
 var attack_area: Area2D
 var attack_shape: CollisionShape2D
 
@@ -90,6 +98,8 @@ func _physics_process(delta: float) -> void:
 		velocity.y = 0.0
 
 	hurt_cooldown = maxf(0.0, hurt_cooldown - delta)
+	combo_timer = maxf(0.0, combo_timer - delta)
+	lunge_timer = maxf(0.0, lunge_timer - delta)
 	dash_cooldown = maxf(0.0, dash_cooldown - delta)
 
 	if dash_timer > 0.0:
@@ -97,7 +107,9 @@ func _physics_process(delta: float) -> void:
 		velocity.x = facing * DASH_SPEED
 	else:
 		var direction := Input.get_axis("move_left", "move_right")
-		if direction != 0.0:
+		if lunge_timer > 0.0:
+			velocity.x = facing * SPEED * 1.5
+		elif direction != 0.0:
 			facing = int(sign(direction))
 			velocity.x = direction * SPEED * move_speed_mod
 		else:
@@ -133,6 +145,8 @@ func _physics_process(delta: float) -> void:
 			attack_shape.set_deferred("disabled", true)
 			attack_area.set_deferred("monitoring", false)
 			is_attacking = false
+			if attack_step > 0:
+				combo_timer = COMBO_WINDOW
 
 	move_and_slide()
 	queue_redraw()
@@ -143,6 +157,22 @@ func _start_attack() -> void:
 	attack_timer = 0.18
 	attack_progress = 0.0
 	attack_has_hit = false
+	# Bible 4.3: J,J,J = 8/8/12 (third hit lunges), air 9, dash attack 10.
+	var kind := "NORMAL"
+	if not is_on_floor():
+		attack_damage = AIR_DAMAGE
+		attack_step = 0
+		kind = "AIR"
+	elif dash_cooldown > 0.15:
+		attack_damage = DASH_ATTACK_DAMAGE
+		attack_step = 0
+		kind = "DASH"
+	else:
+		attack_step = (attack_step % 3) + 1 if combo_timer > 0.0 else 1
+		attack_damage = COMBO_DAMAGE[attack_step - 1]
+		if attack_step == 3:
+			lunge_timer = 0.12
+			kind = "LUNGE"
 	is_attacking = true
 	attack_area.position.x = 28.0 * facing
 
@@ -156,7 +186,7 @@ func _start_attack() -> void:
 
 	attack_shape.set_deferred("disabled", false)
 	attack_area.set_deferred("monitoring", true)
-	status_changed.emit("LANTERN SWING!")
+	status_changed.emit("LANTERN SWING! (%d)" % attack_damage if kind == "NORMAL" else "LANTERN SWING: %s (%d)" % [kind, attack_damage])
 
 func _on_attack_body_entered(body: Node2D) -> void:
 	if body == self:
@@ -169,7 +199,7 @@ func _on_attack_body_entered(body: Node2D) -> void:
 			feedback.call("apply_hit_freeze", ATTACK_IMPACT_FRAMES)
 			feedback.call("screenshake", 0.5, 0.08)
 
-		body.take_damage(ATTACK_DAMAGE)
+		body.take_damage(attack_damage)
 		add_glow(3.0)
 		attack_has_hit = true
 

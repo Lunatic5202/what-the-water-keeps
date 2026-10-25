@@ -48,10 +48,11 @@ Implemented in code:
   - Coin Toss (L, 20 Glow, up to 5 coins at 3 each, or one soft orb), Open Palm guard (I, 0.25s, perfect in the first 0.12s gives Glow and returns Moss spores at 2 damage), Everything Given (O, 100 Glow, hits everything on screen for 12 plus 1 per coin)
   - Glow: gained from hits and perfect guards, shown as five petals around the HUD lantern
 - Lantern Swing extras (never run in Godot): heavy K (22, wind-up, knockback), Lantern Flash L (30 Glow, 6 damage and a 1.5s stun on small enemies in 150px), guard I (0.25s, perfect guard gives Glow), Warm Light O (100 Glow, 40 damage and push in 260px). Jelly, Dust Bunny and Puddle Sprite can be stunned
+- Lantern Swing combo: J,J,J = 8/8/12 (third hit lunges), air swing 9, dash swing 10 (never run in Godot)
 - Pit recovery, checkpoint-aware death respawn, visible Wake boundaries, hit-stop and camera-shake feedback
 
 Still incomplete:
-- Playtesting and tuning The Collector and the Open Hand. The Gold Key is only a flag. Lantern Swing still lacks the 3-hit combo, air pogo and dash attack from bible 4.3. The Open Hand does not yet clean sticky coins off Lumi, return Collector coins with its guard, or use the Altar for swapping
+- Playtesting and tuning The Collector and the Open Hand. The Gold Key is only a flag. Lantern Swing still lacks the air pogo (needs a Down input) and the dash attack passing through small enemies. The Open Hand does not yet clean sticky coins off Lumi, return Collector coins with its guard, or use the Altar for swapping
 - Other region implementations, full fighting styles, memory petals, saves, the map/loadout/Memory Tree/keepsake screens, key remapping, audio sliders, music and imported art
 - Full hub-door progression and final Mirror Gate
 - Runtime verification of the current transition loop and combat feedback
@@ -161,7 +162,7 @@ Rooms are chosen by Lumi's x. The camera is locked to the room's camera range an
 ## Roadmap (suggested order)
 
 1. Playtest and stabilize Wake → Still Pond → Greed → Still Pond.
-2. Playtest and tune The Collector and the Open Hand (both never run). Next: Lantern Swing's 3-hit combo and dash attack, then the Sloth region.
+2. Playtest and tune The Collector and the Open Hand (both never run). Next: the Sloth region.
 3. Connect region-clear rewards to hub door unlocks and gadget progression.
 4. Build the remaining six regions and their bosses, keeping the game bible as the source of truth.
 5. Add the Mirror Gate, Memory Path, final fight and both endings.
