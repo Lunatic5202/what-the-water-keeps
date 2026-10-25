@@ -26,7 +26,8 @@ var reflection: Node2D = null
 var door_lights: Array[Node2D] = []
 
 # Platforms as Rect2(left, top, width, height). Lumi's jump is about 77px high,
-# so every step up is 55px or less. Neighbours must touch (no gap): Lumi is
+# so every step up is 55px or less and nothing hangs within 120px above a
+# walkway or stair landing (it would bonk Lumi's jump). Neighbours must touch (no gap): Lumi is
 # 26px wide and gets wedged in any gap narrower than that.
 const PLATFORMS := [
 	Rect2(-200, 690, 800, 60),   # start ground
@@ -35,9 +36,6 @@ const PLATFORMS := [
 	Rect2(850, 525, 125, 30),
 	Rect2(975, 470, 125, 30),
 	Rect2(1100, 415, 425, 50),   # pond platform
-	Rect2(1525, 360, 125, 20),   # steps to the Mirror Gate
-	Rect2(1400, 305, 125, 20),
-	Rect2(1000, 250, 400, 30),   # Mirror Gate platform
 	Rect2(1525, 470, 125, 30),   # stairs down the right side
 	Rect2(1650, 525, 125, 30),
 	Rect2(1775, 580, 275, 30),
@@ -171,8 +169,8 @@ func _create_hub_elements() -> void:
 	var nim := _make_interactable("NIM\n[E]", Vector2(2400, 650), Color(0.95, 0.9, 0.6))
 	interactables.append({"node": nim, "message": "Nim waits.", "kind": "nim", "used": false})
 
-	# Mirror Gate - top platform
-	var gate := _make_interactable("GATE\n[E]", Vector2(1190, 210), Color(0.85, 0.88, 0.95))
+	# Mirror Gate - on the pond platform
+	var gate := _make_interactable("GATE\n[E]", Vector2(1340, 375), Color(0.85, 0.88, 0.95))
 	interactables.append({"node": gate, "message": "Sealed.", "kind": "gate", "used": false})
 
 func _create_npcs() -> void:
