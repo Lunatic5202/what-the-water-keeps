@@ -29,6 +29,8 @@ var door_lights: Array[Node2D] = []
 # so every step up is 55px or less and nothing hangs within 120px above a
 # walkway or stair landing (it would bonk Lumi's jump). Neighbours must touch (no gap): Lumi is
 # 26px wide and gets wedged in any gap narrower than that.
+const KILL_Y := 900.0  # lowest platform is at 750
+
 const PLATFORMS := [
 	Rect2(-200, 690, 800, 60),   # start ground
 	Rect2(600, 635, 125, 30),    # stairs up to the pond
@@ -319,6 +321,12 @@ func _connect_signals() -> void:
 	player.status_changed.connect(_show_status)
 
 func _process(_delta: float) -> void:
+	# Killbox: falling under the map anywhere returns Lumi to the hub spawn.
+	if is_instance_valid(player) and player.global_position.y > KILL_Y:
+		player.global_position = respawn_point
+		player.velocity = Vector2.ZERO
+		_show_status("THE WATER CATCHES LUMI. BACK TO SAFE GROUND.")
+
 	# Reflection follows player with delay
 	if is_instance_valid(reflection) and is_instance_valid(player):
 		var target_pos := Vector2(1300, 585) + Vector2(player.global_position.x - 1300, 0) * 0.3
