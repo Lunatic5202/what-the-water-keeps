@@ -21,6 +21,7 @@ Target: a playable game on itch.io, in the spirit of Hollow Knight and Blasphemo
 - Keep the tone gentle. Quiet over loud. Sad, never edgy. Lust is portrayed as obsessive longing only, nothing sexual.
 - Keep code short and readable. Wrap long lines.
 - **Everything must be readable at a glance.** All on-screen text uses a dark outline (`font_outline_color` 0.12, 0.10, 0.24) so it works on any background. Minimum sizes: HUD text 17+, world labels 17, dialogue 24, prompt 23. Muted menu text must stay above (0.8, 0.8, 0.9). Do not add pale text on pale sky without an outline.
+- **Colour rule** (`scripts/palette.gd`): every solid thing must contrast at least 3:1 with what is behind it. Ground is the darkest thing in a scene. Characters get a dark outline or a light rim. New regions add their ground and sky colours to `palette.gd` and check the contrast before drawing anything. Pale-on-pale (the old Wake ground on the Wake sky was 1.1:1) is a bug.
 
 ## Current status: Prototype 02 (Wake → Still Pond → Greed)
 
@@ -36,6 +37,7 @@ Implemented in code:
 - The Collector boss (never run, values are guesses): Coin Rain and belly slam, then below 66% health he swallows his coin mountain and grows (faster if Lumi carries gold) while the arena's left wall creeps inward, then below 33% he lunges for Lumi's purse. A grab with gold steals it all and heals him; with empty hands it whiffs and leaves him open. Offering bowls hurt and shrink him. Defeat plays the bible's lines, sets the Open Hand and Gold Key flags and clears Greed, which returns Lumi to the hub with one more key
 - Wake → Hub → Greed → Hub handoff using the same Lumi instance
 - Hub arrival positioned beside the Greed door without the bench/NPC stealing the first interaction
+- Colour pass: deeper Wake ground, Greed now draws its ground and platforms (it had none), outlines on Lumi, the Little Jelly, Old Moss and The Collector (never run in Godot)
 - Title, pause, settings and controls menus (Esc), a lantern HUD meter (flame shrinks with health, oil drops for heals), and saved Reduce Shake / Gentle Mode / Fullscreen options. Never run in Godot
 - Wake split into four rooms with a locked camera that slides to the next room when Lumi crosses the room edge (never run in Godot)
 - Hub: platforms rebuilt so every step is jumpable (55px max, no gaps, nothing hanging over walkways), Mirror Gate marker on the pond platform, hub killbox at y=900
@@ -76,6 +78,7 @@ Run: open `project.godot` in the Godot Project Manager and press F5.
 | `scripts/collector.gd` | The Collector boss: phases, attacks, growth, purse grab, drawing |
 | `scripts/menu_overlay.gd` | Title, pause, settings and controls menus. Lives on the root as `MenuOverlay`, pauses the tree while open |
 | `scripts/game_settings.gd` | Saved options (`user://settings.cfg`), Gentle Mode damage scaling |
+| `scripts/palette.gd` | Shared colours and the contrast rule |
 | `scripts/lantern_meter.gd` | HUD health lantern, reads the `player` group |
 | `scripts/open_hand.gd` | Open Hand style: combo, Offer, heavy, air, dash attack, Coin Toss, guard, Overture. Child node `OpenHand` of Lumi |
 | `scripts/palm_shot.gd` | Moving palm waves (shockwave, coins, orbs, reflected spores) |

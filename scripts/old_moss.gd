@@ -208,6 +208,7 @@ func _draw() -> void:
 	if hurt_cooldown > 0.0 and int(Time.get_ticks_msec() / 80) % 2 == 0:
 		shell_color = Color(0.95, 0.92, 0.88, 1.0)
 	draw_circle(Vector2(0, 8), 28, Color(0.42, 0.52, 0.44, 1.0))
+	draw_arc(Vector2(0, 8), 28.0, 0.0, TAU, 32, Color(0.12, 0.18, 0.15), 3.0)
 	draw_arc(Vector2.ZERO, 32, 0, PI, 16, shell_color, 8.0)
 	draw_circle(Vector2(-14, -4), 6, shell_color.darkened(0.2))
 	draw_circle(Vector2(0, -8), 6, shell_color.darkened(0.2))

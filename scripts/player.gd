@@ -240,6 +240,10 @@ func _draw() -> void:
 		Vector2(-15, -4), Vector2(-11, -24), Vector2(0, -31),
 		Vector2(11, -24), Vector2(15, -4), Vector2(20, 15), Vector2(-20, 15)
 	]), cloak)
+	draw_polyline(PackedVector2Array([
+		Vector2(-20, 15), Vector2(-15, -4), Vector2(-11, -24), Vector2(0, -31),
+		Vector2(11, -24), Vector2(15, -4), Vector2(20, 15), Vector2(-20, 15)
+	]), Color(0.95, 0.92, 1.0, 0.85), 1.8)
 
 	# Head
 	draw_circle(Vector2(0, -25), 10, Color(0.88, 0.82, 0.78, 1.0))

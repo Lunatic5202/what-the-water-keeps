@@ -427,6 +427,11 @@ func _draw() -> void:
 	draw_circle(Vector2(-34, -92), 8, dark)
 	draw_circle(Vector2(34, -92), 8, dark)
 	draw_circle(Vector2(0, -62), 40, honey)
+	var ink := Color(0.30, 0.18, 0.08)
+	draw_arc(Vector2.ZERO, BODY_RADIUS, 0.0, TAU, 48, ink, 3.0)
+	draw_arc(Vector2(0, -62), 40.0, 0.0, TAU, 32, ink, 3.0)
+	draw_arc(Vector2(-34, -92), 15.0, 0.0, TAU, 16, ink, 2.5)
+	draw_arc(Vector2(34, -92), 15.0, 0.0, TAU, 16, ink, 2.5)
 	draw_circle(Vector2(0, -52), 17, light)
 	# Tiny crown.
 	draw_colored_polygon(PackedVector2Array([

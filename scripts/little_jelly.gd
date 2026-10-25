@@ -87,11 +87,14 @@ func _draw() -> void:
 		return
 
 	draw_circle(Vector2(0, 1), 19, Color(0.55, 0.79, 0.82, 0.24))
-	draw_colored_polygon(PackedVector2Array([
+	var body := PackedVector2Array([
 		Vector2(-17, 8), Vector2(-18, -2), Vector2(-12, -12), Vector2(0, -17),
 		Vector2(12, -12), Vector2(18, -2), Vector2(17, 8), Vector2(10, 12),
 		Vector2(3, 9), Vector2(-4, 12), Vector2(-11, 9)
-	]), Color(0.55, 0.79, 0.82, 1.0))
+	])
+	draw_colored_polygon(body, Color(0.55, 0.79, 0.82, 1.0))
+	body.append(body[0])
+	draw_polyline(body, Color(0.12, 0.20, 0.31), 2.5)
 	draw_circle(Vector2(-6, -2), 2.2, Color(0.12, 0.20, 0.31, 1.0))
 	draw_circle(Vector2(6, -2), 2.2, Color(0.12, 0.20, 0.31, 1.0))
 	draw_arc(Vector2(0, 2), 4, 0.15, PI - 0.15, 12, Color(0.12, 0.20, 0.31, 1.0), 1.5)

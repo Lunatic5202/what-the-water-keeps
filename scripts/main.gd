@@ -1,5 +1,7 @@
 extends Node2D
 
+const Palette := preload("res://scripts/palette.gd")
+
 var player: CharacterBody2D
 var jelly: CharacterBody2D
 var old_moss: CharacterBody2D
@@ -116,31 +118,33 @@ func _draw() -> void:
 	draw_circle(Vector2(1800, 180), 55, Color(1.0, 0.98, 0.92, 0.3))
 	draw_circle(Vector2(1800, 180), 38, Color(1.0, 0.96, 0.86, 1.0))
 
-	# Tutorial ground - meadow green
-	draw_rect(Rect2(0, 610, 2200, 150), Color(0.75, 0.89, 0.71, 1))
-	draw_rect(Rect2(0, 610, 2200, 4), Color(0.85, 0.94, 0.82, 1))
+	# Ground is the darkest thing in the scene so Lumi and the sky both read clearly.
+	var g := Palette.WAKE_GROUND
+	var gt := Palette.WAKE_GROUND_TOP
+	draw_rect(Rect2(0, 610, 2200, 150), g)
+	draw_rect(Rect2(0, 610, 2200, 5), gt)
 
 	# Boss arena - circular moss clearing framed by old trees
-	draw_circle(Vector2(2800, 610), 380, Color(0.68, 0.82, 0.65, 1))
-	draw_rect(Rect2(2200, 610, 1200, 150), Color(0.68, 0.82, 0.65, 1))
-	draw_rect(Rect2(2200, 610, 1200, 4), Color(0.78, 0.88, 0.72, 1))
+	draw_circle(Vector2(2800, 610), 380, Palette.WAKE_CLEARING)
+	draw_rect(Rect2(2200, 610, 1200, 150), Palette.WAKE_ARENA)
+	draw_rect(Rect2(2200, 610, 1200, 5), gt)
 	for tree_x in [2300.0, 3300.0]:
-		draw_rect(Rect2(tree_x - 24, 350, 48, 260), Color(0.43, 0.49, 0.36, 1))
-		draw_circle(Vector2(tree_x, 330), 92, Color(0.56, 0.70, 0.51, 1))
-		draw_circle(Vector2(tree_x - 55, 380), 62, Color(0.61, 0.75, 0.55, 1))
-		draw_circle(Vector2(tree_x + 55, 380), 62, Color(0.61, 0.75, 0.55, 1))
+		draw_rect(Rect2(tree_x - 24, 350, 48, 260), Color(0.36, 0.40, 0.28, 1))
+		draw_circle(Vector2(tree_x, 330), 92, Color(0.46, 0.62, 0.45, 1))
+		draw_circle(Vector2(tree_x - 55, 380), 62, Color(0.52, 0.68, 0.49, 1))
+		draw_circle(Vector2(tree_x + 55, 380), 62, Color(0.52, 0.68, 0.49, 1))
 
 	# Moss stones make the arena boundary readable without trapping Lumi
 	for stone_x in [2240.0, 2340.0, 3260.0, 3360.0]:
-		draw_circle(Vector2(stone_x, 596), 24, Color(0.51, 0.61, 0.48, 1))
-		draw_circle(Vector2(stone_x, 590), 16, Color(0.68, 0.78, 0.62, 1))
+		draw_circle(Vector2(stone_x, 596), 24, Color(0.40, 0.48, 0.38, 1))
+		draw_circle(Vector2(stone_x, 590), 16, Color(0.72, 0.82, 0.66, 1))
 
 	# The Wind Ribbon is before the dash gap.
-	draw_rect(Rect2(3400, 610, 500, 150), Color(0.80, 0.92, 0.76, 1))
-	draw_rect(Rect2(3400, 610, 500, 4), Color(0.88, 0.96, 0.85, 1))
-	draw_rect(Rect2(4100, 610, 700, 150), Color(0.80, 0.92, 0.76, 1))
-	draw_rect(Rect2(4100, 610, 700, 4), Color(0.88, 0.96, 0.85, 1))
-	draw_rect(Rect2(3900, 610, 200, 150), Color(0.57, 0.77, 0.86, 0.75))
+	draw_rect(Rect2(3400, 610, 500, 150), g)
+	draw_rect(Rect2(3400, 610, 500, 5), gt)
+	draw_rect(Rect2(4100, 610, 700, 150), g)
+	draw_rect(Rect2(4100, 610, 700, 5), gt)
+	draw_rect(Rect2(3900, 610, 200, 150), Color(0.35, 0.58, 0.78, 0.9))
 
 	# Boundary posts
 	draw_rect(Rect2(35, 475, 40, 135), Color(0.56, 0.62, 0.54, 1))

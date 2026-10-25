@@ -1,4 +1,5 @@
 extends Node2D
+const Palette := preload("res://scripts/palette.gd")
 const Settings := preload("res://scripts/game_settings.gd")
 
 signal region_cleared(region_name: String)
@@ -71,7 +72,7 @@ func _create_background() -> void:
 
 func _draw() -> void:
 	# Golden garden sky
-	draw_rect(Rect2(-3000, -2000, 8000, 4000), Color(0.95, 0.88, 0.55, 1.0))
+	draw_rect(Rect2(-3000, -2000, 8000, 4000), Palette.GREED_SKY)
 
 	if not bg_drawn:
 		# Golden flowers (decorative) - only seed once
@@ -93,6 +94,15 @@ func _draw() -> void:
 		draw_circle(Vector2(x - 25, 360), 30, Color(0.8, 0.7, 0.4, 1.0))
 		draw_circle(Vector2(x + 25, 360), 30, Color(0.8, 0.7, 0.4, 1.0))
 
+	# Ground and platforms (same rectangles as the colliders in _create_ground)
+	var ground := Palette.GREED_GROUND
+	var top := Palette.GREED_GROUND_TOP
+	draw_rect(Rect2(0, 570, 2750, 90), ground)
+	draw_rect(Rect2(0, 570, 2750, 5), top)
+	for plat in [Rect2(440, 490, 120, 20), Rect2(850, 440, 100, 20), Rect2(1050, 370, 100, 20)]:
+		draw_rect(plat, ground)
+		draw_rect(Rect2(plat.position, Vector2(plat.size.x, 4)), top)
+
 	if mountain_visible:
 		_draw_mountain()
 
@@ -103,6 +113,10 @@ func _draw_mountain() -> void:
 		Vector2(MOUNTAIN_X, 430), Vector2(MOUNTAIN_X + 60, 470),
 		Vector2(MOUNTAIN_X + 150, 570)
 	]), Color(0.86, 0.66, 0.2, 1.0))
+	draw_polyline(PackedVector2Array([
+		Vector2(MOUNTAIN_X - 150, 570), Vector2(MOUNTAIN_X - 60, 470), Vector2(MOUNTAIN_X, 430),
+		Vector2(MOUNTAIN_X + 60, 470), Vector2(MOUNTAIN_X + 150, 570)
+	]), Palette.GOLD_OUTLINE, 3.0)
 	for i in range(34):
 		var row := i / 7
 		var col := i % 7
