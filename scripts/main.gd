@@ -241,6 +241,8 @@ func _create_hud() -> void:
 	stats_label.position = Vector2(24, 128)
 	stats_label.add_theme_font_size_override("font_size", 18)
 	stats_label.add_theme_color_override("font_color", Color(0.77, 0.88, 1.0))
+	stats_label.add_theme_color_override("font_outline_color", Color(0.12, 0.10, 0.24))
+	stats_label.add_theme_constant_override("outline_size", 5)
 	hud.add_child(stats_label)
 
 	var meter := Control.new()
@@ -252,6 +254,8 @@ func _create_hud() -> void:
 	help.position = Vector2(24, 670)
 	help.add_theme_font_size_override("font_size", 16)
 	help.add_theme_color_override("font_color", Color(0.82, 0.83, 0.9))
+	help.add_theme_color_override("font_outline_color", Color(0.12, 0.10, 0.24))
+	help.add_theme_constant_override("outline_size", 5)
 	help.text = "A/D move   SPACE jump   J lantern swing   LEFT SHIFT dash   Q heal   E interact   ESC menu"
 	hud.add_child(help)
 
