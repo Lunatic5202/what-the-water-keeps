@@ -253,7 +253,7 @@ func _spawn_shot(at: Vector2, vel: Vector2, dmg: int, life: float, radius: float
 	shot.set("radius", radius)
 	shot.set("pierce", pierce)
 	shot.set("color", color)
-	shot.set("gravity", gravity)
+	shot.set("fall_gravity", gravity)
 	player.get_parent().add_child(shot)
 	shot.global_position = player.global_position + at
 
@@ -315,10 +315,10 @@ func _reflect_spores() -> void:
 	var f := _facing()
 	for node in get_tree().get_nodes_in_group("enemy_projectile"):
 		var spore: Node2D = node
-		var offset := spore.global_position - player.global_position
+		var offset: Vector2 = spore.global_position - player.global_position
 		if offset.length() > 48.0 or signf(offset.x) == -f:
 			continue
-		var at := spore.global_position - player.global_position
+		var at: Vector2 = spore.global_position - player.global_position
 		spore.queue_free()
 		_spawn_shot(at, Vector2(f * 360.0, 0.0), REFLECT_DAMAGE, 1.2, 10.0, false, PEACH, 0.0)
 		_perfect()

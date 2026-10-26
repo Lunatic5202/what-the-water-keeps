@@ -213,6 +213,7 @@ Platforms are listed in `PLATFORMS` in `sloth.gd`. Steps up are 55px or less, ga
 ## Testing notes for agents
 
 - Godot is often not installed in agent sandboxes. If it is not, say so, and do a syntax check instead, for example `pip install gdtoolkit` then `gdparse scripts/*.gd`.
+- `gdparse` is NOT enough: it missed three scripts that Godot refuses to load (an empty function body, `:=` on an untyped value, a member that shadows an Area2D property), and one of them made Lumi invincible. Godot can be downloaded headless from GitHub releases (`Godot_v4.6-stable_linux.x86_64.zip`, works in the sandbox). Run `godot --headless --path . -s <script.gd>` with a script that loads every file in `scripts/` and prints any that fail, then one that instantiates `scenes/main.tscn`, calls `_transition_to_hub/greed/sloth` and hits Lumi. Headless runs prove scripts load and damage works, not that the game feels right.
 - Ask the user to playtest and report exact errors or feel problems.
 - Known rough spots: the dash gap width is tight and may need tuning. The Collector's health (360), timings, growth rate and squeeze are untested guesses.
 - Runtime testing is still required after the progression and transition changes.

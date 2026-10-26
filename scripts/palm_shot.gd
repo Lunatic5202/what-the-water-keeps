@@ -7,7 +7,7 @@ var damage := 3
 var life := 0.5
 var radius := 14.0
 var pierce := false
-var gravity := 0.0
+var fall_gravity := 0.0
 var color := Color(1.0, 0.85, 0.75)
 var hit_ids := {}
 var total_life := 0.5
@@ -24,7 +24,7 @@ func _ready() -> void:
 	add_child(shape)
 
 func _physics_process(delta: float) -> void:
-	velocity.y += gravity * delta
+	velocity.y += fall_gravity * delta
 	position += velocity * delta
 	life -= delta
 	queue_redraw()

@@ -103,6 +103,7 @@ func _finish_player_setup() -> void:
 
 func _create_background() -> void:
 	# Background is drawn in _draw()
+	pass
 
 func _draw() -> void:
 	# Hub palette per art doc: lavender, peach, mint, deep indigo

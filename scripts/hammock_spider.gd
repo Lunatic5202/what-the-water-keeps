@@ -80,7 +80,7 @@ func _set_state(next: int) -> void:
 	state_time = 0.0
 
 func _player_idle(player: Node, delta: float) -> bool:
-	var close := absf(player.global_position.x - global_position.x) < 170.0 \
+	var close: bool = absf(player.global_position.x - global_position.x) < 170.0 \
 		and player.global_position.y > global_position.y
 	if close and player.is_on_floor() and player.velocity.length() < 12.0:
 		idle_time += delta
