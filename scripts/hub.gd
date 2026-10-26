@@ -318,8 +318,7 @@ func _make_interactable(marker_text: String, at: Vector2, tint: Color) -> Node2D
 func set_region_active(active: bool) -> void:
 	visible = active
 	hud_layer.visible = active
-	set_process(active)
-	set_physics_process(active)
+	process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
 	if active and not pending_story.is_empty():
 		var beat := pending_story
 		pending_story = []

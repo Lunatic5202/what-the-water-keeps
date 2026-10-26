@@ -343,8 +343,10 @@ func _make_interactable(marker_text: String, at: Vector2, tint: Color) -> Node2D
 func set_region_active(active: bool) -> void:
 	visible = active
 	hud_layer.visible = active
-	set_process(active)
-	set_physics_process(active)
+	process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
+	if not active and is_instance_valid(player):
+		player.set("move_speed_mod", 1.0)
+		player.set("jump_power_mod", 1.0)
 
 func _connect_signals() -> void:
 	player.health_changed.connect(_update_hud)
@@ -606,10 +608,12 @@ func _reset_collector_fight() -> void:
 	if is_instance_valid(arena_wall):
 		arena_wall.queue_free()
 	for coin in get_tree().get_nodes_in_group("collector_coin"):
-		coin.queue_free()
+		if is_ancestor_of(coin):
+			coin.queue_free()
 	mountain_visible = true
 	queue_redraw()
-	collector.call("reset")
+	if is_instance_valid(collector):
+		collector.call("reset")
 
 func _offer_at_bowl(target: Node2D) -> void:
 	var offered := _offer_gold()
@@ -646,6 +650,9 @@ func _on_collector_defeated() -> void:
 	fight_active = false
 	boss_item["used"] = true
 	boss_item["node"].visible = false
+	for coin in get_tree().get_nodes_in_group("collector_coin"):
+		if is_ancestor_of(coin):
+			coin.queue_free()
 	if is_instance_valid(arena_wall):
 		arena_wall.queue_free()
 	scene_id += 1

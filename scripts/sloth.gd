@@ -207,9 +207,10 @@ func _spawn_enemies() -> void:
 		if is_instance_valid(node):
 			node.queue_free()
 	enemies.clear()
-	for t in get_tree().get_nodes_in_group("enemy_projectile"):
-		if not fight_active:
-			t.queue_free()
+	if not fight_active:
+		for t in get_tree().get_nodes_in_group("enemy_projectile"):
+			if is_ancestor_of(t):
+				t.queue_free()
 	for spawn in SPAWNS:
 		var enemy := CharacterBody2D.new()
 		enemy.position = spawn["pos"]
@@ -335,9 +336,8 @@ func set_region_active(active: bool) -> void:
 	visible = active
 	hud_layer.visible = active
 	overlay_layer.visible = active
-	set_process(active)
-	set_physics_process(active)
-	if active:
+	process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
+	if is_instance_valid(player):
 		player.set("move_speed_mod", 1.0)
 
 # --- Drawing ------------------------------------------------------------------
@@ -520,6 +520,8 @@ func _rest(at: Vector2) -> void:
 	_show_status("LUMI RESTS. THE HOLLOW STIRS.")
 
 func _on_player_died() -> void:
+	if player.get_parent() != self:
+		return
 	drowse = 0.0
 	if fight_active:
 		_reset_fight()

@@ -1,6 +1,6 @@
 # Implementation Status
 
-**Last Updated:** 2026-10-26  
+**Last Updated:** 2026-10-26
 **Prototype:** Wake → The Still Pond → The Gilded Garden
 
 ## Implemented in code
