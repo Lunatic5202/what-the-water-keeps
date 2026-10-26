@@ -74,7 +74,7 @@ func _active() -> bool:
 	return is_instance_valid(player) and float(player.get("asleep_timer")) <= 0.0 and player.get("style") == "open_hand"
 
 func _facing() -> int:
-	return int(player.get("facing"))
+	return int(player.call("attack_facing"))
 
 func _busy() -> bool:
 	return swing_timer > 0.0 or recover_timer > 0.0 or guard_timer > 0.0
@@ -141,6 +141,8 @@ func _read_input(delta: float) -> void:
 	if Input.is_action_just_pressed("attack"):
 		if Input.get_axis("move_up", "move_down") < -0.5:
 			_start_swing("up")
+		elif bool(player.get("clinging")):
+			_start_swing("light")  # on a wall: a plain palm push away from it
 		elif not on_floor:
 			_start_swing("air")
 		elif float(player.get("dash_cooldown")) > 0.15:

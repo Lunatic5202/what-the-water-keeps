@@ -61,6 +61,7 @@ var can_glide := false  # Halo Cloak
 var has_double_jumped := false
 var asleep_timer := 0.0   # Drowse: Lumi nods off and cannot act
 var clinging := false
+var cling_dir := 1  # side of the wall Lumi is clinging to (1 = wall on the right)
 const CLIMB_SPEED := 170.0
 var respawn_point := Vector2(240, 570)
 
@@ -178,10 +179,17 @@ func _physics_process(delta: float) -> void:
 func aim_held() -> bool:
 	return Input.get_axis("move_left", "move_right") != 0.0 or Input.get_axis("move_up", "move_down") != 0.0
 
+# While clinging to a wall, attacks and throws point away from it (holding
+# toward the wall is what keeps Lumi on it).
+func attack_facing() -> int:
+	return -cling_dir if clinging else facing
+
 func aim_vector() -> Vector2:
 	var raw := Vector2(Input.get_axis("move_left", "move_right"), Input.get_axis("move_up", "move_down"))
+	if clinging:
+		raw.x = -float(cling_dir)
 	if raw.length() < 0.3:
-		return Vector2(facing, 0)
+		return Vector2(attack_facing(), 0)
 	var step := PI / 4.0
 	return Vector2.from_angle(roundf(raw.angle() / step) * step)
 
@@ -218,11 +226,11 @@ func _start_attack() -> void:
 			lunge_timer = 0.12
 			kind = "LUNGE"
 	is_attacking = true
-	attack_area.position = Vector2(28.0 * facing, 0.0)
-	swing_center = Vector2(25 * facing, -8)
+	attack_area.position = Vector2(28.0 * attack_facing(), 0.0)
+	swing_center = Vector2(25 * attack_facing(), -8)
 
-	# Set arc based on facing direction
-	if facing > 0:
+	# Set arc based on attack_facing() direction
+	if attack_facing() > 0:
 		swing_arc_start = -1.15
 		swing_arc_end = 1.15
 	else:
@@ -304,7 +312,10 @@ func _touching_climbable_wall(direction: float) -> bool:
 		var hit := get_slide_collision(i)
 		var collider := hit.get_collider() as Node
 		if absf(hit.get_normal().x) > 0.9 and collider != null and collider.is_in_group("climbable"):
-			return signf(-hit.get_normal().x) == signf(direction)
+			if signf(-hit.get_normal().x) == signf(direction):
+				cling_dir = int(signf(direction))
+				return true
+			return false
 	return false
 
 func add_glow(amount: float) -> void:

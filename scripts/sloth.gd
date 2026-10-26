@@ -198,7 +198,7 @@ func _create_dreamer() -> void:
 	dreamer.set("arena_left", 4350.0)
 	dreamer.set("arena_right", 5150.0)
 	dreamer.set("floor_y", GROUND_TOP)
-	dreamer.set("heart_pos", Vector2(5030, 210))
+	dreamer.set("heart_pos", Vector2(5015, 230))
 	dreamer.defeated.connect(_on_dreamer_defeated)
 	dreamer.phase_changed.connect(_on_dreamer_phase)
 

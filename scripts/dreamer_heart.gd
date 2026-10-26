@@ -8,7 +8,7 @@ func _ready() -> void:
 	collision_mask = 0
 	var shape := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
-	circle.radius = 26.0
+	circle.radius = 36.0
 	shape.shape = circle
 	add_child(shape)
 

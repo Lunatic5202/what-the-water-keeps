@@ -38,7 +38,9 @@ var home := Vector2.ZERO
 var arena_left := 4350.0
 var arena_right := 5150.0
 var floor_y := 600.0
-var heart_pos := Vector2(5030, 210)
+var heart_pos := Vector2(5015, 230)  # y is used; x moves between the two walls
+const HEART_LEFT_X := 4515.0   # within reach of someone clinging to the left wall
+const HEART_RIGHT_X := 5015.0  # within reach of someone clinging to the right wall
 var heart: CharacterBody2D
 var heart_open := false
 var heart_timer := 0.0
@@ -194,6 +196,9 @@ func _update_heart(delta: float) -> void:
 	heart_timer += delta
 	var cycle := 7.0
 	heart_open = fmod(heart_timer, cycle) > cycle - 4.0
+	# Each round the heart hangs by the other wall. It drifts across while shut.
+	var goal_x := HEART_RIGHT_X if int(heart_timer / cycle) % 2 == 0 else HEART_LEFT_X
+	heart_pos.x = move_toward(heart_pos.x, goal_x, 300.0 * delta)
 	if is_instance_valid(heart):
 		heart.global_position = heart_pos
 
@@ -230,6 +235,7 @@ func _enter_phase(next: int) -> void:
 		n.queue_free()
 	if next == 3:
 		heart_timer = 0.0
+		heart_pos.x = HEART_RIGHT_X
 		heart = CharacterBody2D.new()
 		heart.set_script(HEART)
 		heart.set("dreamer", self)
