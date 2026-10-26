@@ -393,10 +393,10 @@ func _interact(item: Dictionary) -> void:
 		_:
 			if kind.begins_with("door_"):
 				var region: String = item.get("region", "")
-				if unlocked_regions.has(region) or region == "greed":
+				if can_enter(region):
 					region_entered.emit(region)
 				else:
-					_show_dialogue("The door to %s is sealed. It will open when its region is completed." % DOOR_NAMES.get(region, region), target)
+					_show_dialogue("The door to %s is sealed. It opens once the region before it is cleared." % DOOR_NAMES.get(region, region), target)
 				return
 			_show_dialogue(item["message"], target)
 
@@ -418,6 +418,13 @@ func _show_status(message: String) -> void:
 	await get_tree().create_timer(1.6).timeout
 	if my_id == status_id:
 		_update_hud()
+
+# Greed is always open. Each later region opens when the one before it is
+# cleared (the gadget from that region is what the next one needs).
+func can_enter(region: String) -> bool:
+	if region == "greed" or unlocked_regions.has(region):
+		return true
+	return region == "sloth" and unlocked_regions.has("greed")
 
 func unlock_region(region_name: String) -> void:
 	if not unlocked_regions.has(region_name):

@@ -7,6 +7,7 @@
 
 ### The Wake
 - Movement, jump, dash, lantern swing, health and healing
+- Slumber Hollow (Sloth) with Drowse, three enemy types, platforming, benches and The Dreamer; Snail Grips wall climb (never run in Godot)
 - Lantern Swing extras: heavy, Lantern Flash (stun), guard, Warm Light (never run in Godot)
 - Open Hand fighting style (full kit), Glow, Tab style swap, five-petal Glow ring (never run in Godot)
 - Wake rooms with room-locked camera; hub killbox and reachable hub platforms (never run in Godot)

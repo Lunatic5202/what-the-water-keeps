@@ -68,7 +68,7 @@ func _ready() -> void:
 	add_child(area)
 
 func _active() -> bool:
-	return is_instance_valid(player) and player.get("style") == "open_hand"
+	return is_instance_valid(player) and float(player.get("asleep_timer")) <= 0.0 and player.get("style") == "open_hand"
 
 func _facing() -> int:
 	return int(player.get("facing"))

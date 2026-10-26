@@ -31,7 +31,7 @@ func _ready() -> void:
 	player = get_parent()
 
 func _active() -> bool:
-	return is_instance_valid(player) and player.get("style") == "lantern"
+	return is_instance_valid(player) and float(player.get("asleep_timer")) <= 0.0 and player.get("style") == "lantern"
 
 func _busy() -> bool:
 	return windup > 0.0 or recover > 0.0 or guard_timer > 0.0

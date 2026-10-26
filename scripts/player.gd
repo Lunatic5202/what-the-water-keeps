@@ -55,6 +55,9 @@ var can_ground_pound := false  # Ember Boots
 var can_glide := false  # Halo Cloak
 
 var has_double_jumped := false
+var asleep_timer := 0.0   # Drowse: Lumi nods off and cannot act
+var clinging := false
+const CLIMB_SPEED := 170.0
 var respawn_point := Vector2(240, 570)
 
 # Animation state
@@ -66,6 +69,7 @@ var swing_arc_end := 0.0
 signal health_changed(value: int)
 signal heals_changed(value: int)
 signal status_changed(message: String)
+signal died
 
 func _ready() -> void:
 	add_to_group("player")
@@ -102,6 +106,15 @@ func _physics_process(delta: float) -> void:
 	lunge_timer = maxf(0.0, lunge_timer - delta)
 	dash_cooldown = maxf(0.0, dash_cooldown - delta)
 
+	if asleep_timer > 0.0:
+		asleep_timer -= delta
+		velocity.x = 0.0
+		move_and_slide()
+		queue_redraw()
+		return
+
+	clinging = _touching_climbable_wall(Input.get_axis("move_left", "move_right"))
+
 	if dash_timer > 0.0:
 		dash_timer -= delta
 		velocity.x = facing * DASH_SPEED
@@ -119,7 +132,7 @@ func _physics_process(delta: float) -> void:
 			if is_on_floor():
 				velocity.y = JUMP_VELOCITY * jump_power_mod
 				has_double_jumped = false
-			elif can_double_jump and not has_double_jumped:
+			elif can_double_jump and not has_double_jumped and not clinging:
 				velocity.y = JUMP_VELOCITY * jump_power_mod * 0.85
 				has_double_jumped = true
 
@@ -147,6 +160,11 @@ func _physics_process(delta: float) -> void:
 			is_attacking = false
 			if attack_step > 0:
 				combo_timer = COMBO_WINDOW
+
+	# Snail Grips: hold toward a climbable wall to cling; hold jump to climb.
+	if clinging and dash_timer <= 0.0:
+		velocity.y = -CLIMB_SPEED if Input.is_action_pressed("jump") else 0.0
+		has_double_jumped = false
 
 	move_and_slide()
 	queue_redraw()
@@ -225,9 +243,29 @@ func take_damage(amount: int) -> void:
 		heals = maxi(0, heals - 1)
 		global_position = respawn_point
 		velocity = Vector2.ZERO
+		asleep_timer = 0.0
 		health_changed.emit(health)
+		died.emit()
 		heals_changed.emit(heals)
 		status_changed.emit("LUMI RETURNS TO THE SHORE. ONE HEAL CHARGE LOST.")
+
+func fall_asleep(seconds: float) -> void:
+	asleep_timer = seconds
+	attack_timer = 0.0
+	is_attacking = false
+	attack_shape.set_deferred("disabled", true)
+	attack_area.set_deferred("monitoring", false)
+	status_changed.emit("LUMI NODS OFF...")
+
+func _touching_climbable_wall(direction: float) -> bool:
+	if not can_wall_climb or is_on_floor() or direction == 0.0:
+		return false
+	for i in range(get_slide_collision_count()):
+		var hit := get_slide_collision(i)
+		var collider := hit.get_collider() as Node
+		if absf(hit.get_normal().x) > 0.9 and collider != null and collider.is_in_group("climbable"):
+			return signf(-hit.get_normal().x) == signf(direction)
+	return false
 
 func add_glow(amount: float) -> void:
 	glow = clampf(glow + amount, 0.0, MAX_GLOW)
@@ -263,6 +301,8 @@ func _heal() -> void:
 
 func _draw() -> void:
 	var cloak := Color(0.23, 0.30, 0.48, 1.0)
+	if asleep_timer > 0.0:
+		draw_string(ThemeDB.fallback_font, Vector2(8, -40), "Z z z", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.9, 0.88, 1.0))
 	if hurt_cooldown > 0.0 and int(Time.get_ticks_msec() / 90) % 2 == 0:
 		cloak = Color(0.95, 0.75, 0.83, 1.0)
 

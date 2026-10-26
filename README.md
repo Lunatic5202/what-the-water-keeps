@@ -49,9 +49,18 @@ Implemented in code:
   - Glow: gained from hits and perfect guards, shown as five petals around the HUD lantern
 - Lantern Swing extras (never run in Godot): heavy K (22, wind-up, knockback), Lantern Flash L (30 Glow, 6 damage and a 1.5s stun on small enemies in 150px), guard I (0.25s, perfect guard gives Glow), Warm Light O (100 Glow, 40 damage and push in 260px). Jelly, Dust Bunny and Puddle Sprite can be stunned
 - Lantern Swing combo: J,J,J = 8/8/12 (third hit lunges), air swing 9, dash swing 10 (never run in Godot)
+- Slumber Hollow (Sloth), the second region, never run in Godot (all numbers are guesses). Door opens in the hub once Greed is cleared:
+  - Drowse: builds while Lumi stands still (+1 per second) or moves with unlit lanterns within 700px (+0.5 per second). 25: Nim's line. 50: "You put it off again", vignette and 15% slower (stand-in for the bible's 0.1s input delay). 100: Lumi sleeps 3 seconds, then drops to 60. Lighting a lantern gives -20. Gentle Mode halves the build
+  - Souls-like: three hammock benches (rest saves your spot, refills hearts and heals, respawns enemies), enemies respawn when you die, killed trails vanish, fog gate and lock wall at the boss, death in the arena resets the fight, falling in the pit returns you to the last bench
+  - Platforming: bobbing pillows over a pit (the 230px gap needs double jump or dash), a six-step hammock climb to a high ledge, drop down to the boss
+  - Enemies: Napping Nimbus (drifts, drops sleep spores), Snoozle Snail (slow, leaves drowsy trails), Hammock Spider (drops on Lumi when she stands still near it)
+  - The Dreamer (420 HP, bible says 800): Lullaby notes then a yawn that lowers her into reach, Pillow Fall (pillows crush, then become platforms; lantern posts appear), Covers Over (arena dims, climbable walls appear, Snail Grips are granted, strike the lantern-heart while it glows)
+  - Snail Grips (wall climb): hold toward a climbable wall to cling, hold jump to climb. Only walls in the `climbable` group work
+  - Rewards set flags only: Hourglass Shard (Tempo Style is not built yet) and Dusk Key
 - Pit recovery, checkpoint-aware death respawn, visible Wake boundaries, hit-stop and camera-shake feedback
 
 Still incomplete:
+- Slumber Hollow is untested. Missing from it: the Unwound Clock quest, Memory Petals, a Soft Shortcut, hidden areas, music, the bible's 0.1s input delay (approximated by slowing)
 - Playtesting and tuning The Collector and the Open Hand. The Gold Key is only a flag. Lantern Swing still lacks the air pogo (needs a Down input) and the dash attack passing through small enemies. The Open Hand does not yet clean sticky coins off Lumi, return Collector coins with its guard, or use the Altar for swapping
 - Other region implementations, full fighting styles, memory petals, saves, the map/loadout/Memory Tree/keepsake screens, key remapping, audio sliders, music and imported art
 - Full hub-door progression and final Mirror Gate
@@ -85,6 +94,10 @@ Run: open `project.godot` in the Godot Project Manager and press F5.
 | `scripts/open_hand.gd` | Open Hand style: combo, Offer, heavy, air, dash attack, Coin Toss, guard, Overture. Child node `OpenHand` of Lumi |
 | `scripts/lantern_kit.gd` | Lantern Swing extras: heavy, Lantern Flash, guard, Warm Light. Child node `LanternKit` of Lumi |
 | `scripts/palm_shot.gd` | Moving palm waves (shockwave, coins, orbs, reflected spores) |
+| `scripts/sloth.gd` | Slumber Hollow: level, Drowse, lanterns, benches, enemy spawns, Dreamer fight flow and rewards |
+| `scripts/dreamer.gd` | The Dreamer boss, plus `pillow.gd` and `dreamer_heart.gd` |
+| `scripts/sleep_spore.gd` | Sleep spores and lullaby notes (they add Drowse) |
+| `scripts/nimbus.gd`, `snoozle_snail.gd`, `hammock_spider.gd`, `drowsy_trail.gd`, `bob_platform.gd` | Sloth enemies, the snail's trail and bobbing pillow platforms |
 | `scripts/collector_coin.gd` | Coins he throws: they hurt while falling, then become gold pickups |
 | `docs/game-bible.md` | Full design reference (story, regions, bosses, movesets, art, sound, UI) |
 
@@ -132,6 +145,23 @@ Rooms are chosen by Lumi's x. The camera is locked to the room's camera range an
 | old_moss | 2160 to 3440 | 2160 to 3440 | Old Moss arena |
 | ribbon | 3440 to 4700 | 3420 to 4700 | Wind Ribbon, dash gap, first door |
 
+## Level reference (Slumber Hollow)
+
+| Thing | Position |
+|-------|----------|
+| Start / first bench / hub exit | x = 150 / 180 / 80, ground top y=600 |
+| Start ground | x = -100 to 900 |
+| Bobbing pillows over the pit | x = 960 to 1300 (killbox y > 900) |
+| Double-jump gap | x = 1300 to 1530, landing at y=500 |
+| First ledge and second bench | x = 1790 to 2300, bench at 1900 |
+| Hammock climb | six 110px platforms, x = 2390 to 3350, tops from y=490 up to y=240 |
+| High ledge | x = 3410 to 3960, top y=240 |
+| Pre-boss bench | x = 3830 (under the ledge) |
+| Boss marker, lock wall, end wall | x = 4440, 4330, 5190 |
+| Phase 3 climb walls | x = 4420 and 5110, heart at (5030, 210) |
+
+Platforms are listed in `PLATFORMS` in `sloth.gd`. Steps up are 55px or less, gaps are 60px or more.
+
 ## Level reference (Greed arena)
 
 | Thing | Position |
@@ -146,6 +176,7 @@ Rooms are chosen by Lumi's x. The camera is locked to the room's camera range an
 
 - Hub platforms live in `PLATFORMS` in `hub.gd` (used for both collision and drawing). Lumi's jump is about 77px, so keep every step up at 55px or less and leave 50px of headroom under floating platforms.
 - The camera is found through the `game_camera` group. Runtime-created nodes get auto names like `@Camera2D@2`, so `get_node("Camera2D")` returns null; never look it up by name.
+- Sloth: `sloth.gd` is in group `drowse_holder`; spores and trails call `add_drowse()`. Enemies are rebuilt from `SPAWNS` by `_spawn_enemies()` on bench rest and death. The player emits `died` when it respawns. `player.fall_asleep(seconds)` freezes input.
 - Both style nodes (`OpenHand`, `LanternKit`) expose `block_hit()`; enemies that can be stunned have `stun(seconds)`; to make a new enemy stunnable add `stun_time` and a check at the top of its `_physics_process`.
 - Styles: `player.gd` holds `style`, `unlocked_styles` and `glow`. `greed.gd` calls `unlock_style("open_hand")` after the Collector. While `style == "open_hand"` the `OpenHand` node reads the combat inputs and `player.gd` skips the Lantern swing. Guard works through `player.take_damage` asking `OpenHand.block_hit()`. Gold is read from nodes in the `gold_holder` group (Greed) and spent with `spend_gold()`. Moss spores join the `enemy_projectile` group so a perfect guard can return them.
 - Wake rooms: `_update_wake_room()` in `main.gd` runs each frame while `current_region == "wake"`. A respawn that jumps rooms snaps the camera instead of sliding. Rooms have no names on screen because the bible gives none.
@@ -162,7 +193,7 @@ Rooms are chosen by Lumi's x. The camera is locked to the room's camera range an
 ## Roadmap (suggested order)
 
 1. Playtest and stabilize Wake → Still Pond → Greed → Still Pond.
-2. Playtest and tune The Collector and the Open Hand (both never run). Next: the Sloth region.
+2. Playtest and tune The Collector and the Open Hand (both never run). Next: playtest Sloth, then the Gluttony region (needs Wall Climb).
 3. Connect region-clear rewards to hub door unlocks and gadget progression.
 4. Build the remaining six regions and their bosses, keeping the game bible as the source of truth.
 5. Add the Mirror Gate, Memory Path, final fight and both endings.

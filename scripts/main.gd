@@ -23,6 +23,7 @@ var status_id := 0
 # Region references for scene management
 var hub_scene: Node2D = null
 var greed_scene: Node2D = null
+var sloth_scene: Node2D = null
 var pending_transition := ""
 var combat_feedback: Node2D = null
 
@@ -418,6 +419,8 @@ func _transition_to_hub() -> void:
 func _on_hub_region_entered(region_name: String) -> void:
 	if region_name == "greed":
 		_transition_to_greed()
+	elif region_name == "sloth":
+		_transition_to_sloth()
 
 func _transition_to_greed() -> void:
 	if not is_instance_valid(hub_scene) or not is_instance_valid(player):
@@ -441,12 +444,34 @@ func _transition_to_greed() -> void:
 	_set_camera_limits(0, 2850, 100, 750)
 	current_region = "greed"
 
-func _return_to_hub() -> void:
-	if not is_instance_valid(hub_scene) or not is_instance_valid(greed_scene):
+func _transition_to_sloth() -> void:
+	if not is_instance_valid(hub_scene) or not is_instance_valid(player):
 		return
-	if player.get_parent() == greed_scene:
-		greed_scene.remove_child(player)
-	greed_scene.call("set_region_active", false)
+	hub_scene.call("set_region_active", false)
+	if not is_instance_valid(sloth_scene):
+		sloth_scene = Node2D.new()
+		sloth_scene.set_script(load("res://scripts/sloth.gd"))
+		sloth_scene.set("player", player)
+		sloth_scene.connect("return_to_hub", Callable(self, "_return_to_hub"))
+		sloth_scene.connect("region_cleared", Callable(self, "_on_region_cleared"))
+		get_parent().add_child(sloth_scene)
+	else:
+		sloth_scene.call("set_region_active", true)
+	hub_scene.remove_child(player)
+	sloth_scene.add_child(player)
+	player.position = sloth_scene.get("respawn_point")
+	player.set("respawn_point", sloth_scene.get("respawn_point"))
+	_set_camera_limits(-100, 5300, -350, 820)
+	current_region = "sloth"
+
+func _return_to_hub() -> void:
+	if not is_instance_valid(hub_scene):
+		return
+	for scene in [greed_scene, sloth_scene]:
+		if is_instance_valid(scene):
+			if player.get_parent() == scene:
+				scene.remove_child(player)
+			scene.call("set_region_active", false)
 	hub_scene.add_child(player)
 	player.position = hub_scene.get("respawn_point")
 	player.set("respawn_point", hub_scene.get("respawn_point"))
