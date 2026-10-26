@@ -633,6 +633,11 @@ func _on_dreamer_phase(phase: int) -> void:
 			var wall := _solid(Rect2(wall_x - 15, 0, 30, 600), "climbable")
 			climb_walls.append(wall)
 		_grant_grips()
+		# Tutorial box after her line, long enough to read.
+		var my_id := scene_id
+		await get_tree().create_timer(3.4).timeout
+		if my_id == scene_id and fight_active:
+			_banner("SNAIL GRIPS: jump at a wall while holding toward it, then hold Space to climb. Swing (J) at the glowing lantern-heart. Your swing points away from the wall.", 8.0)
 
 func _grant_grips() -> void:
 	has_snail_grips = true
