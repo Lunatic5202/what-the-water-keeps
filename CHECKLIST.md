@@ -79,8 +79,8 @@
 - [ ] Boss music and sound
 
 ## Story pass (never run in Godot)
-- [x] Hub arrival cutscene (Nim, Reflection, seven keyholes)
+- [x] Hub arrival cutscene (Nim, seven keyholes; no Reflection text on purpose)
 - [x] Greed: entry, shrine and weight lines from Nim
 - [x] Post-Greed and post-Sloth hub dialogue
-- [x] Reflection grows with regions cleared
+- [x] Reflection figure grows with regions cleared (visual only, never explained)
 - [ ] Gluttony onward, Mirror Gate, endings, side quests

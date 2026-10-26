@@ -1738,15 +1738,17 @@ This part is not new lore. It records which bible story beats are in the playabl
 
 ## 6.1 Story beats in the game
 
+Rule: the Reflection is never spoken about in the prototype's text. No Nim line, narration or whisper points at it. The player only sees a figure in the pond and slowly works it out.
+
 | Beat | Bible source | Where it plays |
 |------|--------------|----------------|
-| Waking by the pond, meeting Nim, the late-waving Reflection, "You came back.", seven keyholes and seven doors | Hub arrival | Plays once when the game starts (`Story.ARRIVAL`, `main.gd` `_ready`). Interaction prompts are hidden while it plays |
+| Waking by the pond, meeting Nim, seven keyholes and seven doors | Hub arrival | Plays once at the start (`Story.ARRIVAL`, `main.gd` `_ready`). The bible's Reflection beats (late wave, whisper) are left out on purpose. Interaction prompts are hidden while it plays |
 | Nim's lines on entering Greed, at the shrine, and when Lumi gets heavy | Greed region | `Story.GREED_ENTER`, `GREED_SHRINE` (first shrine use), `GREED_WEIGHT` (first time weight passes 30%) |
 | The Collector's defeat lines | Greed boss | `greed.gd` |
-| Return to the hub after Greed: Nim's remark, the Reflection's first lines, first door glows, Sloth opens, the music loses a note | Hub changes | `Story.AFTER_GREED`, plays when Lumi is back in the hub |
+| Nim's line after Greed, first door glows, Sloth opens, the music loses a note | Hub changes | `Story.AFTER_GREED`, plays when Lumi is back in the hub |
 | Sloth entry, tablets and Dreamer fight lines | Sloth region | `sloth.gd` |
-| Return to the hub after Sloth: Nim and the Reflection ("Stillness isn't the sin. Hiding in it is."), Gluttony door opens | Hub changes | `Story.AFTER_SLOTH` |
-| The Reflection grows | Hub changes over time | `reflection.gd`: a mirrored Lumi in the pond whose eyes follow Lumi, which gets brighter and larger with each region cleared and smiles from three clears |
+| Nim's lines after Sloth, Gluttony door opens | Hub changes | `Story.AFTER_SLOTH` |
+| The pond figure changes | Hub changes over time | `reflection.gd`: a mirrored Lumi whose eyes follow Lumi, brighter and larger with each region cleared, smiling from three clears. Silent and unexplained |
 
 Beats for regions that are not built yet (Gluttony onward, the Mirror Gate, the endings, side quests) are not in the game.
 

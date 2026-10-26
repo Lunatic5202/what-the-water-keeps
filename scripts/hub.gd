@@ -391,7 +391,7 @@ func _interact(item: Dictionary) -> void:
 			_show_dialogue("The Memory Tree stands bare. Collecting Memory Petals in each region will bloom its branches with quiet memories.\n\n(0/35 petals found)", target)
 		"nim":
 			if regions_unlocked >= 7:
-				_show_dialogue("Nim flutters excitedly around the lantern post.\n\n“We did it! Seven doors, seven lessons. The reflection is watching, but... it feels less scary now.”", target)
+				_show_dialogue("Nim flutters excitedly around the lantern post.\n\n“We did it! Seven doors, seven lessons. We should be able to open the Gate now.”", target)
 			else:
 				_show_dialogue(Story.hint(regions_unlocked), target)
 		"gate":
