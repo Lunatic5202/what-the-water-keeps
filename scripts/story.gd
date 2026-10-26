@@ -1,0 +1,80 @@
+extends RefCounted
+# Story beats from docs/game-bible.md, kept in one place. Each beat is a list
+# of [text, seconds]. Use Story.play() to show one in a scene's dialogue box.
+# Only text that is in the bible goes here. Do not invent lore.
+
+const ARRIVAL := [
+	["(Lumi wakes beside the pond. A tiny glow flutters out of the lantern.)", 3.2],
+	["NIM: Oh! You're awake. Hello. I'm Nim. I live in your lantern. I think. I've been in it a very long time.", 4.6],
+	["NIM: Do you remember anything? No? ...That's okay. Neither do I. Isn't that funny?", 4.0],
+	["(Lumi looks into the pond. The reflection waves a moment late.)", 3.2],
+	["NIM: That's you. Though... it waved after you did. Hmm. Probably nothing.", 3.8],
+	["REFLECTION (whisper, from the water): You came back.", 3.0],
+	["NIM: Did you hear that?", 2.0],
+	["(Lumi nods.)", 1.6],
+	["NIM: It's coming from the Gate. See the seven keyholes? I think we need seven keys. And there are seven doors. I think the doors are the way.", 5.6],
+	["NIM: Let's start small. Come on, I'll teach you to move.", 3.4]
+]
+
+const GREED_ENTER := [
+	["NIM: It's so pretty! Careful. Things that shine are usually watching.", 4.0]
+]
+const GREED_SHRINE := [
+	["NIM: A little bowl. It says \"give what you carry.\" Odd. I thought we were supposed to collect things.", 5.0]
+]
+const GREED_WEIGHT := [
+	["NIM: You're slower. It's the coins. Maybe... put some down?", 3.6]
+]
+
+const AFTER_GREED := [
+	["NIM: He wasn't a monster, was he. He was just... holding on.", 3.8],
+	["(The pond ripples.)", 2.0],
+	["REFLECTION: You put it down. That's strange. Most people don't.", 3.6],
+	["NIM: Who said that?", 2.0],
+	["REFLECTION: Come back when you're ready, little light.", 3.4],
+	["(The first door glows green-white. The second door opens: SLOTH. The hub's music loses a note.)", 4.4]
+]
+
+const AFTER_SLOTH := [
+	["NIM: She wasn't lazy. She was drowning. Quietly.", 3.4],
+	["(Lumi stands still by the pond. Nim hovers.)", 3.0],
+	["NIM: Funny. In there, standing still was dangerous. Here, it feels like the only thing I can do.", 4.8],
+	["REFLECTION: Stillness isn't the sin. Hiding in it is. Remember that.", 4.0],
+	["NIM: Who... what does that mean?", 2.6],
+	["REFLECTION: You'll know.", 2.4],
+	["(The third door opens: GLUTTONY.)", 3.0]
+]
+
+# Nim's post gives a gentle hint for wherever the player is in the game.
+# These are gameplay hints (the lessons each region teaches), not new lore.
+const NIM_HINTS := {
+	0: "Nim: The first door is Greed. Golden things shine. Some of them want you to carry them. Maybe put some down?",
+	1: "Nim: The second door is Slumber Hollow. Keep moving, and light the lanterns. Standing still is how it gets you.",
+	2: "Nim: Two keys. The other doors are asleep. I think they wake when the ones before them are done."
+}
+
+static func after(region: String) -> Array:
+	match region:
+		"greed":
+			return AFTER_GREED
+		"sloth":
+			return AFTER_SLOTH
+	return []
+
+static func hint(cleared: int) -> String:
+	return NIM_HINTS.get(mini(cleared, 2), "")
+
+# Shows lines one after another in a scene's dialogue box. Playing a new beat
+# cancels the old one. While a beat plays the scene has meta "story_busy".
+static func play(scene: Node, panel: Control, label: Label, lines: Array) -> void:
+	var token := int(scene.get_meta("story_token", 0)) + 1
+	scene.set_meta("story_token", token)
+	scene.set_meta("story_busy", true)
+	for line in lines:
+		label.text = line[0]
+		panel.visible = true
+		await scene.get_tree().create_timer(float(line[1])).timeout
+		if not is_instance_valid(scene) or int(scene.get_meta("story_token", 0)) != token:
+			return
+	panel.visible = false
+	scene.set_meta("story_busy", false)

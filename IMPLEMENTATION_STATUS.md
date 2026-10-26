@@ -1,6 +1,6 @@
 # Implementation Status
 
-**Last Updated:** 2026-10-24  
+**Last Updated:** 2026-10-26  
 **Prototype:** Wake → The Still Pond → The Gilded Garden
 
 ## Implemented in code
@@ -11,6 +11,7 @@
 - Lantern Swing extras: heavy, Lantern Flash (stun), guard, Warm Light (never run in Godot)
 - Open Hand fighting style (full kit), Glow, Tab style swap, five-petal Glow ring (never run in Godot)
 - Wake rooms with room-locked camera; hub killbox and reachable hub platforms (never run in Godot)
+- Story pass: hub arrival cutscene, Nim lines in Greed, post-Greed and post-Sloth hub dialogue, scripted growing Reflection, Nim post hints (never run in Godot)
 - Title, pause, settings and controls menus; lantern HUD meter; Reduce Shake, Gentle Mode and Fullscreen options (never run in Godot)
 - Four E-to-read signs; dialogue closes when Lumi walks away
 - Little Jelly tutorial enemy

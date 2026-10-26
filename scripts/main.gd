@@ -1,5 +1,6 @@
 extends Node2D
 
+const Story := preload("res://scripts/story.gd")
 const Palette := preload("res://scripts/palette.gd")
 
 var player: CharacterBody2D
@@ -60,6 +61,7 @@ func _ready() -> void:
 	jelly.defeated.connect(_jelly_defeated)
 	old_moss.defeated.connect(_moss_defeated)
 	_update_hud()
+	Story.play(self, dialogue_panel, dialogue_label, Story.ARRIVAL)
 
 func _create_menus() -> void:
 	# Lives on the root so it survives main being disabled after the hub loads.
@@ -95,6 +97,10 @@ func _process(_delta: float) -> void:
 		else:
 			prompt_label.text = ""
 			return
+
+	if bool(get_meta("story_busy", false)):
+		prompt_label.text = ""
+		return
 
 	var nearest: Dictionary = {}
 	var nearest_distance := 95.0

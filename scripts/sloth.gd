@@ -368,6 +368,10 @@ func _process(delta: float) -> void:
 		else:
 			prompt_label.text = ""
 			return
+	if bool(get_meta("story_busy", false)):
+		prompt_label.text = ""
+		return
+
 	var nearest: Dictionary = {}
 	var nearest_distance := 95.0
 	for item in interactables:

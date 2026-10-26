@@ -1,4 +1,5 @@
 extends Node2D
+const Story := preload("res://scripts/story.gd")
 const Palette := preload("res://scripts/palette.gd")
 const Settings := preload("res://scripts/game_settings.gd")
 
@@ -42,6 +43,8 @@ var boss_item: Dictionary = {}
 var fight_active := false
 var mountain_visible := true
 var offering_line_shown := false
+var shrine_line_shown := false
+var weight_line_shown := false
 var banner_time := 0.0
 var scene_id := 0
 var has_open_hand := false
@@ -63,6 +66,7 @@ func _ready() -> void:
 	_create_greed_level()
 	_connect_signals()
 	_update_hud()
+	Story.play(self, dialogue_panel, dialogue_label, Story.GREED_ENTER)
 
 var bg_drawn := false
 
@@ -384,6 +388,10 @@ func _process(delta: float) -> void:
 			prompt_label.text = ""
 			return
 
+	if bool(get_meta("story_busy", false)):
+		prompt_label.text = ""
+		return
+
 	var nearest: Dictionary = {}
 	var nearest_distance := 95.0
 	for item in interactables:
@@ -412,11 +420,15 @@ func _interact(item: Dictionary) -> void:
 			_show_dialogue(item["message"], target)
 		"shrine":
 			var offered := _offer_gold()
+			var msg := "A small golden bowl. \"Give what you carry.\"\n\n(Carry no gold to offer.)"
 			if offered > 0:
 				weight_debuff = maxf(0.0, weight_debuff - 0.3)
-				_show_dialogue("Lumi offers %d gold to the shrine. The bowl glows warmly.\n\nThe weight lifts slightly." % offered, target)
+				msg = "Lumi offers %d gold to the shrine. The bowl glows warmly.\n\nThe weight lifts slightly." % offered
+			if not shrine_line_shown:
+				shrine_line_shown = true
+				Story.play(self, dialogue_panel, dialogue_label, Story.GREED_SHRINE + [[msg, 3.6]])
 			else:
-				_show_dialogue("A small golden bowl. \"Give what you carry.\"\n\n(Carry no gold to offer.)", target)
+				_show_dialogue(msg, target)
 		"coin":
 			item["used"] = true
 			target.visible = false
@@ -453,6 +465,9 @@ func _offer_gold() -> int:
 func _update_weight() -> void:
 	# More gold = more weight
 	weight_debuff = clampf(float(carried_gold) / 100.0, 0.0, 0.7)
+	if weight_debuff > 0.3 and not weight_line_shown:
+		weight_line_shown = true
+		Story.play(self, dialogue_panel, dialogue_label, Story.GREED_WEIGHT)
 	if carried_gold >= 60:
 		_show_status("BURDEN: You held on too tightly.")
 

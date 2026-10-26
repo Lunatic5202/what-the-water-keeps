@@ -1,5 +1,7 @@
 extends Node2D
 
+const Story := preload("res://scripts/story.gd")
+
 signal region_entered(region_name: String)
 
 var player: CharacterBody2D
@@ -18,6 +20,7 @@ var unlocked_regions: Array[String] = []  # Regions cleared
 var current_region := "wake"
 # Keep Lumi clear of the bench and Orrin so the Greed door is the first nearby interaction.
 var respawn_point := Vector2(330, 650)
+var pending_story: Array = []
 var regions_unlocked := 0  # How many regions (doors) are open
 
 # Hub elements
@@ -100,10 +103,6 @@ func _finish_player_setup() -> void:
 
 func _create_background() -> void:
 	# Background is drawn in _draw()
-	# Reflection placeholder (will be animated)
-	reflection = Node2D.new()
-	reflection.position = Vector2(640, 485)
-	add_child(reflection)
 
 func _draw() -> void:
 	# Hub palette per art doc: lavender, peach, mint, deep indigo
@@ -160,7 +159,9 @@ func _create_hub_elements() -> void:
 
 	# Pond at center high platform
 	reflection = Node2D.new()
-	reflection.position = Vector2(1200, 400)
+	reflection.set_script(load("res://scripts/reflection.gd"))
+	reflection.position = Vector2(1300, 585)
+	reflection.set("player", player)
 	add_child(reflection)
 
 	# Memory Tree - right mid platform
@@ -318,6 +319,11 @@ func set_region_active(active: bool) -> void:
 	hud_layer.visible = active
 	set_process(active)
 	set_physics_process(active)
+	if active and not pending_story.is_empty():
+		var beat := pending_story
+		pending_story = []
+		await get_tree().create_timer(0.9).timeout
+		Story.play(self, dialogue_panel, dialogue_label, beat)
 
 func _connect_signals() -> void:
 	player.health_changed.connect(_update_hud)
@@ -347,6 +353,10 @@ func _process(_delta: float) -> void:
 		else:
 			prompt_label.text = ""
 			return
+
+	if bool(get_meta("story_busy", false)):
+		prompt_label.text = ""
+		return
 
 	var nearest: Dictionary = {}
 	var nearest_distance := 95.0
@@ -380,7 +390,10 @@ func _interact(item: Dictionary) -> void:
 		"tree":
 			_show_dialogue("The Memory Tree stands bare. Collecting Memory Petals in each region will bloom its branches with quiet memories.\n\n(0/35 petals found)", target)
 		"nim":
-			_show_dialogue("Nim flutters excitedly around the lantern post.\n\n“We did it! Seven doors, seven lessons. The reflection is watching, but... it feels less scary now.”", target)
+			if regions_unlocked >= 7:
+				_show_dialogue("Nim flutters excitedly around the lantern post.\n\n“We did it! Seven doors, seven lessons. The reflection is watching, but... it feels less scary now.”", target)
+			else:
+				_show_dialogue(Story.hint(regions_unlocked), target)
 		"gate":
 			if regions_unlocked >= 7:
 				_show_dialogue("All seven keys turn in the locks. The Mirror Gate begins to open...\n\n(The final path awaits.)", target)
@@ -430,6 +443,9 @@ func unlock_region(region_name: String) -> void:
 	if not unlocked_regions.has(region_name):
 		unlocked_regions.append(region_name)
 		regions_unlocked += 1
+		pending_story = Story.after(region_name)
+		if is_instance_valid(reflection):
+			reflection.set("clears", regions_unlocked)
 		_update_hud()
 
 func get_respawn_point() -> Vector2:

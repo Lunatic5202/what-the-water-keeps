@@ -77,3 +77,10 @@
 - [ ] Playtest and tune health (360 vs bible 700), timings, growth and squeeze
 - [ ] Open Hand as a real fighting style (Offering Style)
 - [ ] Boss music and sound
+
+## Story pass (never run in Godot)
+- [x] Hub arrival cutscene (Nim, Reflection, seven keyholes)
+- [x] Greed: entry, shrine and weight lines from Nim
+- [x] Post-Greed and post-Sloth hub dialogue
+- [x] Reflection grows with regions cleared
+- [ ] Gluttony onward, Mirror Gate, endings, side quests

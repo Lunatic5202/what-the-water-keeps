@@ -1728,3 +1728,37 @@ A circular lakeside shrine. From left to right:
 
 ### Hub changes over time
 Each region cleared lights one lantern around the ring. The sky grows brighter, the flowers bloom, the pond calmer, but the music is slightly more out of tune each time. The Reflection in the pond lingers a little longer before it waves back.
+
+
+---
+
+# PART 6: PROTOTYPE IMPLEMENTATION NOTES
+
+This part is not new lore. It records which bible story beats are in the playable prototype, where they live in code, and where the prototype differs from the bible. All story text is in `scripts/story.gd` (plus the boss lines in `sloth.gd` and `greed.gd`). If the bible changes, update those files.
+
+## 6.1 Story beats in the game
+
+| Beat | Bible source | Where it plays |
+|------|--------------|----------------|
+| Waking by the pond, meeting Nim, the late-waving Reflection, "You came back.", seven keyholes and seven doors | Hub arrival | Plays once when the game starts (`Story.ARRIVAL`, `main.gd` `_ready`). Interaction prompts are hidden while it plays |
+| Nim's lines on entering Greed, at the shrine, and when Lumi gets heavy | Greed region | `Story.GREED_ENTER`, `GREED_SHRINE` (first shrine use), `GREED_WEIGHT` (first time weight passes 30%) |
+| The Collector's defeat lines | Greed boss | `greed.gd` |
+| Return to the hub after Greed: Nim's remark, the Reflection's first lines, first door glows, Sloth opens, the music loses a note | Hub changes | `Story.AFTER_GREED`, plays when Lumi is back in the hub |
+| Sloth entry, tablets and Dreamer fight lines | Sloth region | `sloth.gd` |
+| Return to the hub after Sloth: Nim and the Reflection ("Stillness isn't the sin. Hiding in it is."), Gluttony door opens | Hub changes | `Story.AFTER_SLOTH` |
+| The Reflection grows | Hub changes over time | `reflection.gd`: a mirrored Lumi in the pond whose eyes follow Lumi, which gets brighter and larger with each region cleared and smiles from three clears |
+
+Beats for regions that are not built yet (Gluttony onward, the Mirror Gate, the endings, side quests) are not in the game.
+
+## 6.2 Differences from the bible
+
+These are prototype adaptations, not decisions. Say if the bible should win.
+
+- Boss health is scaled down for testing: The Collector 360, The Dreamer 420 (bible: Dreamer 800).
+- Sloth's input delay (0.1s) is approximated by making Lumi 15% slower at 50 Drowse.
+- Sloth only opens after Greed is cleared (the bible does not gate door order).
+- Fighting styles are swapped with Tab. K heavy, L skill, I guard, O overture are new key bindings.
+- The Hourglass Shard and Dusk Key are flags only. Tempo Style is not built.
+- The Wake is split into four rooms with a locked camera.
+- Nim's Lantern Post gives short gameplay hints (what each region teaches). They are hints, not lore. After seven regions it shows its normal text.
+- The hub is built from stepped platforms so every step is jumpable, and has a killbox.

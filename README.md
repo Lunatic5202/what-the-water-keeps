@@ -57,6 +57,7 @@ Implemented in code:
   - The Dreamer (420 HP, bible says 800): Lullaby notes then a yawn that lowers her into reach, Pillow Fall (pillows crush, then become platforms; lantern posts appear), Covers Over (arena dims, climbable walls appear, Snail Grips are granted, strike the lantern-heart while it glows)
   - Snail Grips (wall climb): hold toward a climbable wall to cling, hold jump to climb. Only walls in the `climbable` group work
   - Rewards set flags only: Hourglass Shard (Tempo Style is not built yet) and Dusk Key
+- Story pass (never run in Godot): the bible's hub arrival plays at the start (Nim, the late-waving Reflection, seven keyholes), Nim comments in Greed (entry, first shrine, getting heavy), and after Greed and after Sloth the hub plays the bible's Nim and Reflection lines. The pond Reflection is a scripted node that grows brighter with each clear. Nim's post gives gameplay hints. See bible Part 6
 - Pit recovery, checkpoint-aware death respawn, visible Wake boundaries, hit-stop and camera-shake feedback
 
 Still incomplete:
@@ -98,6 +99,8 @@ Run: open `project.godot` in the Godot Project Manager and press F5.
 | `scripts/dreamer.gd` | The Dreamer boss, plus `pillow.gd` and `dreamer_heart.gd` |
 | `scripts/sleep_spore.gd` | Sleep spores and lullaby notes (they add Drowse) |
 | `scripts/nimbus.gd`, `snoozle_snail.gd`, `hammock_spider.gd`, `drowsy_trail.gd`, `bob_platform.gd` | Sloth enemies, the snail's trail and bobbing pillow platforms |
+| `scripts/story.gd` | Every story beat as `[text, seconds]` lists, plus `Story.play()` that shows them in a scene's dialogue box |
+| `scripts/reflection.gd` | The pond Reflection: mirrored Lumi that follows with its eyes and changes with regions cleared |
 | `scripts/collector_coin.gd` | Coins he throws: they hurt while falling, then become gold pickups |
 | `docs/game-bible.md` | Full design reference (story, regions, bosses, movesets, art, sound, UI) |
 
@@ -180,6 +183,7 @@ Platforms are listed in `PLATFORMS` in `sloth.gd`. Steps up are 55px or less, ga
 - Both style nodes (`OpenHand`, `LanternKit`) expose `block_hit()`; enemies that can be stunned have `stun(seconds)`; to make a new enemy stunnable add `stun_time` and a check at the top of its `_physics_process`.
 - Styles: `player.gd` holds `style`, `unlocked_styles` and `glow`. `greed.gd` calls `unlock_style("open_hand")` after the Collector. While `style == "open_hand"` the `OpenHand` node reads the combat inputs and `player.gd` skips the Lantern swing. Guard works through `player.take_damage` asking `OpenHand.block_hit()`. Gold is read from nodes in the `gold_holder` group (Greed) and spent with `spend_gold()`. Moss spores join the `enemy_projectile` group so a perfect guard can return them.
 - Wake rooms: `_update_wake_room()` in `main.gd` runs each frame while `current_region == "wake"`. A respawn that jumps rooms snaps the camera instead of sliding. Rooms have no names on screen because the bible gives none.
+- Story: add or edit text only in `story.gd`, and only text that is in the bible. `Story.play(scene, panel, label, lines)` shows a beat and sets meta `story_busy`, which makes the scene's interact code hide the E prompt. Playing a new beat cancels the old one. `hub.gd` stores `pending_story` when a region is cleared and plays it when the hub becomes active.
 - Menus: `main.gd` adds `MenuOverlay` to the root once. Esc opens pause only when the tree is not already paused (hit-freeze owns that pause). Options are read from `game_settings.gd` (`Settings.reduce_shake`, `Settings.gentle_mode`). Return to title is intentionally missing: reloading the scene would orphan the hub/region nodes on the root.
 
 - `main.gd` keeps a list of `interactables` (dictionaries with `node`, `message`, `kind`, `used`). `_process` finds the nearest one within 95px, shows the E prompt and handles opening and closing dialogue.
