@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-const Settings := preload("res://scripts/game_settings.gd")
+const RunState := preload("res://scripts/run_state.gd")
 
 # Souls-like: 5 hearts, precise combat
 const SPEED := 260.0
@@ -23,6 +23,9 @@ const ATTACK_IMPACT_FRAMES := 6  # Freeze on hit
 var health := 5
 var max_health := 5
 var heals := 3
+var vulnerable := 0       # extra damage per hit while a debuff is heavy (Drowse, Weight)
+var heal_blocked := false # too sleepy to heal
+var weighed_down := false # Weight: no dash or double jump
 var facing := 1
 var dash_timer := 0.0
 var attack_timer := 0.0
@@ -75,6 +78,7 @@ signal health_changed(value: int)
 signal heals_changed(value: int)
 signal status_changed(message: String)
 signal died
+signal no_hit_failed  # the secret no-hit challenge: any damage ends the run
 
 func _ready() -> void:
 	add_to_group("player")
@@ -137,11 +141,11 @@ func _physics_process(delta: float) -> void:
 			if is_on_floor():
 				velocity.y = JUMP_VELOCITY * jump_power_mod
 				has_double_jumped = false
-			elif can_double_jump and not has_double_jumped and not clinging:
+			elif can_double_jump and not has_double_jumped and not clinging and not weighed_down:
 				velocity.y = JUMP_VELOCITY * jump_power_mod * 0.85
 				has_double_jumped = true
 
-		if Input.is_action_just_pressed("dash") and dash_cooldown <= 0.0 and has_dash:
+		if Input.is_action_just_pressed("dash") and dash_cooldown <= 0.0 and has_dash and not weighed_down:
 			dash_timer = DASH_TIME
 			dash_cooldown = 0.55
 			velocity.y = 0.0
@@ -277,7 +281,16 @@ func take_damage(amount: int) -> void:
 		if kit != null and kit.call("block_hit"):
 			hurt_cooldown = 0.2
 			return
-	amount = Settings.scaled_damage(amount)
+	# Challenge mode: any hit that gets past a guard ends the run.
+	if RunState.no_hit:
+		health = 0
+		hurt_cooldown = 5.0
+		health_changed.emit(health)
+		no_hit_failed.emit()
+		return
+	if amount > 0:
+		amount += vulnerable + (1 if asleep_timer > 0.0 else 0)
+	amount = RunState.damage(amount)
 	if amount <= 0:
 		hurt_cooldown = 0.8
 		status_changed.emit("A SOFTER LANDING.")
@@ -341,6 +354,9 @@ func _cycle_style() -> void:
 	status_changed.emit("STYLE: " + ("OPEN HAND" if style == "open_hand" else "LANTERN SWING"))
 
 func _heal() -> void:
+	if heal_blocked:
+		status_changed.emit("TOO SLEEPY TO REST.")
+		return
 	if heals <= 0 or health >= max_health:
 		status_changed.emit("NO HEAL NEEDED RIGHT NOW.")
 		return

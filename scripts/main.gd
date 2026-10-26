@@ -2,6 +2,8 @@ extends Node2D
 
 const Story := preload("res://scripts/story.gd")
 const Palette := preload("res://scripts/palette.gd")
+const RunState := preload("res://scripts/run_state.gd")
+const SaveGame := preload("res://scripts/save_game.gd")
 
 var player: CharacterBody2D
 var jelly: CharacterBody2D
@@ -27,6 +29,7 @@ var greed_scene: Node2D = null
 var sloth_scene: Node2D = null
 var pending_transition := ""
 var combat_feedback: Node2D = null
+var save_cache: Dictionary = {}  # the save being played (or last written), by section
 
 # Wake rooms. "from"/"to" decide which room Lumi is in (by her x). The camera
 # is locked to "cam_left".."cam_right", which must be at least 1280 wide (the
@@ -48,6 +51,7 @@ const SIGN_MESSAGES := [
 ]
 
 func _ready() -> void:
+	add_to_group("game_main")
 	_create_menus()
 	_create_ground()
 	_create_player()
@@ -60,12 +64,100 @@ func _ready() -> void:
 	player.status_changed.connect(_show_status)
 	jelly.defeated.connect(_jelly_defeated)
 	old_moss.defeated.connect(_moss_defeated)
+	player.no_hit_failed.connect(_on_no_hit_failed)
 	_update_hud()
+	# The arrival story starts from begin_new_game(), after the title screen.
+
+# --- New game, saving and continuing -----------------------------------------
+
+func begin_new_game(chosen: String, challenge: bool) -> void:
+	RunState.start_run(chosen, challenge)
+	save_cache = {}
+	player.heals = RunState.max_heals()
+	player.heals_changed.emit(player.heals)
 	Story.play(self, dialogue_panel, dialogue_label, Story.ARRIVAL)
+
+# Writes a bench save. Called by the hub bench and Sloth's hammocks. The
+# challenge mode never writes a save.
+func save_game(where: String, respawn: Vector2) -> void:
+	if RunState.no_hit or not is_instance_valid(player):
+		return
+	var data := save_cache.duplicate(true)
+	data["difficulty"] = RunState.difficulty
+	data["where"] = where
+	data["respawn"] = [respawn.x, respawn.y]
+	data["wake"] = {"has_wind_ribbon": has_wind_ribbon, "moss_defeated": moss_defeated, "reached_greed": reached_greed}
+	data["player"] = {
+		"heals": player.heals,
+		"style": player.style,
+		"unlocked_styles": Array(player.unlocked_styles),
+		"has_dash": player.has_dash,
+		"can_double_jump": player.can_double_jump,
+		"can_wall_climb": player.can_wall_climb
+	}
+	if is_instance_valid(hub_scene):
+		data["hub"] = {"unlocked_regions": Array(hub_scene.get("unlocked_regions"))}
+	if is_instance_valid(greed_scene):
+		data["greed"] = greed_scene.call("save_state")
+	if is_instance_valid(sloth_scene):
+		data["sloth"] = sloth_scene.call("save_state")
+	save_cache = data
+	SaveGame.write(data)
+
+func continue_game() -> bool:
+	var data := SaveGame.read()
+	if data.is_empty():
+		return false
+	save_cache = data
+	RunState.start_run(str(data.get("difficulty", "normal")), false)
+	var wake: Dictionary = data.get("wake", {})
+	has_wind_ribbon = bool(wake.get("has_wind_ribbon", true))
+	moss_defeated = bool(wake.get("moss_defeated", true))
+	reached_greed = bool(wake.get("reached_greed", true))
+	var saved: Dictionary = data.get("player", {})
+	var styles: Array[String] = []
+	for entry in saved.get("unlocked_styles", ["lantern"]):
+		styles.append(str(entry))
+	player.unlocked_styles = styles
+	player.style = str(saved.get("style", "lantern")) if styles.has(str(saved.get("style", "lantern"))) else "lantern"
+	player.has_dash = bool(saved.get("has_dash", true))
+	player.can_double_jump = bool(saved.get("can_double_jump", false))
+	player.can_wall_climb = bool(saved.get("can_wall_climb", false))
+	player.health = player.max_health
+	player.heals = int(saved.get("heals", RunState.max_heals()))
+	player.health_changed.emit(player.health)
+	player.heals_changed.emit(player.heals)
+	_transition_to_hub()
+	var hub: Dictionary = data.get("hub", {})
+	hub_scene.call("restore_progress", hub.get("unlocked_regions", []))
+	if str(data.get("where", "hub")) == "sloth":
+		_transition_to_sloth()
+		var at: Array = data.get("respawn", [])
+		if at.size() == 2:
+			var spot := Vector2(float(at[0]), float(at[1]))
+			sloth_scene.set("respawn_point", spot)
+			player.position = spot
+			player.set("respawn_point", spot)
+	return true
+
+func _on_no_hit_failed() -> void:
+	get_tree().call_group("menu_overlay", "show_run_over", "THE RUN ENDS", "One hit. The water remembers.\n\nThe challenge starts over from the beginning.")
+
+# Throws the running game away and shows the title again.
+func restart_to_title() -> void:
+	get_tree().paused = false
+	for scene in [hub_scene, greed_scene, sloth_scene]:
+		if is_instance_valid(scene):
+			scene.queue_free()
+	get_tree().root.set_meta("show_title", true)
+	get_tree().reload_current_scene()
 
 func _create_menus() -> void:
 	# Lives on the root so it survives main being disabled after the hub loads.
 	if get_tree().root.has_node("MenuOverlay"):
+		if get_tree().root.get_meta("show_title", false):
+			get_tree().root.set_meta("show_title", false)
+			get_tree().call_group("menu_overlay", "show_title")
 		return
 	var overlay := CanvasLayer.new()
 	overlay.name = "MenuOverlay"
@@ -440,6 +532,7 @@ func _transition_to_greed() -> void:
 		greed_scene.connect("return_to_hub", Callable(self, "_return_to_hub"))
 		greed_scene.connect("region_cleared", Callable(self, "_on_region_cleared"))
 		get_parent().add_child(greed_scene)
+		greed_scene.call("apply_save", save_cache.get("greed", {}))
 	else:
 		greed_scene.call("set_region_active", true)
 
@@ -461,6 +554,7 @@ func _transition_to_sloth() -> void:
 		sloth_scene.connect("return_to_hub", Callable(self, "_return_to_hub"))
 		sloth_scene.connect("region_cleared", Callable(self, "_on_region_cleared"))
 		get_parent().add_child(sloth_scene)
+		sloth_scene.call("apply_save", save_cache.get("sloth", {}))
 	else:
 		sloth_scene.call("set_region_active", true)
 	hub_scene.remove_child(player)

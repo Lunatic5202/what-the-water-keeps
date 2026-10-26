@@ -1,5 +1,6 @@
 extends Node2D
 
+const RunState := preload("res://scripts/run_state.gd")
 const Story := preload("res://scripts/story.gd")
 
 signal region_entered(region_name: String)
@@ -381,10 +382,12 @@ func _interact(item: Dictionary) -> void:
 		"bench":
 			player.set("respawn_point", respawn_point)
 			player.health = player.max_health
-			player.heals = 3
+			player.heals = RunState.max_heals()
 			player.health_changed.emit(player.health)
 			player.heals_changed.emit(player.heals)
-			_show_dialogue("Lumi rests at the bench. The world is quiet. Health and heals restored.", target)
+			var saved := not RunState.no_hit
+			get_tree().call_group("game_main", "save_game", "hub", respawn_point)
+			_show_dialogue("Lumi rests at the bench. The world is quiet. Health and heals restored.%s" % ("\n\n(Game saved.)" if saved else ""), target)
 		"altar":
 			_show_dialogue("Three empty slots wait for artifacts. Each style changes how Lumi fights.\n\n(Current: Lantern Swing - balanced and reliable)", target)
 		"tree":
@@ -438,6 +441,17 @@ func can_enter(region: String) -> bool:
 	if region == "greed" or unlocked_regions.has(region):
 		return true
 	return region == "sloth" and unlocked_regions.has("greed")
+
+# Called when a save is loaded: re-opens the doors without playing story.
+func restore_progress(cleared: Array) -> void:
+	unlocked_regions.clear()
+	for region in cleared:
+		unlocked_regions.append(str(region))
+	regions_unlocked = unlocked_regions.size()
+	pending_story = []
+	if is_instance_valid(reflection):
+		reflection.set("clears", regions_unlocked)
+	_update_hud()
 
 func unlock_region(region_name: String) -> void:
 	if not unlocked_regions.has(region_name):
