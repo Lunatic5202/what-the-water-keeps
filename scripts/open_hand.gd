@@ -18,6 +18,9 @@ const SHOCKWAVE_RANGE := 192.0    # 3 tiles of 64px
 const HEAVY_CHARGE := 0.6
 const HEAVY_DAMAGE := 24
 const AIR_DAMAGE := 14
+const UP_DAMAGE := 9              # W + J: Rising Palm
+const TOSS_SPEED := 520.0
+const TOSS_SPREAD := 0.12         # radians between coins in the fan
 const DASH_DAMAGE := 8
 const SKILL_COST := 20.0
 const OVERTURE_COST := 100.0
@@ -136,7 +139,9 @@ func _read_input(delta: float) -> void:
 	if _busy():
 		return
 	if Input.is_action_just_pressed("attack"):
-		if not on_floor:
+		if Input.get_axis("move_up", "move_down") < -0.5:
+			_start_swing("up")
+		elif not on_floor:
 			_start_swing("air")
 		elif float(player.get("dash_cooldown")) > 0.15:
 			_start_swing("dash")
@@ -189,6 +194,11 @@ func _start_swing(kind: String) -> void:
 			petals_pending = true
 			_place_area(Vector2(0.0, 24.0), 42.0)
 			coins = _spend_coins(LIGHT_COINS)
+		"up":
+			swing_damage = UP_DAMAGE
+			swing_glow = 3.0
+			_place_area(Vector2(0.0, -52.0), 44.0)
+			coins = _spend_coins(LIGHT_COINS)
 		"dash":
 			swing_damage = DASH_DAMAGE
 			swing_push = 60.0
@@ -199,7 +209,7 @@ func _start_swing(kind: String) -> void:
 	player.emit_signal("status_changed", _swing_text(kind, coins))
 
 func _swing_text(kind: String, coins: int) -> String:
-	var names := {"light": "PALM PUSH", "heavy": "WIDE OFFERING", "air": "FALLING PETALS", "dash": "GENTLE RUSH"}
+	var names := {"light": "PALM PUSH", "heavy": "WIDE OFFERING", "air": "FALLING PETALS", "up": "RISING PALM", "dash": "GENTLE RUSH"}
 	var text: String = names[kind]
 	if coins > 0:
 		text += "  (+%d GIVEN)" % coins
@@ -287,14 +297,16 @@ func _coin_toss() -> void:
 	if not player.call("spend_glow", SKILL_COST):
 		player.emit_signal("status_changed", "NOT ENOUGH GLOW.")
 		return
-	var f := _facing()
+	# 8-way aim: hold W / A / S / D (diagonals too) while pressing L. Nothing held
+	# throws the way Lumi faces. Coins fan out around the aim and fly straight.
+	var aim: Vector2 = player.call("aim_vector")
 	var coins := _spend_coins(TOSS_COINS)
 	var count := maxi(1, coins)
 	for i in range(count):
-		var t := 0.0 if count == 1 else float(i) / float(count - 1) - 0.5
-		var vel := Vector2(f * 520.0, t * 260.0 - 40.0)
+		var offset := (float(i) - float(count - 1) * 0.5) * TOSS_SPREAD
+		var dir := aim.rotated(offset)
 		var color := GOLD if coins > 0 else Color(1.0, 0.95, 0.9)
-		_spawn_shot(Vector2(24.0 * f, -10.0), vel, 3, 0.7, 9.0, false, color, 260.0)
+		_spawn_shot(aim * 26.0 + Vector2(0.0, -10.0), dir * TOSS_SPEED, 3, 0.7, 9.0, false, color, 0.0)
 	recover_timer = 0.3
 	var what := "COIN TOSS (%d COINS)" % coins if coins > 0 else "SOFT ORB"
 	player.emit_signal("status_changed", what)
@@ -396,8 +408,15 @@ func _draw() -> void:
 		if swing_kind == "air":
 			center = Vector2(0, 16)
 			a = Vector2(0.3, PI - 0.3)
+		elif swing_kind == "up":
+			center = Vector2(0, -30)
+			a = Vector2(-PI + 0.3, -0.3)
 		draw_arc(center, r, a.x, a.y, 24, Color(PEACH, (1.0 - p) * 0.8), 8.0)
 		draw_arc(center, r * 0.72, a.x, a.y, 24, Color(1, 1, 1, (1.0 - p) * 0.4), 3.0)
+	if float(player.get("glow")) >= SKILL_COST and bool(player.call("aim_held")):
+		var aim: Vector2 = player.call("aim_vector")
+		draw_circle(aim * 46.0 + Vector2(0.0, -10.0), 4.0, Color(PEACH, 0.8))
+		draw_arc(aim * 46.0 + Vector2(0.0, -10.0), 7.0, 0.0, TAU, 12, Color(1, 1, 1, 0.5), 1.5)
 	if charging:
 		var c := clampf(charge_time / HEAVY_CHARGE, 0.0, 1.0)
 		draw_arc(Vector2(0, -10), 14.0 + c * 26.0, 0.0, TAU, 28, Color(PEACH, 0.35 + 0.5 * c), 3.0)

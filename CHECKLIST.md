@@ -78,6 +78,13 @@
 - [ ] Open Hand as a real fighting style (Offering Style)
 - [ ] Boss music and sound
 
+## Directional moves (headless-tested, feel untested)
+- [x] W / S aim keys
+- [x] Lantern up swing and downward pogo
+- [x] Open Hand Rising Palm
+- [x] Open Hand Coin Toss 8-way aim
+- [ ] Aim the Lantern Flash or Palm Push shockwave
+
 ## Story pass (never run in Godot)
 - [x] Hub arrival cutscene (Nim, seven keyholes; no Reflection text on purpose)
 - [x] Greed: entry, shrine and weight lines from Nim

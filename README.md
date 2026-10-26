@@ -58,11 +58,12 @@ Implemented in code:
   - Snail Grips (wall climb): hold toward a climbable wall to cling, hold jump to climb. Only walls in the `climbable` group work
   - Rewards set flags only: Hourglass Shard (Tempo Style is not built yet) and Dusk Key
 - Story pass (never run in Godot): a short hub arrival plays at the start (Nim, seven keyholes, seven doors), Nim comments in Greed (entry, first shrine, getting heavy), and after Greed and after Sloth Nim says a line in the hub. The Reflection is never named or spoken about in text: it is only a figure in the pond that the player can notice (eyes follow, brighter with each clear). Do not add dialogue that explains it Nim's post gives gameplay hints. See bible Part 6
+- Directional moves (headless-tested only for hit and aim logic): W / S are new aim keys. Lantern: W + J upward swing (9), S + J in the air downward pogo (9 and a bounce). Open Hand: W + J Rising Palm (9). Coin Toss throws in 8 directions with W / A / S / D (straight shots, fan of coins around the aim), with an aim dot when Glow is enough. Headless Godot 4.6 was used to check that scripts load and these moves hit/aim correctly, not how they feel
 - Pit recovery, checkpoint-aware death respawn, visible Wake boundaries, hit-stop and camera-shake feedback
 
 Still incomplete:
 - Slumber Hollow is untested. Missing from it: the Unwound Clock quest, Memory Petals, a Soft Shortcut, hidden areas, music, the bible's 0.1s input delay (approximated by slowing)
-- Playtesting and tuning The Collector and the Open Hand. The Gold Key is only a flag. Lantern Swing still lacks the air pogo (needs a Down input) and the dash attack passing through small enemies. The Open Hand does not yet clean sticky coins off Lumi, return Collector coins with its guard, or use the Altar for swapping
+- Playtesting and tuning The Collector and the Open Hand. The Gold Key is only a flag. Lantern Swing still lacks the dash attack passing through small enemies. The Open Hand does not yet clean sticky coins off Lumi, return Collector coins with its guard, or use the Altar for swapping
 - Other region implementations, full fighting styles, memory petals, saves, the map/loadout/Memory Tree/keepsake screens, key remapping, audio sliders, music and imported art
 - Full hub-door progression and final Mirror Gate
 - Runtime verification of the current transition loop and combat feedback
@@ -109,15 +110,16 @@ Run: open `project.godot` in the Godot Project Manager and press F5.
 | Key | Action |
 |-----|--------|
 | A / D | Move |
+| W / S | Aim up / down. Combined with A / D it aims in 8 directions (new keys, added for directional moves) |
 | Space | Jump |
 | Left Shift | Dash |
-| J | Lantern swing |
+| J | Attack. Hold W for an upward swing (9). Hold S in the air for a downward pogo swing (9, bounces Lumi up on a hit). Open Hand: W + J is Rising Palm (9) |
 | Q | Heal |
 | E | Interact |
 | Esc | Pause menu / back |
 | Tab | Swap fighting style (after Greed) |
 | K | Heavy. Lantern: 22 damage after a short wind-up. Open Hand: Wide Offering, hold 0.6s then release |
-| L | Skill. Lantern Flash 30 Glow, or Coin Toss 20 Glow |
+| L | Skill. Lantern Flash 30 Glow, or Coin Toss 20 Glow, thrown in the 8-way aim direction (nothing held = the way Lumi faces) |
 | I | Guard (0.25s, perfect in the first 0.12s) |
 | O | Overture, 100 Glow. Lantern: Warm Light. Open Hand: Everything Given |
 

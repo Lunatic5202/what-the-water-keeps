@@ -11,6 +11,7 @@
 - Lantern Swing extras: heavy, Lantern Flash (stun), guard, Warm Light (never run in Godot)
 - Open Hand fighting style (full kit), Glow, Tab style swap, five-petal Glow ring (never run in Godot)
 - Wake rooms with room-locked camera; hub killbox and reachable hub platforms (never run in Godot)
+- Directional moves: W / S aim keys, Lantern up swing and downward pogo, Open Hand Rising Palm, 8-way Coin Toss (headless-tested for hits and aim, feel untested)
 - Story pass: hub arrival cutscene, Nim lines in Greed, post-Greed and post-Sloth hub dialogue, a silent growing pond figure (no Reflection text), Nim post hints (never run in Godot)
 - Title, pause, settings and controls menus; lantern HUD meter; Reduce Shake, Gentle Mode and Fullscreen options (never run in Godot)
 - Four E-to-read signs; dialogue closes when Lumi walks away

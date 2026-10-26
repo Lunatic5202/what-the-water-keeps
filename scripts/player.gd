@@ -14,6 +14,8 @@ const ATTACK_DAMAGE := 8  # Light attack base
 const COMBO_DAMAGE := [8, 8, 12]  # Lantern combo (bible 4.3)
 const AIR_DAMAGE := 9
 const DASH_ATTACK_DAMAGE := 10
+const UP_DAMAGE := 9  # W + J, hits above Lumi
+const POGO_BOUNCE := -380.0  # S + J in the air: hit something and bounce
 const COMBO_WINDOW := 0.45
 const HEAL_AMOUNT := 2  # Per charge
 const ATTACK_IMPACT_FRAMES := 6  # Freeze on hit
@@ -27,6 +29,8 @@ var attack_timer := 0.0
 var hurt_cooldown := 0.0
 var dash_cooldown := 0.0
 var attack_has_hit := false
+var attack_dir := "side"  # "side", "up" or "down" (W / S held when swinging)
+var swing_center := Vector2(25, -8)
 var attack_damage := ATTACK_DAMAGE
 var attack_step := 0
 var combo_timer := 0.0
@@ -169,18 +173,40 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	queue_redraw()
 
+# Where the player is aiming: W / A / S / D combined, snapped to 8 directions.
+# With nothing held it is the way Lumi faces.
+func aim_held() -> bool:
+	return Input.get_axis("move_left", "move_right") != 0.0 or Input.get_axis("move_up", "move_down") != 0.0
+
+func aim_vector() -> Vector2:
+	var raw := Vector2(Input.get_axis("move_left", "move_right"), Input.get_axis("move_up", "move_down"))
+	if raw.length() < 0.3:
+		return Vector2(facing, 0)
+	var step := PI / 4.0
+	return Vector2.from_angle(roundf(raw.angle() / step) * step)
+
 func _start_attack() -> void:
 	if attack_timer > 0.0:
 		return
 	attack_timer = 0.18
 	attack_progress = 0.0
 	attack_has_hit = false
+	attack_dir = "side"
+	var vertical := Input.get_axis("move_up", "move_down")
 	# Bible 4.3: J,J,J = 8/8/12 (third hit lunges), air 9, dash attack 10.
 	var kind := "NORMAL"
-	if not is_on_floor():
+	if vertical < -0.5:
+		attack_damage = UP_DAMAGE
+		attack_step = 0
+		attack_dir = "up"
+		kind = "UP"
+	elif not is_on_floor():
 		attack_damage = AIR_DAMAGE
 		attack_step = 0
 		kind = "AIR"
+		if vertical > 0.5:
+			attack_dir = "down"
+			kind = "POGO"
 	elif dash_cooldown > 0.15:
 		attack_damage = DASH_ATTACK_DAMAGE
 		attack_step = 0
@@ -192,7 +218,8 @@ func _start_attack() -> void:
 			lunge_timer = 0.12
 			kind = "LUNGE"
 	is_attacking = true
-	attack_area.position.x = 28.0 * facing
+	attack_area.position = Vector2(28.0 * facing, 0.0)
+	swing_center = Vector2(25 * facing, -8)
 
 	# Set arc based on facing direction
 	if facing > 0:
@@ -201,6 +228,16 @@ func _start_attack() -> void:
 	else:
 		swing_arc_start = PI + 0.2
 		swing_arc_end = PI + 2.1
+	if attack_dir == "up":
+		attack_area.position = Vector2(0, -44)
+		swing_center = Vector2(0, -14)
+		swing_arc_start = -PI / 2.0 - 1.15
+		swing_arc_end = -PI / 2.0 + 1.15
+	elif attack_dir == "down":
+		attack_area.position = Vector2(0, 38)
+		swing_center = Vector2(0, 14)
+		swing_arc_start = PI / 2.0 - 1.15
+		swing_arc_end = PI / 2.0 + 1.15
 
 	attack_shape.set_deferred("disabled", false)
 	attack_area.set_deferred("monitoring", true)
@@ -220,6 +257,9 @@ func _on_attack_body_entered(body: Node2D) -> void:
 		body.take_damage(attack_damage)
 		add_glow(3.0)
 		attack_has_hit = true
+		if attack_dir == "down":
+			velocity.y = POGO_BOUNCE
+			has_double_jumped = false
 
 func take_damage(amount: int) -> void:
 	if hurt_cooldown > 0.0:
@@ -333,11 +373,11 @@ func _draw() -> void:
 		var current_arc_end := lerpf(swing_arc_end, swing_arc_end - 2.3, ease_progress)
 
 		var glow_alpha := (1.0 - ease_progress) * 0.7
-		draw_arc(Vector2(25 * facing, -8), 32, current_arc_start, current_arc_end, 20,
+		draw_arc(swing_center, 32, current_arc_start, current_arc_end, 20,
 			Color(0.88, 0.95, 1.0, glow_alpha), 4.0)
 
 		# Impact flash at peak
 		if ease_progress > 0.6:
 			var impact_flash := (ease_progress - 0.6) / 0.4
-			draw_arc(Vector2(25 * facing, -8), 28, current_arc_start, current_arc_end, 16,
+			draw_arc(swing_center, 28, current_arc_start, current_arc_end, 16,
 				Color(1.0, 1.0, 1.0, impact_flash * 0.5), 2.0)
