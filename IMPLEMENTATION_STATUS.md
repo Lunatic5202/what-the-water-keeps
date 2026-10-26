@@ -11,6 +11,7 @@
 - Lantern Swing extras: heavy, Lantern Flash (stun), guard, Warm Light (never run in Godot)
 - Open Hand fighting style (full kit), Glow, Tab style swap, five-petal Glow ring (never run in Godot)
 - Wake rooms with room-locked camera; hub killbox and reachable hub platforms (never run in Godot)
+- Climb walls are drawn (pale stitched cloth with rungs, rises over 1s), exist only during phase 3 and are removed on reset or defeat (headless-tested only, never seen on screen)
 - Phase 3 now shows a readable Snail Grips tutorial box (8s) after the Dreamer's line, not just a 1.6s status flash
 - Dreamer phase 3 fix: attacks while clinging point away from the wall, the lantern-heart alternates beside each wall with a bigger hit area (headless-tested hits with both styles)
 - Directional moves: W / S aim keys, Lantern up swing and downward pogo, Open Hand Rising Palm, 8-way Coin Toss (headless-tested for hits and aim, feel untested)

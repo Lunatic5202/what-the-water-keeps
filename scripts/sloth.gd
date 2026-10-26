@@ -97,6 +97,7 @@ var boss_defeated := false
 var fight_active := false
 var lock_wall: StaticBody2D
 var climb_walls: Array[Node] = []
+var wall_age := 0.0  # seconds since the climb walls appeared (phase 3 only)
 var boss_lanterns: Array[Node] = []
 
 func _ready() -> void:
@@ -385,6 +386,7 @@ func _process(delta: float) -> void:
 	prompt_label.text = "E  •  interact" if not nearest.is_empty() else ""
 	if not nearest.is_empty() and Input.is_action_just_pressed("interact"):
 		_interact(nearest)
+	wall_age += delta
 	queue_redraw()
 
 func _draw() -> void:
@@ -412,6 +414,26 @@ func _draw() -> void:
 	# Fight walls.
 	if fight_active and is_instance_valid(lock_wall):
 		draw_rect(Rect2(ARENA_LOCK_X - 20, 100, 40, 520), Color(Palette.FOG, 0.35))
+	_draw_climb_walls()
+
+# The Snail Grips walls: pale stitched cloth that rises from the ground when
+# phase 3 starts. Bright on purpose so they read through the dim overlay.
+func _draw_climb_walls() -> void:
+	var rise := clampf(wall_age / 1.0, 0.0, 1.0)
+	for wall in climb_walls:
+		if not is_instance_valid(wall):
+			continue
+		var x: float = wall.position.x
+		var height := 600.0 * ease(rise, 0.4)
+		var rect := Rect2(x - 15.0, 600.0 - height, 30.0, height)
+		draw_rect(rect, Color(0.80, 0.76, 0.98))
+		draw_rect(Rect2(rect.position.x + 5.0, rect.position.y, 20.0, rect.size.y), Color(0.64, 0.60, 0.90))
+		# Stitched rungs show it can be climbed.
+		var y := 600.0 - 24.0
+		while y > rect.position.y + 10.0:
+			draw_line(Vector2(x - 11.0, y), Vector2(x + 11.0, y), INK, 3.0)
+			y -= 40.0
+		draw_rect(rect, INK, false, 3.0)
 
 func _draw_sleeper(x: float) -> void:
 	var breathing := clampf(1.0 - maxf(0.0, x - 1900.0) / 1800.0, 0.0, 1.0)
@@ -595,10 +617,7 @@ func _reset_fight() -> void:
 	dialogue_panel.visible = false
 	if is_instance_valid(lock_wall):
 		lock_wall.queue_free()
-	for wall in climb_walls:
-		if is_instance_valid(wall):
-			wall.queue_free()
-	climb_walls.clear()
+	_clear_climb_walls()
 	for post in boss_lanterns:
 		if is_instance_valid(post):
 			post.queue_free()
@@ -632,6 +651,7 @@ func _on_dreamer_phase(phase: int) -> void:
 		for wall_x in [4420.0, 5110.0]:
 			var wall := _solid(Rect2(wall_x - 15, 0, 30, 600), "climbable")
 			climb_walls.append(wall)
+		wall_age = 0.0
 		_grant_grips()
 		# Tutorial box after her line, long enough to read.
 		var my_id := scene_id
@@ -644,8 +664,15 @@ func _grant_grips() -> void:
 	player.set("can_wall_climb", true)
 	_show_status("SNAIL GRIPS! HOLD TOWARD A WALL TO CLING, HOLD JUMP TO CLIMB.")
 
+func _clear_climb_walls() -> void:
+	for wall in climb_walls:
+		if is_instance_valid(wall):
+			wall.queue_free()
+	climb_walls.clear()
+
 func _on_dreamer_defeated() -> void:
 	boss_defeated = true
+	_clear_climb_walls()
 	fight_active = false
 	boss_item["used"] = true
 	boss_item["node"].visible = false
