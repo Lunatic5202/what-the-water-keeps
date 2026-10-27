@@ -128,17 +128,53 @@ func _draw() -> void:
 	# Golden garden sky
 	draw_rect(Rect2(-3000, -2000, 8000, 4000), Palette.GREED_SKY)
 
+	# Distant ridgelines make the golden garden feel like a landscape, not a flat room.
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-3000, 470), Vector2(-2600, 360), Vector2(-2200, 430),
+		Vector2(-1750, 300), Vector2(-1320, 430), Vector2(-900, 330),
+		Vector2(-450, 430), Vector2(0, 320), Vector2(420, 420),
+		Vector2(850, 310), Vector2(1280, 420), Vector2(1680, 300),
+		Vector2(2100, 420), Vector2(2550, 330), Vector2(3000, 450),
+		Vector2(3000, 610), Vector2(-3000, 610)
+	]), Color(0.91, 0.82, 0.55, 1.0))
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-3000, 520), Vector2(-2500, 450), Vector2(-2050, 500),
+		Vector2(-1600, 405), Vector2(-1150, 510), Vector2(-650, 440),
+		Vector2(-150, 510), Vector2(350, 430), Vector2(800, 510),
+		Vector2(1300, 425), Vector2(1800, 510), Vector2(2250, 430),
+		Vector2(3000, 510), Vector2(3000, 610), Vector2(-3000, 610)
+	]), Color(0.86, 0.72, 0.40, 1.0))
+
+	# Broken garden columns: a hint of an older place being swallowed by flowers.
+	for i in range(7):
+		var x := -1850.0 + i * 680.0
+		var h := 115.0 + float((i * 47) % 90)
+		draw_rect(Rect2(x, 570.0 - h, 22, h), Color(0.68, 0.53, 0.30, 1.0))
+		draw_rect(Rect2(x - 5, 570.0 - h, 32, 8), Color(0.78, 0.64, 0.37, 1.0))
+		draw_rect(Rect2(x + 3, 570.0 - h * 0.55, 17, 5), Color(0.55, 0.41, 0.24, 0.9))
+		if i % 2 == 0:
+			draw_line(Vector2(x + 10, 570.0 - h + 18), Vector2(x + 4, 570.0 - h + 47), Color(0.48, 0.36, 0.22, 0.85), 2.0)
+			draw_line(Vector2(x + 4, 570.0 - h + 47), Vector2(x + 15, 570.0 - h + 68), Color(0.48, 0.36, 0.22, 0.85), 2.0)
+
+	# The broken arch frames the approach to the Collector.
+	draw_rect(Rect2(1980, 300, 24, 270), Color(0.61, 0.45, 0.25, 1.0))
+	draw_rect(Rect2(2240, 345, 24, 225), Color(0.61, 0.45, 0.25, 1.0))
+	draw_rect(Rect2(1980, 290, 180, 22), Color(0.73, 0.56, 0.30, 1.0))
+	draw_rect(Rect2(2140, 290, 100, 22), Color(0.73, 0.56, 0.30, 1.0))
+	draw_line(Vector2(2160, 290), Vector2(2178, 312), Color(0.48, 0.35, 0.20, 1.0), 3.0)
+
 	if not bg_drawn:
 		# Golden flowers (decorative) - only seed once
 		randomize()
 		bg_drawn = true
 
-	for i in range(40):
-		var x := fposmod(float(i * 137 + 42), 3000.0) - 500.0
-		var y := fposmod(float(i * 89 + 17), 350.0) + 200.0
-		var size := 4.0 + fposmod(float(i * 13), 6.0)
-		draw_circle(Vector2(x, y), size, Color(0.94, 0.78, 0.31, 0.6))
-		draw_circle(Vector2(x, y), size * 0.5, Color(1.0, 0.9, 0.4, 0.8))
+	for i in range(64):
+		var x := fposmod(float(i * 173 + 42), 5600.0) - 2800.0
+		var y := fposmod(float(i * 97 + 17), 440.0) + 80.0
+		var size := 2.0 + fposmod(float(i * 13), 4.0)
+		draw_circle(Vector2(x, y), size, Color(0.94, 0.72, 0.24, 0.48))
+		if i % 3 == 0:
+			draw_circle(Vector2(x + 4, y - 3), size * 0.55, Color(1.0, 0.9, 0.54, 0.72))
 
 	# Distant golden trees
 	for i in range(6):
@@ -154,6 +190,10 @@ func _draw() -> void:
 	for section: Rect2 in MAIN_GROUND:
 		draw_rect(section, ground)
 		draw_rect(Rect2(section.position, Vector2(section.size.x, 5)), top)
+		for blade in range(int(section.size.x / 34.0)):
+			var bx := section.position.x + 16.0 + blade * 34.0
+			draw_line(Vector2(bx, section.position.y + 3), Vector2(bx - 3, section.position.y - 7), Color(0.77, 0.68, 0.34, 1.0), 2.0)
+			draw_line(Vector2(bx, section.position.y + 3), Vector2(bx + 5, section.position.y - 5), Color(0.77, 0.68, 0.34, 1.0), 2.0)
 	for plat: Rect2 in EXTRA_PLATFORMS + [VAULT_GROUND]:
 		draw_rect(plat, ground)
 		draw_rect(Rect2(plat.position, Vector2(plat.size.x, 4)), top)
@@ -161,6 +201,16 @@ func _draw() -> void:
 	for plat in [Rect2(440, 490, 120, 20), Rect2(850, 440, 100, 20), Rect2(1050, 370, 100, 20)]:
 		draw_rect(plat, ground)
 		draw_rect(Rect2(plat.position, Vector2(plat.size.x, 4)), top)
+
+	# Foreground flower clumps make the garden feel overgrown.
+	for i in range(42):
+		var fx := fposmod(float(i * 113 + 31), 3000.0) - 150.0
+		var fy := 568.0 - fposmod(float(i * 29), 16.0)
+		var petal := Color(0.94, 0.75, 0.25, 0.95) if i % 3 != 0 else Color(0.95, 0.86, 0.52, 0.95)
+		draw_line(Vector2(fx, fy + 3), Vector2(fx - 2, fy - 9), Color(0.34, 0.48, 0.24, 1.0), 2.0)
+		draw_circle(Vector2(fx - 3, fy - 10), 3.0, petal)
+		draw_circle(Vector2(fx + 2, fy - 12), 3.0, petal)
+		draw_circle(Vector2(fx, fy - 11), 2.0, Color(0.48, 0.31, 0.13, 1.0))
 
 	for item in interactables:
 		if item.get("used", false) or not is_instance_valid(item["node"]):
