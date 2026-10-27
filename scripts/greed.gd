@@ -940,8 +940,9 @@ func _on_collector_defeated() -> void:
 		["THE OPEN HAND (OFFERING STYLE) AND THE GOLD KEY ARE YOURS.", 3.4]
 	]
 	for line in lines:
-		_banner(line[0], line[1])
-		await get_tree().create_timer(line[1]).timeout
+		var seconds := maxf(float(line[1]), Story.reading_time(str(line[0])))
+		_banner(str(line[0]), seconds)
+		await get_tree().create_timer(seconds).timeout
 		if my_id != scene_id:
 			return
 	has_open_hand = true
