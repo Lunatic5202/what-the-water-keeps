@@ -38,24 +38,20 @@ var save_cache: Dictionary = {}  # the save being played (or last written), by s
 # is locked to "cam_left".."cam_right", which must be at least 1280 wide (the
 # viewport), so a short room borrows some of its neighbour's width.
 const WAKE_ROOMS := [
-	{"id": "meadow", "from": 0.0, "to": 1280.0, "cam_left": 0, "cam_right": 1280},
-	{"id": "path", "from": 1280.0, "to": 2160.0, "cam_left": 880, "cam_right": 2160},
+	{"id": "meadow", "from": 0.0, "to": 900.0, "cam_left": 0, "cam_right": 1280},
+	{"id": "path", "from": 900.0, "to": 2160.0, "cam_left": 880, "cam_right": 2160},
 	{"id": "old_moss", "from": 2160.0, "to": 3440.0, "cam_left": 2160, "cam_right": 3440},
 	{"id": "ribbon", "from": 3440.0, "to": 4700.0, "cam_left": 3420, "cam_right": 4700},
 ]
 
 var wake_room := -1
 
-# Optional upper meadow route. It climbs above the tutorial path and descends
-# back to it, giving curious players a second way through the first room.
-# Rect2 coordinates are shared by the drawing and collision code.
+# A short, mandatory platforming stretch leads from the quiet waking meadow
+# into the tutorial path. These rectangles are shared by drawing and collision.
 const WAKE_SECRET_PLATFORMS := [
-	Rect2(700, 545, 100, 18),
-	Rect2(820, 495, 100, 18),
-	Rect2(940, 445, 100, 18),
-	Rect2(1060, 395, 100, 18),
-	Rect2(1180, 445, 100, 18),
-	Rect2(1300, 495, 100, 18),
+	Rect2(650, 550, 110, 18),
+	Rect2(790, 500, 110, 18),
+	Rect2(930, 550, 110, 18),
 ]
 
 const SIGN_MESSAGES := [
@@ -254,11 +250,14 @@ func _draw() -> void:
 	draw_circle(Vector2(1800, 180), 55, Color(1.0, 0.98, 0.92, 0.3))
 	draw_circle(Vector2(1800, 180), 38, Color(1.0, 0.96, 0.86, 1.0))
 
-	# Ground is the darkest thing in the scene so Lumi and the sky both read clearly.
+	# The waking shore is deliberately quiet and empty. Ground resumes after
+	# the small platforming gap, where the tutorial begins.
 	var g := Palette.WAKE_GROUND
 	var gt := Palette.WAKE_GROUND_TOP
-	draw_rect(Rect2(0, 610, 2200, 150), g)
-	draw_rect(Rect2(0, 610, 2200, 5), gt)
+	draw_rect(Rect2(0, 610, 650, 150), g)
+	draw_rect(Rect2(0, 610, 650, 5), gt)
+	draw_rect(Rect2(1050, 610, 1150, 150), g)
+	draw_rect(Rect2(1050, 610, 1150, 5), gt)
 	for ledge: Rect2 in WAKE_SECRET_PLATFORMS:
 		draw_rect(ledge, Palette.WAKE_GROUND)
 		draw_rect(Rect2(ledge.position, Vector2(ledge.size.x, 3)), gt)
@@ -267,13 +266,16 @@ func _draw() -> void:
 	# Meadow flowers and little stones: quiet environmental texture along the path.
 	for i in range(34):
 		var fx := 60.0 + fposmod(float(i * 127), 2050.0)
+		# Keep the spawn shore empty; meadow details begin near the tutorial.
+		if fx < 1050.0:
+			continue
 		var fy := 604.0 - fposmod(float(i * 19), 10.0)
 		var flower := Color(0.98, 0.89, 0.64, 1.0) if i % 3 == 0 else Color(0.86, 0.91, 0.66, 1.0)
 		draw_line(Vector2(fx, fy + 3), Vector2(fx - 2, fy - 8), Color(0.26, 0.43, 0.30, 1.0), 2.0)
 		draw_circle(Vector2(fx - 3, fy - 9), 3.0, flower)
 		draw_circle(Vector2(fx + 2, fy - 11), 3.0, flower)
 		draw_circle(Vector2(fx, fy - 10), 2.0, Color(0.70, 0.61, 0.35, 1.0))
-	for stone_x in [340.0, 980.0, 1510.0, 2010.0]:
+	for stone_x in [980.0, 1510.0, 2010.0]:
 		draw_circle(Vector2(stone_x, 602), 10.0, Color(0.48, 0.56, 0.43, 1.0))
 		draw_circle(Vector2(stone_x - 4, 600), 4.0, Color(0.65, 0.70, 0.54, 1.0))
 
@@ -306,8 +308,9 @@ func _draw() -> void:
 	draw_rect(Rect2(4580, 475, 40, 5), Color(0.75, 0.82, 0.71, 1))
 
 func _create_ground() -> void:
-	# Tutorial path: signs and jelly (0 to 2200)
-	_create_ground_section(Vector2(1100, 650), Vector2(2200, 80), "TutorialGround")
+	# Quiet waking shore, then a small platforming gap before the tutorial.
+	_create_ground_section(Vector2(325, 650), Vector2(650, 80), "WakingShore")
+	_create_ground_section(Vector2(1625, 650), Vector2(1150, 80), "TutorialGround")
 	for i in range(WAKE_SECRET_PLATFORMS.size()):
 		var ledge: Rect2 = WAKE_SECRET_PLATFORMS[i]
 		_create_ground_section(ledge.get_center(), ledge.size, "WakeSecretPlatform%d" % (i + 1))
@@ -378,7 +381,7 @@ func _create_player() -> void:
 func _create_jelly() -> void:
 	jelly = CharacterBody2D.new()
 	jelly.name = "LittleJelly"
-	jelly.position = Vector2(570, 590)
+	jelly.position = Vector2(1510, 590)
 	jelly.set_script(load("res://scripts/little_jelly.gd"))
 	var collision := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
@@ -492,13 +495,13 @@ func _create_hud() -> void:
 	dialogue_panel.add_child(dialogue_label)
 
 func _create_wake_tutorial() -> void:
-	var sign_positions := [Vector2(355, 570), Vector2(560, 570), Vector2(820, 570), Vector2(1100, 570)]
+	var sign_positions := [Vector2(1160, 570), Vector2(1340, 570), Vector2(1710, 570), Vector2(1900, 570)]
 	for i in range(SIGN_MESSAGES.size()):
 		var sign_marker := _make_marker("SIGN %d\n[E] READ" % (i + 1), sign_positions[i], Color(0.60, 0.75, 0.58))
 		interactables.append({"node": sign_marker, "message": SIGN_MESSAGES[i], "kind": "sign", "used": false})
 
 	# Arena entrance marker
-	var arena_marker := _make_marker("MOSS CLEARING\n[E] ENTER", Vector2(1650, 565), Color(0.65, 0.78, 0.68))
+	var arena_marker := _make_marker("MOSS CLEARING\n[E] ENTER", Vector2(2110, 565), Color(0.65, 0.78, 0.68))
 	interactables.append({
 		"node": arena_marker,
 		"message": "A circular clearing ahead. Old Moss waits in the center, guarding something.",
@@ -707,6 +710,13 @@ func _show_dialogue(message: String, target: Node2D = null) -> void:
 	dialogue_panel.visible = true
 	dialogue_open = true
 	dialogue_target = target
+	var shown_text := message
+	await get_tree().create_timer(Story.reading_time(shown_text)).timeout
+	# Do not let an older timer hide a newer line or a story beat.
+	if dialogue_open and dialogue_label.text == shown_text and not bool(get_meta("story_busy", false)):
+		dialogue_panel.visible = false
+		dialogue_open = false
+		dialogue_target = null
 
 func _update_hud(_value: int = 0) -> void:
 	if not is_instance_valid(player) or not is_instance_valid(stats_label):
