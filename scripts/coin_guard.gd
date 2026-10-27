@@ -18,6 +18,8 @@ var dissolve_alpha := 1.0
 var shield := 8
 var player_ref: Node2D
 var slam_cooldown := 0.0
+var attack_facing := 1
+var slam_hit_done := false
 
 func _ready() -> void:
 	add_to_group("boss")
@@ -29,9 +31,12 @@ func stun(seconds: float) -> void:
 func take_damage(amount: int) -> void:
 	if dead or dissolving:
 		return
-	if shield > 0 and state != "stagger":
+	if shield > 0:
 		shield -= 1
 		_show_shield_hit()
+		if shield == 0:
+			state = "stagger"
+			state_time = 0.0
 		return
 	health -= amount
 	if health <= 0:
@@ -87,10 +92,14 @@ func _physics_process(delta: float) -> void:
 		if state_time > 0.8:
 			_do_slam()
 	elif state == "slam":
-		var dir := 1 if is_instance_valid(player_ref) and player_ref.global_position.x >= global_position.x else -1
-		velocity.x = dir * 220.0
+		velocity.x = attack_facing * 220.0
 		if state_time > 0.6:
 			_end_slam()
+	elif state == "stagger":
+		velocity.x = move_toward(velocity.x, 0.0, 600.0 * delta)
+		if state_time > 1.15:
+			state = "idle"
+			state_time = 0.0
 	elif state == "recover":
 		velocity.x = move_toward(velocity.x, 0.0, 400.0 * delta)
 		if state_time > 1.0:
@@ -110,6 +119,8 @@ func _physics_process(delta: float) -> void:
 func _start_slam() -> void:
 	state = "slam_windup"
 	state_time = 0.0
+	attack_facing = 1 if is_instance_valid(player_ref) and player_ref.global_position.x >= global_position.x else -1
+	slam_hit_done = false
 
 func _do_slam() -> void:
 	state = "slam"
@@ -118,14 +129,15 @@ func _do_slam() -> void:
 func _end_slam() -> void:
 	state = "recover"
 	state_time = 0.0
-	if is_instance_valid(player_ref) and global_position.distance_to(player_ref.global_position) < 70.0:
+	if not slam_hit_done and is_instance_valid(player_ref) and absf(player_ref.global_position.x - global_position.x) < 82.0 and absf(player_ref.global_position.y - global_position.y) < 70.0:
 		if player_ref.has_method("take_damage"):
 			player_ref.take_damage(2)
+			slam_hit_done = true
 
 func _check_contact() -> void:
 	if not is_instance_valid(player_ref):
 		return
-	if global_position.distance_to(player_ref.global_position) < 52.0 and slam_cooldown <= 0.5:
+	if global_position.distance_to(player_ref.global_position) < 52.0 and state != "slam_windup" and state != "stagger" and slam_cooldown <= 0.5:
 		if player_ref.has_method("take_damage"):
 			player_ref.take_damage(1)
 
@@ -155,6 +167,11 @@ func _draw() -> void:
 		draw_arc(Vector2(0, -6), 30, 0, TAU, 32, Color(1.0, 0.92, 0.6, 0.7), 3.0)
 		for i in range(min(shield, 8)):
 			draw_circle(Vector2(-20.0 + i * 5.0, -36), 2.2, Color(1.0, 0.94, 0.7, 0.95))
+	if state == "slam_windup":
+		var warning := Color(1.0, 0.38, 0.20, 0.25 + 0.35 * absf(sin(state_time * 10.0)))
+		draw_rect(Rect2(attack_facing * 24.0 if attack_facing > 0 else -190.0, 18, 166.0, 10), warning)
+	if state == "stagger":
+		draw_arc(Vector2.ZERO, 39.0, 0.0, TAU, 24, Color(1.0, 0.96, 0.72, 0.95), 3.0)
 	for i in range(health):
 		if i % 6 == 0:
 			draw_circle(Vector2(-14.0 + (i / 6.0) * 4.0, -44), 1.4, Color(1.0, 0.9, 0.5, 0.9))
