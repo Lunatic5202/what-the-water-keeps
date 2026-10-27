@@ -479,6 +479,11 @@ func _draw() -> void:
 	if fight_active and is_instance_valid(lock_wall):
 		draw_rect(Rect2(ARENA_LOCK_X - 20, 100, 40, 520), Color(Palette.FOG, 0.35))
 	_draw_climb_walls()
+	# Wayfinding for the optional sky-route miniboss; keep the cue visible before the fight.
+	draw_string(ThemeDB.fallback_font, Vector2(3820, 178), "SKY ROUTE  →  DOZY WARDEN", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.94, 0.91, 1.0, 1.0))
+	if not sloth_miniboss_defeated:
+		draw_circle(Vector2(4530, 90), 58.0, Color(0.77, 0.72, 1.0, 0.13))
+		draw_arc(Vector2(4530, 90), 45.0, 0.0, TAU, 32, Color(0.86, 0.81, 1.0, 0.95), 3.0)
 
 # The Snail Grips walls: pale stitched cloth that rises from the ground when
 # phase 3 starts. Bright on purpose so they read through the dim overlay.
