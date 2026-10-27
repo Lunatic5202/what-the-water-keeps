@@ -34,6 +34,7 @@ var lore_found := 0
 var total_lore := 3
 var boss_defeated := false
 var featherweight_found := false
+var secret_cache_found := false
 
 # The Collector fight
 const COLLECTOR_SCRIPT := preload("res://scripts/collector.gd")
@@ -50,10 +51,11 @@ const VAULT_EXIT_POS := Vector2(-1730, 440)
 # jump, but make the garden feel like terrain rather than one uninterrupted floor.
 # Keep these rectangles in sync for both drawing and collision.
 const MAIN_GROUND := [
-	Rect2(0, 570, 600, 90),
-	Rect2(700, 570, 550, 90),
-	Rect2(1370, 570, 460, 90),
-	Rect2(1920, 570, 830, 90),
+	Rect2(0, 570, 520, 90),
+	Rect2(700, 570, 380, 90),
+	Rect2(1280, 570, 330, 90),
+	Rect2(1800, 570, 230, 90),
+	Rect2(2180, 570, 570, 90),
 ]
 
 # Extra platforms: Rect2(left, top, width, height). The same list draws and
@@ -61,8 +63,28 @@ const MAIN_GROUND := [
 # double jump needed). The first step of each climb is a solid block down to the
 # ground so Lumi can still walk beneath the rest.
 const EXTRA_PLATFORMS := [
-	# A low garden ledge gives the opening a readable landmark and a coin route.
+	# Low ledge above the opening route.
 	Rect2(440, 490, 120, 20),
+	# Broken causeways force short, readable jumps between ground shelves.
+	Rect2(545, 520, 70, 18),
+	Rect2(620, 470, 70, 18),
+	Rect2(685, 520, 70, 18),
+	Rect2(1090, 520, 70, 18),
+	Rect2(1165, 470, 70, 18),
+	Rect2(1240, 520, 70, 18),
+	Rect2(1620, 520, 70, 18),
+	Rect2(1695, 470, 70, 18),
+	Rect2(1770, 520, 70, 18),
+	Rect2(2030, 520, 80, 18),
+	Rect2(2110, 520, 80, 18),
+	# Optional high route: climb the broken compass tower and cross above the road.
+	Rect2(735, 520, 90, 18),
+	Rect2(805, 470, 90, 18),
+	Rect2(875, 420, 90, 18),
+	Rect2(945, 370, 90, 18),
+	Rect2(1015, 320, 130, 18),
+	Rect2(1125, 370, 90, 18),
+	Rect2(1195, 420, 90, 18),
 	# Vault Route: climb left over the broken pit, then loop back through the treasury.
 	Rect2(250, 520, 110, 50),
 	Rect2(70, 470, 110, 18),
@@ -73,7 +95,7 @@ const EXTRA_PLATFORMS := [
 	Rect2(-830, 320, 110, 18),
 	Rect2(-1010, 370, 110, 18),
 	Rect2(-1190, 420, 110, 18),
-	# Optional secret alcove: its upper ledge requires the double jump.
+	# Secret cache shelf: the final rise is intentionally a double-jump discovery.
 	Rect2(-1830, 410, 100, 18),
 	Rect2(-1830, 300, 100, 18),
 	# Gold Ridge: a high route with a short elevated loop back into the crossroads.
@@ -214,6 +236,10 @@ func _draw() -> void:
 		draw_rect(Rect2(plat.position, Vector2(plat.size.x, 4)), top)
 		draw_rect(plat, Palette.GOLD_OUTLINE, false, 2.0)
 	# Walkable platforms are drawn from EXTRA_PLATFORMS, matching collision.
+
+	# A deliberately subtle coin-glint points upward from the hidden treasury shelf.
+	draw_line(Vector2(-1800, 407), Vector2(-1780, 390), Color(1.0, 0.83, 0.38, 0.8), 2.0)
+	draw_circle(Vector2(-1780, 390), 3.0, Color(1.0, 0.9, 0.55, 0.85))
 
 	# Foreground flower clumps make the garden feel overgrown.
 	for i in range(42):
@@ -368,13 +394,15 @@ func _create_player() -> void:
 	add_child(player)
 
 	var camera := Camera2D.new()
-	camera.position = Vector2(640, 400)
+	camera.position = Vector2(0, -100)
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = 5.0
-	camera.limit_left = 0
-	camera.limit_right = 2850
-	camera.limit_top = 100
-	camera.limit_bottom = 750
+	# The vault is west of spawn; clamping at x=0 hid the entire branch off-screen.
+	camera.limit_left = int(VAULT_END_X - 100.0)
+	camera.limit_right = int(ARENA_END_X + 100.0)
+	# Let the camera travel vertically so the high ridge reads as a real climb.
+	camera.limit_top = -200
+	camera.limit_bottom = 900
 	player.add_child(camera)
 
 func _create_hud() -> void:
@@ -529,6 +557,15 @@ func _create_greed_level() -> void:
 	var ridge_seal := _make_interactable("SEAL\n[E] TAKE", Vector2(1885, 325), Color(1.0, 0.9, 0.5))
 	interactables.append({"node": ridge_seal, "message": "A heavy gold seal, warm from the sun.", "kind": "seal", "seal_id": "ridge", "used": false})
 
+	# Optional secret: an upper shelf beyond the treasury tablet. No stat buff.
+	var secret_cache := _make_interactable("???", Vector2(-1780, 260), Color(0.95, 0.82, 0.5))
+	interactables.append({
+		"node": secret_cache,
+		"message": "A forgotten purse spills 35 gold into Lumi's hands.",
+		"kind": "secret_cache",
+		"used": false
+	})
+
 	# Exit to hub
 	var exit := _make_interactable("EXIT TO HUB\n[E] RETURN", Vector2(100, 520), Color(0.7, 0.8, 0.9))
 	interactables.append({"node": exit, "message": "Return to The Still Pond?", "kind": "exit", "used": false})
@@ -614,6 +651,11 @@ func _process(delta: float) -> void:
 	if bool(get_meta("story_busy", false)):
 		prompt_label.text = ""
 		return
+
+	# Keep the secret's label hidden until Lumi is close enough to notice the glint.
+	for item in interactables:
+		if item["kind"] == "secret_cache" and is_instance_valid(item["node"]):
+			item["node"].visible = not secret_cache_found and player.global_position.distance_to(item["node"].global_position) < 220.0
 
 	var nearest: Dictionary = {}
 	var nearest_distance := 95.0
@@ -707,6 +749,12 @@ func _interact(item: Dictionary) -> void:
 			var val: int = item.get("value", 15)
 			add_gold(val)
 			_show_dialogue("Lumi picks up %d gold." % val)
+		"secret_cache":
+			item["used"] = true
+			target.visible = false
+			secret_cache_found = true
+			add_gold(35)
+			_show_dialogue(item["message"], target)
 		_:
 			_show_dialogue(item["message"], target)
 
@@ -789,6 +837,7 @@ func save_state() -> Dictionary:
 		"boss_defeated": boss_defeated,
 		"has_open_hand": has_open_hand,
 		"has_gold_key": has_gold_key,
+		"secret_cache_found": secret_cache_found,
 		"coin_guard_defeated": miniboss_defeated,
 		"seals": seals.duplicate()
 	}
@@ -802,6 +851,12 @@ func apply_save(d: Dictionary) -> void:
 			player.set("can_double_jump", true)
 		for item in interactables:
 			if item["kind"] == "featherweight":
+				item["used"] = true
+				item["node"].visible = false
+	if bool(d.get("secret_cache_found", false)):
+		secret_cache_found = true
+		for item in interactables:
+			if item["kind"] == "secret_cache":
 				item["used"] = true
 				item["node"].visible = false
 	if bool(d.get("has_open_hand", false)):
