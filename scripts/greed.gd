@@ -62,9 +62,9 @@ const MAIN_GROUND := [
 # double jump needed). The first step of each climb is a solid block down to the
 # ground so Lumi can still walk beneath the rest.
 const EXTRA_PLATFORMS := [
-	# A low garden ledge gives the opening a readable landmark and a coin route.
+	# Opening ledge: one optional pickup, not a chain of tutorial blocks.
 	Rect2(440, 490, 120, 20),
-	# Vault Route: climb left over the broken pit, then loop back through the treasury.
+	# Vault Route: a deliberate climb out over the broken garden wall.
 	Rect2(250, 520, 110, 50),
 	Rect2(70, 470, 110, 18),
 	Rect2(-110, 420, 110, 18),
@@ -74,17 +74,15 @@ const EXTRA_PLATFORMS := [
 	Rect2(-830, 320, 110, 18),
 	Rect2(-1010, 370, 110, 18),
 	Rect2(-1190, 420, 110, 18),
-	# Optional secret alcove: its upper ledge requires the double jump.
+	# Hidden treasury shelf: the upper pocket is reached with the Featherweight Charm.
 	Rect2(-1830, 410, 100, 18),
 	Rect2(-1830, 300, 100, 18),
-	# Gold Ridge: a high route with a short elevated loop back into the crossroads.
-	Rect2(1330, 520, 100, 50),
-	Rect2(1500, 470, 100, 18),
-	Rect2(1670, 420, 100, 18),
-	Rect2(1840, 370, 100, 18),
-	Rect2(1240, 500, 100, 18),
-	Rect2(1120, 450, 100, 18),
-	Rect2(1000, 500, 100, 18),
+	# Gold Ridge: four broad, rising shelves form one readable climb to the seal.
+	# The first is a substantial broken outcrop; the next three keep a steady jump rhythm.
+	Rect2(1240, 500, 150, 70),
+	Rect2(1405, 445, 155, 24),
+	Rect2(1575, 390, 155, 24),
+	Rect2(1745, 335, 165, 24),
 ]
 const MOUNTAIN_X := 2580.0
 var collector: CharacterBody2D
@@ -210,11 +208,19 @@ func _draw() -> void:
 			var bx := section.position.x + 16.0 + blade * 34.0
 			draw_line(Vector2(bx, section.position.y + 3), Vector2(bx - 3, section.position.y - 7), Color(0.77, 0.68, 0.34, 1.0), 2.0)
 			draw_line(Vector2(bx, section.position.y + 3), Vector2(bx + 5, section.position.y - 5), Color(0.77, 0.68, 0.34, 1.0), 2.0)
-	for plat: Rect2 in EXTRA_PLATFORMS + [VAULT_GROUND]:
-		draw_rect(plat, ground)
-		draw_rect(Rect2(plat.position, Vector2(plat.size.x, 4)), top)
-		draw_rect(plat, Palette.GOLD_OUTLINE, false, 2.0)
-	# Walkable platforms are drawn from EXTRA_PLATFORMS, matching collision.
+	for plat: Rect2 in EXTRA_PLATFORMS:
+		var rock := _platform_world_points(plat)
+		draw_colored_polygon(rock, ground)
+		var outline := rock.duplicate()
+		outline.append(rock[0])
+		draw_polyline(outline, Palette.GOLD_OUTLINE, 2.0)
+		# A restrained highlight follows the irregular top edge instead of outlining a rectangle.
+		draw_line(rock[1], rock[2], top, 3.0)
+		draw_line(rock[2], rock[3], top, 3.0)
+		draw_line(rock[3], rock[4], top, 3.0)
+	# The treasury floor remains a broad, solid stone shelf.
+	draw_rect(VAULT_GROUND, ground)
+	draw_rect(Rect2(VAULT_GROUND.position, Vector2(VAULT_GROUND.size.x, 5)), top)
 
 	# A deliberately subtle coin-glint points upward from the hidden treasury shelf.
 	draw_line(Vector2(-1800, 407), Vector2(-1780, 390), Color(1.0, 0.83, 0.38, 0.8), 2.0)
@@ -337,12 +343,31 @@ func _create_ground_section(at: Vector2, size: Vector2, section_name: String) ->
 func _create_platform(at: Vector2, size: Vector2) -> void:
 	var platform := StaticBody2D.new()
 	platform.position = at
-	var collision := CollisionShape2D.new()
-	var shape := RectangleShape2D.new()
-	shape.size = size
-	collision.shape = shape
+	platform.name = "GreedRockShelf"
+	var collision := CollisionPolygon2D.new()
+	collision.polygon = _platform_local_points(Rect2(Vector2.ZERO, size))
 	platform.add_child(collision)
 	add_child(platform)
+
+# A single silhouette function feeds both drawing and collision. Broad tops and
+# bevelled sides read as broken stone outcrops rather than floating rectangles.
+func _platform_local_points(rect: Rect2) -> PackedVector2Array:
+	var half := rect.size * 0.5
+	var bevel := minf(10.0, half.y * 0.65)
+	return PackedVector2Array([
+		Vector2(-half.x, half.y),
+		Vector2(-half.x + 8.0, -half.y + bevel),
+		Vector2(-half.x * 0.28, -half.y),
+		Vector2(half.x * 0.24, -half.y + 2.0),
+		Vector2(half.x - 8.0, -half.y + bevel),
+		Vector2(half.x, half.y),
+	])
+
+func _platform_world_points(rect: Rect2) -> PackedVector2Array:
+	var points := _platform_local_points(rect)
+	for i in range(points.size()):
+		points[i] += rect.get_center()
+	return points
 
 func _create_boundary(at: Vector2) -> void:
 	var wall := StaticBody2D.new()
