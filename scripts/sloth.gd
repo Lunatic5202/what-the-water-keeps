@@ -99,6 +99,10 @@ var lock_wall: StaticBody2D
 var climb_walls: Array[Node] = []
 var wall_age := 0.0  # seconds since the climb walls appeared (phase 3 only)
 var boss_lanterns: Array[Node] = []
+var dream_exit: Node2D = null
+var dream_exit_open := false
+var sloth_miniboss: CharacterBody2D = null
+var sloth_miniboss_defeated := false
 
 func _ready() -> void:
 	add_to_group("drowse_holder")
@@ -107,6 +111,7 @@ func _ready() -> void:
 	_create_hud()
 	_create_level()
 	_spawn_enemies()
+	call_deferred("_create_sloth_expanded")
 	_connect_signals()
 	_update_hud()
 
@@ -517,6 +522,11 @@ func _interact(item: Dictionary) -> void:
 				_banner("NIM: Better. Every little light helps. Funny. Doing something is easier than I remembered.", 3.4)
 		"bench":
 			_rest(target.global_position)
+		"dream_exit":
+			if get_parent() and get_parent().has_method("_return_to_hub"):
+				get_parent()._return_to_hub(true)
+			else:
+				return_to_hub.emit()
 		"exit":
 			return_to_hub.emit()
 		"boss":
@@ -697,7 +707,64 @@ func _on_dreamer_defeated() -> void:
 	has_dusk_key = true
 	if not has_snail_grips:
 		_grant_grips()
+	_open_dream_exit()
 	region_cleared.emit("sloth")
+
+func _create_sloth_expanded() -> void:
+	_solid(Rect2(3410, 190, 110, 24))
+	_solid(Rect2(3580, 150, 110, 24))
+	_solid(Rect2(3750, 120, 110, 24))
+	_solid(Rect2(3920, 90, 110, 24))
+	_solid(Rect2(4090, 60, 130, 24))
+	_solid(Rect2(4260, 30, 110, 24))
+	_solid(Rect2(4430, -10, 110, 24))
+	_solid(Rect2(4600, -50, 110, 24))
+	_solid(Rect2(4770, -10, 110, 24))
+	_solid(Rect2(4940, 30, 110, 24))
+	_solid(Rect2(5110, 70, 150, 24))
+
+	# Side branches - non-linear exploration
+	_solid(Rect2(1350, 480, 90, 18))
+	_solid(Rect2(1180, 440, 90, 18))
+	_solid(Rect2(1010, 400, 90, 18))
+	_solid(Rect2(840, 360, 90, 18))
+	_solid(Rect2(670, 320, 90, 18))
+	_solid(Rect2(500, 280, 90, 18))
+
+	_solid(Rect2(2600, 370, 110, 24))
+	_solid(Rect2(2770, 340, 110, 24))
+	_solid(Rect2(2940, 310, 110, 24))
+	_solid(Rect2(3110, 280, 110, 24))
+
+	_solid(Rect2(2250, 520, 100, 18))
+	_solid(Rect2(2420, 500, 100, 18))
+	_solid(Rect2(2590, 480, 100, 18))
+
+	for pos in [Vector2(1150, 380), Vector2(3450, 170), Vector2(700, 300), Vector2(2650, 350)]:
+		_add_lantern(pos)
+	if not sloth_miniboss_defeated:
+		sloth_miniboss = DREAMER.new()
+		sloth_miniboss.set_script(DREAMER)
+		sloth_miniboss.position = Vector2(5000, 200)
+		sloth_miniboss.scale = Vector2(0.7, 0.7)
+		var mc := CollisionShape2D.new()
+		var mshape := CircleShape2D.new()
+		mshape.radius = 38.0
+		mc.shape = mshape
+		sloth_miniboss.add_child(mc)
+		add_child(sloth_miniboss)
+		if sloth_miniboss.has_signal("defeated"):
+			sloth_miniboss.connect("defeated", Callable(self, "_on_sloth_mb_defeated"))
+
+func _on_sloth_mb_defeated() -> void:
+	sloth_miniboss_defeated = true
+	_show_status("DOZY WARDEN SLAIN. PATHS SHIFT.")
+
+func _open_dream_exit() -> void:
+	dream_exit_open = true
+	dream_exit = _make_interactable("DREAM EXIT\n[E] RETURN", Vector2(5100, 520), Color(0.88, 0.84, 1.0))
+	interactables.append({"node": dream_exit, "message": "A shimmering doorway of half-remembered pillows leads back to the Still Pond through the Dream.\n\nReturn to hub?", "kind": "dream_exit", "used": false})
+	_show_status("DREAM EXIT OPEN - WAKE THROUGH THE DREAMING")
 
 func get_respawn_point() -> Vector2:
 	return respawn_point

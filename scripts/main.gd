@@ -44,7 +44,7 @@ const SIGN_MESSAGES := [
 	"Walk! (it's easy, I believe in you)",
 	"Jump over the tiny puddle.",
 	"Swing your lantern. Hit the little jelly. He is very forgiving.",
-    "Healing takes a moment. Be brave, but not silly."
+	"Healing takes a moment. Be brave, but not silly."
 ]
 
 func _ready() -> void:
@@ -470,7 +470,7 @@ func _transition_to_sloth() -> void:
 	_set_camera_limits(-100, 5300, -350, 820)
 	current_region = "sloth"
 
-func _return_to_hub() -> void:
+func _return_to_hub(from_vault: bool = false) -> void:
 	if not is_instance_valid(hub_scene):
 		return
 	for scene in [greed_scene, sloth_scene]:
@@ -479,7 +479,10 @@ func _return_to_hub() -> void:
 				scene.remove_child(player)
 			scene.call("set_region_active", false)
 	hub_scene.add_child(player)
-	player.position = hub_scene.get("respawn_point")
+	if from_vault:
+		player.position = Vector2(1200, 400)
+	else:
+		player.position = hub_scene.get("respawn_point")
 	player.set("respawn_point", hub_scene.get("respawn_point"))
 	hub_scene.call("set_region_active", true)
 	_set_camera_limits(-200, 3000, 100, 850)
@@ -488,7 +491,8 @@ func _return_to_hub() -> void:
 func _on_region_cleared(region_name: String) -> void:
 	if is_instance_valid(hub_scene):
 		hub_scene.call("unlock_region", region_name)
-	_return_to_hub()
+	# Don't force teleport - let the region's alternate exit handle it, or stay
+	pass
 
 func _set_camera_limits(left: int, right: int, top: int, bottom: int) -> void:
 	var camera := get_tree().get_first_node_in_group("game_camera") as Camera2D
