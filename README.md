@@ -190,14 +190,15 @@ Platforms are listed in `PLATFORMS` in `sloth.gd`. Steps up are 55px or less, ga
 
 ### Greed route layout
 
-Greed is a set of connected routes at different heights, not one flat corridor:
+Greed has a lower road, an upper canopy floor and two optional branch routes:
 
 - The main road runs near y=570.
-- The canopy route climbs from the road around x=760, crosses the garden near y=350, then drops onto the Gold Ridge approach around x=1370.
+- The canopy entrance starts at x=930. Five flat treads rise westward by 40px each; Lumi turns onto one broad, flat canopy floor at y=330 and crosses east above the road. The canopy uses one-way collision, so Lumi can jump up through it and the lower road stays open underneath. The floor ends above the Gold Ridge approach near x=1360, where Lumi can drop onto the Ridge.
+- The first shrine sits on the road before the climb, so Lumi can offer carried gold before Weight lowers jump height.
 - The Gold Ridge rises from the road to its seal at x=1885, y=325, before returning to the Collector approach.
 - The western Vault Route branches off the road, climbs over the broken wall, and descends into the treasury and Coin Guard arena.
 
-The route platforms use the same beveled shapes for collision and drawing. Keep rises at 55px or less, leave 50px of headroom, and keep traversal gaps at 60px or more. Weight can lower Lumi's jump; the shrines let players shed carried gold before a climb.
+The route platforms use the same shapes for collision and drawing. Their landing tops are level; only the sides are beveled. Keep rises at 55px or less, leave 50px of headroom, and keep traversal gaps at 60px or more. Weight can lower Lumi's jump; the road shrine sits before the climb so players can shed carried gold.
 
 ## How the code works
 
