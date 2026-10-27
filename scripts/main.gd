@@ -104,7 +104,6 @@ func save_game(where: String, respawn: Vector2) -> void:
 		"unlocked_styles": Array(player.unlocked_styles),
 		"has_dash": player.has_dash,
 		"can_double_jump": player.can_double_jump,
-		"can_golden_dash": player.can_golden_dash,
 		"can_wall_climb": player.can_wall_climb
 	}
 	if is_instance_valid(hub_scene):
@@ -134,7 +133,6 @@ func continue_game() -> bool:
 	player.style = str(saved.get("style", "lantern")) if styles.has(str(saved.get("style", "lantern"))) else "lantern"
 	player.has_dash = bool(saved.get("has_dash", true))
 	player.can_double_jump = bool(saved.get("can_double_jump", false))
-	player.can_golden_dash = bool(saved.get("can_golden_dash", false))
 	player.can_wall_climb = bool(saved.get("can_wall_climb", false))
 	player.health = player.max_health
 	player.heals = int(saved.get("heals", RunState.max_heals()))

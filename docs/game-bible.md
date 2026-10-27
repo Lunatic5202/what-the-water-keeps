@@ -1764,6 +1764,7 @@ These are prototype adaptations, not decisions. Say if the bible should win.
 - Debuffs are harsher than the bible's first description: Drowse and Weight add +1 damage per hit at their upper tiers, Drowse blocks healing at 80 and Weight blocks dash and double jump. The bible's Drowse still approximated by slowing, not the 0.1s input delay.
 - Difficulty (Gentle / Normal / Hard), bench-only saves with Continue, and a secret No-Hit Challenge (one hit ends the run, unlocked by beating the game) are user-requested prototype features, not in the bible.
 - W and S are new aim keys. W + J swings up, S + J in the air pogos, W + J with the Open Hand is Rising Palm, and Coin Toss throws in 8 directions (straight shots; the bible only says it throws coins). User-requested, not from the bible.
+- Prototype reward placement differs from the region overview above: the Open Hand moves are learned from the sealed manual in the Greed vault after defeating the Coin Guard, rather than being granted automatically by the Collector.
 - The Wake is split into four rooms with a locked camera.
 - Nim's Lantern Post gives short gameplay hints (what each region teaches). They are hints, not lore. After seven regions it shows its normal text.
 - The hub is built from stepped platforms so every step is jumpable, and has a killbox.
@@ -1774,4 +1775,4 @@ These are prototype adaptations, not decisions. Say if the bible should win.
 - Defeating a region boss does not return the player to the hub; they climb out via the Vault Exit or Dream Exit on purpose.
 
 - Each boss approach needs two seals, one from each optional branch (prototype; "seal" is not canon yet).
-- The Gilded Garden has an optional hidden relic, the Gilded Afterimage, which grants a second midair dash. It is reached with the Featherweight Charm's double jump and is not required to reach or defeat the Collector.
+- Prototype reward-placement change: the Open Hand combat manual is inside the old Greed vault. Defeat the Coin Guard to unseal it, then interact with the manual to unlock Offering Style and its full moveset before the Collector fight. The Featherweight Charm remains the region's traversal reward.
