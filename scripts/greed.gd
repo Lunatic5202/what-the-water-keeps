@@ -51,11 +51,10 @@ const VAULT_EXIT_POS := Vector2(-1730, 440)
 # jump, but make the garden feel like terrain rather than one uninterrupted floor.
 # Keep these rectangles in sync for both drawing and collision.
 const MAIN_GROUND := [
-	Rect2(0, 570, 520, 90),
-	Rect2(700, 570, 380, 90),
-	Rect2(1280, 570, 330, 90),
-	Rect2(1800, 570, 230, 90),
-	Rect2(2180, 570, 570, 90),
+	Rect2(0, 570, 600, 90),
+	Rect2(700, 570, 550, 90),
+	Rect2(1370, 570, 460, 90),
+	Rect2(1920, 570, 830, 90),
 ]
 
 # Extra platforms: Rect2(left, top, width, height). The same list draws and
@@ -63,28 +62,8 @@ const MAIN_GROUND := [
 # double jump needed). The first step of each climb is a solid block down to the
 # ground so Lumi can still walk beneath the rest.
 const EXTRA_PLATFORMS := [
-	# Low ledge above the opening route.
+	# A low garden ledge gives the opening a readable landmark and a coin route.
 	Rect2(440, 490, 120, 20),
-	# Broken causeways force short, readable jumps between ground shelves.
-	Rect2(545, 520, 70, 18),
-	Rect2(620, 470, 70, 18),
-	Rect2(685, 520, 70, 18),
-	Rect2(1090, 520, 70, 18),
-	Rect2(1165, 470, 70, 18),
-	Rect2(1240, 520, 70, 18),
-	Rect2(1620, 520, 70, 18),
-	Rect2(1695, 470, 70, 18),
-	Rect2(1770, 520, 70, 18),
-	Rect2(2030, 520, 80, 18),
-	Rect2(2110, 520, 80, 18),
-	# Optional high route: climb the broken compass tower and cross above the road.
-	Rect2(735, 520, 90, 18),
-	Rect2(805, 470, 90, 18),
-	Rect2(875, 420, 90, 18),
-	Rect2(945, 370, 90, 18),
-	Rect2(1015, 320, 130, 18),
-	Rect2(1125, 370, 90, 18),
-	Rect2(1195, 420, 90, 18),
 	# Vault Route: climb left over the broken pit, then loop back through the treasury.
 	Rect2(250, 520, 110, 50),
 	Rect2(70, 470, 110, 18),
@@ -95,7 +74,7 @@ const EXTRA_PLATFORMS := [
 	Rect2(-830, 320, 110, 18),
 	Rect2(-1010, 370, 110, 18),
 	Rect2(-1190, 420, 110, 18),
-	# Secret cache shelf: the final rise is intentionally a double-jump discovery.
+	# Optional secret alcove: its upper ledge requires the double jump.
 	Rect2(-1830, 410, 100, 18),
 	Rect2(-1830, 300, 100, 18),
 	# Gold Ridge: a high route with a short elevated loop back into the crossroads.
