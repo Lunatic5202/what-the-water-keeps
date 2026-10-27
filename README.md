@@ -240,3 +240,14 @@ Platforms are listed in `PLATFORMS` in `sloth.gd`. Steps up are 55px or less, ga
 - "Coin Guard" and "Dozy Warden" are prototype names, not in the bible yet. Their rewards are undefined.
 - Extra platforms live in `EXTRA_PLATFORMS` in `greed.gd` and `sloth.gd`; same step and gap rules as above.
 - Headless-tested only (jump hops, mini-boss flow, exits, saves). Not played in the Godot editor.
+
+## Seal gates and pickup sprites
+
+- Each boss approach is gated by two seals (`SEALS_NEEDED`), one from each optional branch, collectable in either order:
+  - Greed: the Coin Guard drops the "vault" seal; a pickup at the end of the Gold Ridge is the "ridge" seal.
+  - Sloth: the Dozy Warden drops the "sky" seal; a pickup at the top of the loft stair is the "loft" seal.
+  Pressing E at the boss marker with fewer than 2 shows the seal count and does not start the fight. Seals are saved at benches (`seals` in each region's save).
+- "Seal" is a prototype word, not in the bible.
+- Pickups (coins, gold, seals) are now drawn: coin and seal sprites in `greed.gd` `_draw`, seal in `sloth.gd` `_draw`. Before, they were label-only.
+- Greedy Mites now turn around at ledges instead of walking off.
+- Rendered screenshots can be taken headless with `xvfb-run` and `--rendering-driver opengl3`.

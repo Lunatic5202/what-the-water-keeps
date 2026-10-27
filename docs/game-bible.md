@@ -1772,3 +1772,5 @@ These are prototype adaptations, not decisions. Say if the bible should win.
 
 - Greedy Mites, the Coin Guard (Greed Vault mini-boss) and the Dozy Warden (Sloth sky-route mini-boss) are prototype content. Names and rewards are not decided.
 - Defeating a region boss does not return the player to the hub; they climb out via the Vault Exit or Dream Exit on purpose.
+
+- Each boss approach needs two seals, one from each optional branch (prototype; "seal" is not canon yet).

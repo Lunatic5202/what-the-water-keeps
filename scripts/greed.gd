@@ -77,6 +77,8 @@ var banner_time := 0.0
 var scene_id := 0
 var has_open_hand := false
 var has_gold_key := false
+const SEALS_NEEDED := 2
+var seals: Array = []   # "vault" (Coin Guard) and "ridge" (end of the Gold Ridge)
 
 # Expanded content
 var post_boss_open := false
@@ -146,8 +148,30 @@ func _draw() -> void:
 		draw_rect(plat, ground)
 		draw_rect(Rect2(plat.position, Vector2(plat.size.x, 4)), top)
 
+	for item in interactables:
+		if item.get("used", false) or not is_instance_valid(item["node"]):
+			continue
+		var kind: String = item["kind"]
+		if kind == "coin" or kind == "coin_extra":
+			_draw_pickup_coin(item["node"].position)
+		elif kind == "seal":
+			_draw_pickup_seal(item["node"].position)
+
 	if mountain_visible:
 		_draw_mountain()
+
+# Pickups need a body: a coin, and a seal. Dark outline so they read on the pale ground.
+func _draw_pickup_coin(c: Vector2) -> void:
+	draw_circle(c, 13.0, Palette.GOLD_OUTLINE)
+	draw_circle(c, 10.0, Color(0.94, 0.72, 0.16))
+	draw_circle(c, 5.5, Color(1.0, 0.92, 0.55))
+
+func _draw_pickup_seal(c: Vector2) -> void:
+	draw_circle(c, 24.0, Color(1.0, 0.85, 0.3, 0.25))
+	draw_circle(c, 17.0, Palette.GOLD_OUTLINE)
+	draw_circle(c, 14.0, Color(0.85, 0.52, 0.16))
+	draw_circle(c, 8.0, Color(1.0, 0.88, 0.45))
+	draw_circle(c + Vector2(-4, -4), 2.5, Color(1, 1, 1, 0.9))
 
 func _draw_mountain() -> void:
 	# The Collector's mountain of coins. He swallows it in phase two.
@@ -373,6 +397,9 @@ func _create_greed_level() -> void:
 		interactables.append({"node": bowl, "message": "An offering bowl.", "kind": "bowl", "used": false})
 	_create_collector()
 
+	var ridge_seal := _make_interactable("SEAL\n[E] TAKE", Vector2(1890, 345), Color(1.0, 0.9, 0.5))
+	interactables.append({"node": ridge_seal, "message": "A heavy gold seal, warm from the sun.", "kind": "seal", "seal_id": "ridge", "used": false})
+
 	# Exit to hub
 	var exit := _make_interactable("EXIT TO HUB\n[E] RETURN", Vector2(100, 520), Color(0.7, 0.8, 0.9))
 	interactables.append({"node": exit, "message": "Return to The Still Pond?", "kind": "exit", "used": false})
@@ -473,6 +500,7 @@ func _process(delta: float) -> void:
 		_interact(nearest)
 
 func _interact(item: Dictionary) -> void:
+	queue_redraw()
 	var kind: String = item["kind"]
 	var target: Node2D = item["node"]
 
@@ -510,12 +538,20 @@ func _interact(item: Dictionary) -> void:
 		"boss":
 			if boss_defeated:
 				_show_dialogue("The mountain is gone. Only a small, quiet shine is left in the bowl.", target)
+			elif seals.size() < SEALS_NEEDED:
+				_show_dialogue("The mountain's gate is shut tight.\n\nSEALS %d/%d. Two seals lie far from the main road." % [seals.size(), SEALS_NEEDED], target)
 			else:
 				_start_collector_fight()
 		"bowl":
 			_offer_at_bowl(target)
 		"exit":
 			return_to_hub.emit()
+		"seal":
+			item["used"] = true
+			target.visible = false
+			_grant_seal(item["seal_id"])
+			_show_status("SEAL %d/%d" % [seals.size(), SEALS_NEEDED])
+			_show_dialogue(item["message"], target)
 		"vault_exit":
 			# Lands Lumi on the hub's upper platform instead of the start.
 			get_tree().call_group("game_main", "_return_to_hub", true)
@@ -585,7 +621,8 @@ func save_state() -> Dictionary:
 		"boss_defeated": boss_defeated,
 		"has_open_hand": has_open_hand,
 		"has_gold_key": has_gold_key,
-		"coin_guard_defeated": miniboss_defeated
+		"coin_guard_defeated": miniboss_defeated,
+		"seals": seals.duplicate()
 	}
 
 # Puts Greed back the way a save left it: the charm taken, the Collector gone.
@@ -597,8 +634,12 @@ func apply_save(d: Dictionary) -> void:
 			if item["kind"] == "featherweight":
 				item["used"] = true
 				item["node"].visible = false
+	for id in d.get("seals", []):
+		_grant_seal(str(id))
+		_hide_seal_marker(str(id))
 	if bool(d.get("coin_guard_defeated", false)):
 		miniboss_defeated = true
+		_grant_seal("vault")
 		if is_instance_valid(coin_guard):
 			coin_guard.queue_free()
 	if bool(d.get("boss_defeated", false)):
@@ -794,7 +835,7 @@ func _on_collector_defeated() -> void:
 
 func _create_expanded_content() -> void:
 	# Small mobs spread across expanded areas
-	var mite_positions := [Vector2(700, 550), Vector2(1050, 550), Vector2(1450, 550), Vector2(1750, 550), Vector2(1550, 445), Vector2(1890, 345), Vector2(305, 495), Vector2(-125, 395), Vector2(-485, 295), Vector2(-845, 295), Vector2(-1025, 345), Vector2(-1650, 445)]
+	var mite_positions := [Vector2(700, 550), Vector2(1050, 550), Vector2(1450, 550), Vector2(1750, 550), Vector2(1550, 445), Vector2(1890, 345), Vector2(305, 495), Vector2(-55, 395), Vector2(-415, 295), Vector2(-775, 295), Vector2(-955, 345), Vector2(-1650, 445)]
 	for pos in mite_positions:
 		var mite := CharacterBody2D.new()
 		mite.set_script(GREEDY_MITE)
@@ -826,7 +867,7 @@ func _create_expanded_content() -> void:
 			coin_guard.connect("defeated", Callable(self, "_on_coin_guard_defeated"))
 
 	# Extra coins in expanded wings
-	var extra_coins := [Vector2(1550, 440), Vector2(1890, 340), Vector2(125, 440), Vector2(-305, 340), Vector2(-665, 240), Vector2(-1025, 340), Vector2(-1205, 390), Vector2(-1800, 440), Vector2(1380, 490)]
+	var extra_coins := [Vector2(1550, 440), Vector2(125, 440), Vector2(-305, 340), Vector2(-665, 240), Vector2(-1025, 340), Vector2(-1205, 390), Vector2(-1800, 440), Vector2(1380, 490)]
 	for pos in extra_coins:
 		var marker := _make_interactable("GOLD\n[E] TAKE", pos, Color(1.0, 0.9, 0.5))
 		interactables.append({"node": marker, "message": "Lumi picks up gold.", "kind": "coin_extra", "used": false, "value": 15, "marker": marker})
@@ -839,7 +880,19 @@ func _on_guard_dropped(amount: int) -> void:
 
 func _on_coin_guard_defeated() -> void:
 	miniboss_defeated = true
-	_show_status("COIN GUARD DEFEATED.")
+	_grant_seal("vault")
+	_show_status("COIN GUARD DEFEATED. SEAL %d/%d" % [seals.size(), SEALS_NEEDED])
+
+func _grant_seal(id: String) -> void:
+	if not seals.has(id):
+		seals.append(id)
+
+func _hide_seal_marker(id: String) -> void:
+	for item in interactables:
+		if item["kind"] == "seal" and item.get("seal_id", "") == id:
+			item["used"] = true
+			item["node"].visible = false
+			queue_redraw()
 
 func _open_vault_route() -> void:
 	post_boss_open = true

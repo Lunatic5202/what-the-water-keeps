@@ -77,6 +77,14 @@ func _physics_process(delta: float) -> void:
 	if absf(global_position.x - start_x) > 140.0 and not chase:
 		patrol_direction = -1 if global_position.x > start_x else 1
 
+	# Never walk off a ledge: with no floor just ahead, turn around (or stop while chasing).
+	if is_on_floor() and absf(velocity.x) > 1.0:
+		var ahead := Vector2(signf(velocity.x) * 16.0, 0.0)
+		if not test_move(global_transform.translated(ahead), Vector2(0.0, 24.0)):
+			velocity.x = 0.0
+			if not chase:
+				patrol_direction *= -1
+
 	attack_cooldown = maxf(0.0, attack_cooldown - delta)
 	move_and_slide()
 

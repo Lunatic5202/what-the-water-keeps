@@ -45,7 +45,7 @@ const PLATFORMS := [
 # Warden's ledge, and down into the arena's far end.
 const EXTRA_PLATFORMS := [
 	Rect2(1350, 480, 90, 18), Rect2(1180, 440, 90, 18), Rect2(1010, 400, 90, 18),
-	Rect2(840, 360, 90, 18), Rect2(670, 320, 90, 18), Rect2(500, 280, 90, 18),
+	Rect2(840, 360, 90, 18), Rect2(670, 320, 90, 18), Rect2(250, 280, 340, 18),
 	Rect2(4020, 200, 110, 20), Rect2(4190, 160, 110, 20), Rect2(4360, 120, 340, 24),
 	Rect2(4760, 160, 110, 20), Rect2(4930, 200, 110, 20), Rect2(5100, 240, 70, 20),
 ]
@@ -118,6 +118,8 @@ var dream_exit: Node2D = null
 var dream_exit_open := false
 var sloth_miniboss: CharacterBody2D = null
 var sloth_miniboss_defeated := false
+const SEALS_NEEDED := 2
+var seals: Array = []   # "sky" (Dozy Warden) and "loft" (top of the loft stair)
 
 func _ready() -> void:
 	add_to_group("drowse_holder")
@@ -411,6 +413,14 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	draw_rect(Rect2(-3000, -2000, 11000, 4000), Palette.SLOTH_SKY)
+	for item in interactables:
+		if item["kind"] == "seal" and not item.get("used", false) and is_instance_valid(item["node"]):
+			var c: Vector2 = item["node"].position
+			draw_circle(c, 26.0, Color(0.75, 0.85, 1.0, 0.3))
+			draw_circle(c, 17.0, Color(0.16, 0.14, 0.34))
+			draw_circle(c, 14.0, Color(0.55, 0.7, 1.0))
+			draw_circle(c, 8.0, Color(0.9, 0.95, 1.0))
+			draw_circle(c + Vector2(-4, -4), 2.5, Color(1, 1, 1))
 	# Far hills.
 	for i in range(18):
 		var x := -400.0 + i * 340.0
@@ -542,6 +552,7 @@ func _update_overlay() -> void:
 # --- Interaction --------------------------------------------------------------
 
 func _interact(item: Dictionary) -> void:
+	queue_redraw()
 	var kind: String = item["kind"]
 	var target: Node2D = item["node"]
 	match kind:
@@ -565,8 +576,16 @@ func _interact(item: Dictionary) -> void:
 		"boss":
 			if boss_defeated:
 				_show_dialogue("Only a small hammock, swaying with no one in it.", target)
+			elif seals.size() < SEALS_NEEDED:
+				_show_dialogue("The fog before the hammock will not part.\n\nSEALS %d/%d. Two seals are kept in the high places of this hollow." % [seals.size(), SEALS_NEEDED], target)
 			else:
 				_start_fight()
+		"seal":
+			item["used"] = true
+			target.visible = false
+			_grant_seal(item["seal_id"])
+			_show_status("SEAL %d/%d" % [seals.size(), SEALS_NEEDED])
+			_show_dialogue(item["message"], target)
 		_:
 			_show_dialogue(item["message"], target)
 
@@ -576,7 +595,8 @@ func save_state() -> Dictionary:
 		"has_hourglass": has_hourglass,
 		"has_dusk_key": has_dusk_key,
 		"has_snail_grips": has_snail_grips,
-		"warden_defeated": sloth_miniboss_defeated
+		"warden_defeated": sloth_miniboss_defeated,
+		"seals": seals.duplicate()
 	}
 
 # Puts Slumber Hollow back the way a save left it: the Dreamer at rest.
@@ -584,8 +604,12 @@ func apply_save(d: Dictionary) -> void:
 	has_hourglass = bool(d.get("has_hourglass", false))
 	has_dusk_key = bool(d.get("has_dusk_key", false))
 	has_snail_grips = bool(d.get("has_snail_grips", false))
+	for id in d.get("seals", []):
+		_grant_seal(str(id))
+		_hide_seal_marker(str(id))
 	if bool(d.get("warden_defeated", false)):
 		sloth_miniboss_defeated = true
+		_grant_seal("sky")
 		if is_instance_valid(sloth_miniboss):
 			sloth_miniboss.queue_free()
 	if bool(d.get("boss_defeated", false)):
@@ -782,7 +806,9 @@ func _on_dreamer_defeated() -> void:
 func _create_sloth_expanded() -> void:
 	for rect: Rect2 in EXTRA_PLATFORMS:
 		_solid(rect)
-	for pos in [Vector2(1055, 360), Vector2(545, 240), Vector2(4245, 120)]:
+	var seal_marker := _make_interactable("SEAL\n[E] TAKE", Vector2(570, 262), Color(0.75, 0.85, 1.0))
+	interactables.append({"node": seal_marker, "message": "A cool, pale seal rests on the ledge.", "kind": "seal", "seal_id": "loft", "used": false})
+	for pos in [Vector2(1055, 360), Vector2(420, 240), Vector2(4245, 120)]:
 		_add_lantern(pos)
 	if not sloth_miniboss_defeated:
 		sloth_miniboss = CharacterBody2D.new()
@@ -800,11 +826,23 @@ func _create_sloth_expanded() -> void:
 
 func _on_sloth_mb_defeated() -> void:
 	sloth_miniboss_defeated = true
-	_show_status("DOZY WARDEN DEFEATED.")
+	_grant_seal("sky")
+	_show_status("DOZY WARDEN DEFEATED. SEAL %d/%d" % [seals.size(), SEALS_NEEDED])
+
+func _grant_seal(id: String) -> void:
+	if not seals.has(id):
+		seals.append(id)
+
+func _hide_seal_marker(id: String) -> void:
+	for item in interactables:
+		if item["kind"] == "seal" and item.get("seal_id", "") == id:
+			item["used"] = true
+			item["node"].visible = false
+			queue_redraw()
 
 func _open_dream_exit() -> void:
 	dream_exit_open = true
-	dream_exit = _make_interactable("DREAM EXIT\n[E] RETURN", Vector2(520, 262), Color(0.88, 0.84, 1.0))
+	dream_exit = _make_interactable("DREAM EXIT\n[E] RETURN", Vector2(270, 262), Color(0.88, 0.84, 1.0))
 	interactables.append({"node": dream_exit, "message": "A shimmering doorway of half-remembered pillows leads back to the Still Pond through the Dream.\n\nReturn to hub?", "kind": "dream_exit", "used": false})
 	_show_status("DREAM EXIT OPEN - WAKE THROUGH THE DREAMING")
 

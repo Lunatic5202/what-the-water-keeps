@@ -101,3 +101,4 @@
 - [ ] Gluttony onward, Mirror Gate, endings, side quests
 
 - [ ] Playtest Vault Route, Gold Ridge, loft stair, sky route, both mini-bosses and both exits.
+- [ ] Playtest seal gates: collect both seals in each region in either order, then the boss fight starts.

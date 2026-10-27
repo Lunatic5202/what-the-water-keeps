@@ -66,3 +66,4 @@ The repository has been updated through source changes, but the game has **not**
 `project.godot` advertises Godot 4.7 in `config/features`; use Godot 4.7 or newer unless the feature tag is deliberately changed and the project is verified on an older version.
 
 - Expanded Greed/Sloth routes, Greedy Mites, Coin Guard, Dozy Warden, Vault Exit and Dream Exit (headless-tested only, see README).
+- Seal gates on both bosses, drawn pickups, mite ledge check (headless/screenshot tested only).
