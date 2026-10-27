@@ -44,54 +44,48 @@ const ARENA_LOCK_X := 2000.0   # left lock wall while the fight is on (marker is
 const ARENA_END_X := 2750.0    # permanent end wall of Greed
 const COLLECTOR_X := 2500.0
 const VAULT_END_X := -1930.0   # far left wall, past the vault
-const VAULT_GROUND := Rect2(-1900, 470, 570, 60)   # the old treasury floor
+const VAULT_GROUND := Rect2(-1900, 470, 900, 60)   # the old treasury floor
 const VAULT_EXIT_POS := Vector2(-1730, 440)
 
-# Main route deliberately has three readable breaks. They are short enough to
+# Main route deliberately has three readable 60px breaks. They are easy to
 # jump, but make the garden feel like terrain rather than one uninterrupted floor.
 # Keep these rectangles in sync for both drawing and collision.
 const MAIN_GROUND := [
-	Rect2(0, 570, 600, 90),
-	Rect2(700, 570, 550, 90),
-	Rect2(1370, 570, 460, 90),
-	Rect2(1920, 570, 830, 90),
+	Rect2(0, 570, 620, 90),
+	Rect2(680, 570, 570, 90),
+	Rect2(1310, 570, 520, 90),
+	Rect2(1890, 570, 860, 90),
 ]
 
-# Extra shelves: Rect2(left, top, width, height). One shared silhouette helper
-# defines both the visible rock shape and its collision polygon.
+# Extra floors: Rect2(left, top, width, height). Their visible tops and collision
+# tops come from the same flat-sided silhouette.
 const EXTRA_PLATFORMS := [
-	# Opening ledge: one optional pickup, not a chain of tutorial blocks.
-	Rect2(440, 490, 120, 20),
-	# Canopy route: climb from the road, cross the upper garden, then descend
-	# directly onto the Gold Ridge approach. Keep each rise <= 45 and each
-	# jump gap >= 60 so the route follows the documented platforming limits.
-	Rect2(760, 530, 110, 20),
-	Rect2(590, 485, 110, 20),
-	Rect2(420, 440, 110, 20),
-	Rect2(250, 395, 110, 20),
-	Rect2(490, 350, 220, 24),
-	Rect2(820, 350, 220, 24),
-	Rect2(1130, 350, 220, 24),
-	Rect2(1370, 395, 110, 24),
-	# Vault Route: a deliberate climb out over the broken garden wall.
-	Rect2(250, 520, 110, 50),
-	Rect2(70, 470, 110, 18),
-	Rect2(-110, 420, 110, 18),
-	Rect2(-290, 370, 110, 18),
-	Rect2(-470, 320, 110, 18),
-	Rect2(-650, 270, 110, 18),
-	Rect2(-830, 320, 110, 18),
-	Rect2(-1010, 370, 110, 18),
-	Rect2(-1190, 420, 110, 18),
-	# Hidden treasury shelf: the upper pocket is reached with the Featherweight Charm.
-	Rect2(-1830, 410, 100, 18),
-	Rect2(-1830, 300, 100, 18),
-	# Gold Ridge: four broad, rising shelves form one readable climb to the seal.
-	# The first is a substantial broken outcrop; the next three keep a steady jump rhythm.
-	Rect2(1240, 500, 150, 70),
-	Rect2(1405, 445, 155, 24),
-	Rect2(1575, 390, 155, 24),
-	Rect2(1745, 335, 165, 24),
+	# Canopy stairs: five level treads rise 40px each from the road. Their flat
+	# tops are 106px wide with 74px between landing edges. The broad upper floor
+	# starts 64px beyond the final tread and ends over the Gold Ridge approach.
+	Rect2(930, 530, 130, 40),
+	Rect2(750, 490, 130, 40),
+	Rect2(570, 450, 130, 40),
+	Rect2(390, 410, 130, 40),
+	Rect2(210, 370, 130, 40),
+	Rect2(380, 330, 980, 40),
+	# Vault Route: six broad ledges make one arch over the broken wall. Each 50px
+	# rise has a 74px flat-edge gap, with the turn back down into the treasury.
+	Rect2(250, 520, 200, 50),
+	Rect2(0, 470, 200, 18),
+	Rect2(-250, 420, 200, 18),
+	Rect2(-500, 370, 200, 18),
+	Rect2(-750, 420, 200, 18),
+	Rect2(-1000, 420, 200, 18),
+	# The high treasury nook needs a normal jump onto its first shelf, then
+	# Double Jump to reach the cache 90px above it.
+	Rect2(-1830, 420, 120, 18),
+	Rect2(-1830, 330, 120, 18),
+	# Gold Ridge: four level-topped shelves rise in 40px steps to the seal.
+	Rect2(1240, 530, 150, 40),
+	Rect2(1436, 490, 155, 24),
+	Rect2(1637, 450, 155, 24),
+	Rect2(1840, 410, 170, 24),
 ]
 const MOUNTAIN_X := 2580.0
 var collector: CharacterBody2D
@@ -134,8 +128,6 @@ func _ready() -> void:
 	_update_hud()
 	Story.play(self, dialogue_panel, dialogue_label, Story.GREED_ENTER)
 
-var bg_drawn := false
-
 func _create_background() -> void:
 	# Background is drawn in _draw()
 	pass
@@ -162,8 +154,9 @@ func _draw() -> void:
 	]), Color(0.86, 0.72, 0.40, 1.0))
 
 	# Broken garden columns: a hint of an older place being swallowed by flowers.
-	for i in range(7):
-		var x := -1850.0 + i * 680.0
+	var ruin_columns := [-1750.0, -900.0, 1650.0, 2350.0]
+	for i in range(ruin_columns.size()):
+		var x: float = ruin_columns[i]
 		var h := 115.0 + float((i * 47) % 90)
 		draw_rect(Rect2(x, 570.0 - h, 22, h), Color(0.68, 0.53, 0.30, 1.0))
 		draw_rect(Rect2(x - 5, 570.0 - h, 32, 8), Color(0.78, 0.64, 0.37, 1.0))
@@ -172,12 +165,17 @@ func _draw() -> void:
 			draw_line(Vector2(x + 10, 570.0 - h + 18), Vector2(x + 4, 570.0 - h + 47), Color(0.48, 0.36, 0.22, 0.85), 2.0)
 			draw_line(Vector2(x + 4, 570.0 - h + 47), Vector2(x + 15, 570.0 - h + 68), Color(0.48, 0.36, 0.22, 0.85), 2.0)
 
-	# A broken compass monument marks the crossroads where routes diverge.
-	draw_rect(Rect2(1035, 390, 18, 180), Color(0.68, 0.53, 0.30, 1.0))
-	draw_rect(Rect2(1000, 390, 88, 12), Color(0.78, 0.64, 0.37, 1.0))
-	draw_rect(Rect2(1016, 365, 56, 8), Color(0.55, 0.41, 0.24, 0.9))
-	draw_circle(Vector2(1044, 350), 17.0, Color(0.96, 0.80, 0.35, 0.95))
-	draw_circle(Vector2(1044, 350), 8.0, Color(0.56, 0.39, 0.18, 1.0))
+	# Three piers support the single canopy floor and leave a clear walk beneath it.
+	for x in [520.0, 820.0, 1120.0]:
+		draw_rect(Rect2(x - 12.0, 350.0, 24.0, 220.0), Color(0.68, 0.53, 0.30, 1.0))
+		draw_rect(Rect2(x - 20.0, 350.0, 40.0, 8.0), Color(0.78, 0.64, 0.37, 1.0))
+		draw_rect(Rect2(x - 18.0, 562.0, 36.0, 8.0), Color(0.55, 0.41, 0.24, 0.9))
+
+	# One compass marker sits below the canopy at the main-road crossing.
+	draw_rect(Rect2(1035, 430, 18, 140), Color(0.68, 0.53, 0.30, 1.0))
+	draw_rect(Rect2(1000, 430, 88, 12), Color(0.78, 0.64, 0.37, 1.0))
+	draw_circle(Vector2(1044, 416), 17.0, Color(0.96, 0.80, 0.35, 0.95))
+	draw_circle(Vector2(1044, 416), 8.0, Color(0.56, 0.39, 0.18, 1.0))
 
 	# The broken arch frames the approach to the Collector.
 	draw_rect(Rect2(1980, 300, 24, 270), Color(0.61, 0.45, 0.25, 1.0))
@@ -186,12 +184,7 @@ func _draw() -> void:
 	draw_rect(Rect2(2140, 290, 100, 22), Color(0.73, 0.56, 0.30, 1.0))
 	draw_line(Vector2(2160, 290), Vector2(2178, 312), Color(0.48, 0.35, 0.20, 1.0), 3.0)
 
-	if not bg_drawn:
-		# Golden flowers (decorative) - only seed once
-		randomize()
-		bg_drawn = true
-
-	for i in range(64):
+	for i in range(24):
 		var x := fposmod(float(i * 173 + 42), 5600.0) - 2800.0
 		var y := fposmod(float(i * 97 + 17), 440.0) + 80.0
 		var size := 2.0 + fposmod(float(i * 13), 4.0)
@@ -200,8 +193,8 @@ func _draw() -> void:
 			draw_circle(Vector2(x + 4, y - 3), size * 0.55, Color(1.0, 0.9, 0.54, 0.72))
 
 	# Distant golden trees
-	for i in range(6):
-		var x := -200 + i * 400
+	for i in range(3):
+		var x := -200 + i * 1200
 		draw_rect(Rect2(x - 8, 350, 16, 260), Color(0.65, 0.52, 0.3, 1.0))
 		draw_circle(Vector2(x, 340), 45, Color(0.75, 0.65, 0.35, 1.0))
 		draw_circle(Vector2(x - 25, 360), 30, Color(0.8, 0.7, 0.4, 1.0))
@@ -213,8 +206,8 @@ func _draw() -> void:
 	for section: Rect2 in MAIN_GROUND:
 		draw_rect(section, ground)
 		draw_rect(Rect2(section.position, Vector2(section.size.x, 5)), top)
-		for blade in range(int(section.size.x / 34.0)):
-			var bx := section.position.x + 16.0 + blade * 34.0
+		for blade in range(int(section.size.x / 85.0)):
+			var bx := section.position.x + 35.0 + blade * 85.0
 			draw_line(Vector2(bx, section.position.y + 3), Vector2(bx - 3, section.position.y - 7), Color(0.77, 0.68, 0.34, 1.0), 2.0)
 			draw_line(Vector2(bx, section.position.y + 3), Vector2(bx + 5, section.position.y - 5), Color(0.77, 0.68, 0.34, 1.0), 2.0)
 	for plat: Rect2 in EXTRA_PLATFORMS:
@@ -223,10 +216,8 @@ func _draw() -> void:
 		var outline := rock.duplicate()
 		outline.append(rock[0])
 		draw_polyline(outline, Palette.GOLD_OUTLINE, 2.0)
-		# A restrained highlight follows the irregular top edge instead of outlining a rectangle.
+		# One continuous level highlight makes the landing surface easy to read.
 		draw_line(rock[1], rock[2], top, 3.0)
-		draw_line(rock[2], rock[3], top, 3.0)
-		draw_line(rock[3], rock[4], top, 3.0)
 	# The treasury floor remains a broad, solid stone shelf.
 	draw_rect(VAULT_GROUND, ground)
 	draw_rect(Rect2(VAULT_GROUND.position, Vector2(VAULT_GROUND.size.x, 5)), top)
@@ -236,15 +227,16 @@ func _draw() -> void:
 		draw_line(Vector2(-1800, 407), Vector2(-1780, 390), Color(1.0, 0.83, 0.38, 0.8), 2.0)
 		draw_circle(Vector2(-1780, 390), 3.0, Color(1.0, 0.9, 0.55, 0.85))
 
-	# Miniboss wayfinding: point players into the left vault branch and mark the arena.
-	draw_string(ThemeDB.fallback_font, Vector2(-1110, 392), "VAULT ROUTE  →", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.36, 0.22, 0.08, 1.0))
 	if not miniboss_defeated:
+		# Route marks appear at the branch, the last turn and the arena.
+		draw_string(ThemeDB.fallback_font, Vector2(355, 510), "← VAULT", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(0.36, 0.22, 0.08, 1.0))
+		draw_string(ThemeDB.fallback_font, Vector2(-1225, 398), "COIN GUARD  ←", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.36, 0.22, 0.08, 1.0))
 		draw_circle(Vector2(-1400, 440), 48.0, Color(1.0, 0.76, 0.20, 0.12))
 		draw_arc(Vector2(-1400, 440), 40.0, 0.0, TAU, 32, Color(1.0, 0.77, 0.22, 0.9), 3.0)
 		draw_string(ThemeDB.fallback_font, Vector2(-1505, 385), "COIN GUARD", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.32, 0.20, 0.08, 1.0))
 
-	# Foreground flower clumps make the garden feel overgrown.
-	for i in range(42):
+	# Sparse foreground flowers keep the route edges readable.
+	for i in range(14):
 		var fx := fposmod(float(i * 113 + 31), 3000.0) - 150.0
 		var fy := 568.0 - fposmod(float(i * 29), 16.0)
 		var petal := Color(0.94, 0.75, 0.25, 0.95) if i % 3 != 0 else Color(0.95, 0.86, 0.52, 0.95)
@@ -351,8 +343,9 @@ func _create_ground() -> void:
 
 	# Expanded wings: the Gold Ridge over the road to the arena, and the long
 	# Vault Route out over the pit to the old treasury. See EXTRA_PLATFORMS.
-	for rect: Rect2 in EXTRA_PLATFORMS:
-		_create_platform(rect.get_center(), rect.size)
+	for i in range(EXTRA_PLATFORMS.size()):
+		var rect: Rect2 = EXTRA_PLATFORMS[i]
+		_create_platform(rect.get_center(), rect.size, true)
 	_create_ground_section(VAULT_GROUND.get_center(), VAULT_GROUND.size, "VaultApproach")
 
 	# Boundary walls
@@ -373,12 +366,13 @@ func _create_ground_section(at: Vector2, size: Vector2, section_name: String) ->
 	ground.add_child(collision)
 	add_child(ground)
 
-func _create_platform(at: Vector2, size: Vector2) -> void:
+func _create_platform(at: Vector2, size: Vector2, one_way := false) -> void:
 	var platform := StaticBody2D.new()
 	platform.position = at
 	platform.name = "GreedRockShelf"
 	var collision := CollisionPolygon2D.new()
 	collision.polygon = _platform_local_points(Rect2(Vector2.ZERO, size))
+	collision.one_way_collision = one_way
 	platform.add_child(collision)
 	add_child(platform)
 
@@ -386,13 +380,11 @@ func _create_platform(at: Vector2, size: Vector2) -> void:
 # bevelled sides read as broken stone outcrops rather than floating rectangles.
 func _platform_local_points(rect: Rect2) -> PackedVector2Array:
 	var half := rect.size * 0.5
-	var bevel := minf(10.0, half.y * 0.65)
+	var bevel_x := minf(12.0, half.x * 0.2)
 	return PackedVector2Array([
 		Vector2(-half.x, half.y),
-		Vector2(-half.x + 8.0, -half.y + bevel),
-		Vector2(-half.x * 0.28, -half.y),
-		Vector2(half.x * 0.24, -half.y + 2.0),
-		Vector2(half.x - 8.0, -half.y + bevel),
+		Vector2(-half.x + bevel_x, -half.y),
+		Vector2(half.x - bevel_x, -half.y),
 		Vector2(half.x, half.y),
 	])
 
@@ -547,13 +539,17 @@ func _create_greed_level() -> void:
 		interactables.append({"node": lore, "message": lore_messages[i], "kind": "lore", "used": false})
 
 	# Shrines (offer gold to reduce weight)
-	var shrine_positions := [Vector2(520, 470), Vector2(-1600, 430), Vector2(1640, 545)]
+	var shrine_positions := [Vector2(800, 560), Vector2(-1120, 440), Vector2(1640, 545)]
 	for i in range(shrine_positions.size()):
 		var shrine := _make_interactable("SHRINE\n[E] OFFER", shrine_positions[i], Color(0.95, 0.85, 0.5))
 		interactables.append({"node": shrine, "message": "A small golden bowl. \"Give what you carry.\"\n\nPress E to offer all carried gold.", "kind": "shrine", "used": false, "shrine_id": i})
 
 	# Coin pickups
-	var coin_positions := [Vector2(300, 560), Vector2(500, 470), Vector2(730, 545), Vector2(960, 545), Vector2(1140, 425), Vector2(1380, 545), Vector2(1540, 435), Vector2(1730, 545), Vector2(1860, 350)]
+	var coin_positions := [
+		Vector2(300, 560), Vector2(500, 545), Vector2(730, 545),
+		Vector2(1100, 320), Vector2(1140, 545), Vector2(1380, 545),
+		Vector2(1600, 545), Vector2(1730, 545), Vector2(1760, 420),
+	]
 	for i in range(coin_positions.size()):
 		var coin := _make_interactable("COIN", coin_positions[i], Color(1.0, 0.85, 0.3))
 		interactables.append({"node": coin, "message": "A gleaming gold coin. It feels heavier than it should.\n\n+10 Gold", "kind": "coin", "used": false, "value": 10})
@@ -595,11 +591,11 @@ func _create_greed_level() -> void:
 		interactables.append({"node": bowl, "message": "An offering bowl.", "kind": "bowl", "used": false})
 	_create_collector()
 
-	var ridge_seal := _make_interactable("SEAL\n[E] TAKE", Vector2(1885, 325), Color(1.0, 0.9, 0.5))
+	var ridge_seal := _make_interactable("SEAL\n[E] TAKE", Vector2(1925, 380), Color(1.0, 0.9, 0.5))
 	interactables.append({"node": ridge_seal, "message": "A heavy gold seal, warm from the sun.", "kind": "seal", "seal_id": "ridge", "used": false})
 
-	# Optional secret: an upper shelf beyond the treasury tablet. No stat buff.
-	var secret_cache := _make_interactable("???", Vector2(-1780, 260), Color(0.95, 0.82, 0.5))
+	# Optional secret: a high treasury nook beyond the tablet. No stat buff.
+	var secret_cache := _make_interactable("???", Vector2(-1780, 300), Color(0.95, 0.82, 0.5))
 	interactables.append({
 		"node": secret_cache,
 		"message": "A forgotten purse spills 35 gold into Lumi's hands.",
@@ -625,6 +621,7 @@ func _make_interactable(marker_text: String, at: Vector2, tint: Color) -> Node2D
 	label.add_theme_color_override("font_color", tint)
 	label.add_theme_color_override("font_outline_color", Color(0.12, 0.10, 0.24))
 	label.add_theme_constant_override("outline_size", 5)
+	label.visible = false
 	marker.add_child(label)
 	add_child(marker)
 	return marker
@@ -700,14 +697,26 @@ func _process(delta: float) -> void:
 
 	var nearest: Dictionary = {}
 	var nearest_distance := 95.0
+	var nearest_label_target: Node2D = null
+	var nearest_label_distance := 180.0
 	for item in interactables:
 		var target: Node2D = item["node"]
-		if not is_instance_valid(target) or item.get("used", false):
+		if not is_instance_valid(target) or item.get("used", false) or not target.visible:
 			continue
 		var distance := player.global_position.distance_to(target.global_position)
+		if distance < nearest_label_distance:
+			nearest_label_distance = distance
+			nearest_label_target = target
 		if distance < nearest_distance:
 			nearest_distance = distance
 			nearest = item
+	for item in interactables:
+		var target: Node2D = item["node"]
+		if not is_instance_valid(target):
+			continue
+		var label := target.get_node_or_null("Label") as Label
+		if is_instance_valid(label):
+			label.visible = target == nearest_label_target
 
 	prompt_label.text = "E  •  interact" if not nearest.is_empty() else ""
 	if not nearest.is_empty() and Input.is_action_just_pressed("interact"):
@@ -1107,7 +1116,10 @@ func _on_collector_defeated() -> void:
 
 func _create_expanded_content() -> void:
 	# Small mobs spread across expanded areas
-	var mite_positions := [Vector2(790, 550), Vector2(1110, 550), Vector2(1495, 550), Vector2(1760, 550), Vector2(1550, 405), Vector2(1880, 325), Vector2(-55, 395), Vector2(-415, 295), Vector2(-775, 295), Vector2(-955, 345)]
+	var mite_positions := [
+		Vector2(790, 550), Vector2(1110, 550), Vector2(1495, 550), Vector2(1760, 550),
+		Vector2(100, 445), Vector2(-400, 345), Vector2(-650, 395),
+	]
 	for pos in mite_positions:
 		var mite := CharacterBody2D.new()
 		mite.set_script(GREEDY_MITE)
@@ -1139,7 +1151,9 @@ func _create_expanded_content() -> void:
 			coin_guard.connect("defeated", Callable(self, "_on_coin_guard_defeated"))
 
 	# Extra coins in expanded wings
-	var extra_coins := [Vector2(1610, 405), Vector2(125, 440), Vector2(-305, 340), Vector2(-665, 240), Vector2(-1025, 340), Vector2(-1205, 390), Vector2(1380, 490)]
+	var extra_coins := [
+		Vector2(1360, 470), Vector2(-150, 390), Vector2(-820, 390),
+	]
 	for pos in extra_coins:
 		var marker := _make_interactable("GOLD\n[E] TAKE", pos, Color(1.0, 0.9, 0.5))
 		interactables.append({"node": marker, "message": "Lumi picks up gold.", "kind": "coin_extra", "used": false, "value": 15, "marker": marker})

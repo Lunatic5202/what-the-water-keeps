@@ -190,14 +190,16 @@ Platforms are listed in `PLATFORMS` in `sloth.gd`. Steps up are 55px or less, ga
 
 ### Greed route layout
 
-Greed is a set of connected routes at different heights, not one flat corridor:
+Greed has a lower road, an upper canopy floor and two optional branch routes. The map keeps the existing soft, golden storybook palette, with playable surfaces drawn as broad stone ledges with horizontal tops.
 
 - The main road runs near y=570.
-- The canopy route climbs from the road around x=760, crosses the garden near y=350, then drops onto the Gold Ridge approach around x=1370.
-- The Gold Ridge rises from the road to its seal at x=1885, y=325, before returning to the Collector approach.
-- The western Vault Route branches off the road, climbs over the broken wall, and descends into the treasury and Coin Guard arena.
+- The canopy entrance starts at x=930. Five flat treads rise westward by 40px each; Lumi turns onto one broad, flat canopy floor at y=330 and crosses east above the road. The canopy uses one-way collision, so Lumi can jump up through it and the lower road stays open underneath. The floor ends above the Gold Ridge approach near x=1360, where Lumi can drop onto the Ridge.
+- A shrine sits on the road before the canopy climb, and another sits on the treasury floor before the Coin Guard. Both let Lumi offer carried gold before the next route section.
+- The Gold Ridge is four broad ledges with 40px rises and 70px flat-edge gaps. It leads to the seal at x=1925, y=380, then drops back to the Collector road.
+- The western Vault Route begins beside the road at x=250. Six broad ledges rise over the old garden wall in 50px steps, then descend into the treasury floor and Coin Guard arena. Both ends of the route are marked with a subtle direction cue.
+- The treasury's hidden upper nook has a glint near its first shelf. The next shelf sits 90px above it, so the optional 35-gold cache requires Double Jump.
 
-The route platforms use the same beveled shapes for collision and drawing. Keep rises at 55px or less, leave 50px of headroom, and keep traversal gaps at 60px or more. Weight can lower Lumi's jump; the shrines let players shed carried gold before a climb.
+The route platforms use the same shapes for collision and drawing. Their landing tops are level; only the sides are beveled. The route shelves are one-way platforms, keeping drops and upward passage clear. Keep rises at 55px or less, leave 50px of headroom, and keep flat-edge gaps at 60px or more. Only the closest nearby interaction label is shown at a time, to keep the route visible. Weight can lower Lumi's jump; shrines are placed before the canopy climb, on the treasury approach, and below the Gold Ridge.
 
 ## How the code works
 
