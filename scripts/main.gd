@@ -46,6 +46,18 @@ const WAKE_ROOMS := [
 
 var wake_room := -1
 
+# Optional upper meadow route. It climbs above the tutorial path and descends
+# back to it, giving curious players a second way through the first room.
+# Rect2 coordinates are shared by the drawing and collision code.
+const WAKE_SECRET_PLATFORMS := [
+	Rect2(700, 545, 100, 18),
+	Rect2(820, 495, 100, 18),
+	Rect2(940, 445, 100, 18),
+	Rect2(1060, 395, 100, 18),
+	Rect2(1180, 445, 100, 18),
+	Rect2(1300, 495, 100, 18),
+]
+
 const SIGN_MESSAGES := [
 	"Walk! (it's easy, I believe in you)",
 	"Jump over the tiny puddle.",
@@ -227,6 +239,10 @@ func _draw() -> void:
 	var gt := Palette.WAKE_GROUND_TOP
 	draw_rect(Rect2(0, 610, 2200, 150), g)
 	draw_rect(Rect2(0, 610, 2200, 5), gt)
+	for ledge: Rect2 in WAKE_SECRET_PLATFORMS:
+		draw_rect(ledge, Palette.WAKE_GROUND)
+		draw_rect(Rect2(ledge.position, Vector2(ledge.size.x, 3)), gt)
+		draw_rect(ledge, Color(0.36, 0.48, 0.36, 1.0), false, 2.0)
 
 	# Boss arena - circular moss clearing framed by old trees
 	draw_circle(Vector2(2800, 610), 380, Palette.WAKE_CLEARING)
@@ -259,6 +275,9 @@ func _draw() -> void:
 func _create_ground() -> void:
 	# Tutorial path: signs and jelly (0 to 2200)
 	_create_ground_section(Vector2(1100, 650), Vector2(2200, 80), "TutorialGround")
+	for i in range(WAKE_SECRET_PLATFORMS.size()):
+		var ledge: Rect2 = WAKE_SECRET_PLATFORMS[i]
+		_create_ground_section(ledge.get_center(), ledge.size, "WakeSecretPlatform%d" % (i + 1))
 
 	# Boss arena (2200 to 3400)
 	_create_ground_section(Vector2(2800, 650), Vector2(1200, 80), "BossArena")
