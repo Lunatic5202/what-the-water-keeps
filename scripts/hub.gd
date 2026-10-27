@@ -283,8 +283,8 @@ func _create_hud() -> void:
 	hud.add_child(prompt_label)
 
 	dialogue_panel = Panel.new()
-	dialogue_panel.position = Vector2(100, 478)
-	dialogue_panel.size = Vector2(1080, 170)
+	dialogue_panel.position = Vector2(100, 468)
+	dialogue_panel.size = Vector2(1080, 182)
 	dialogue_panel.visible = false
 	var dialogue_style := StyleBoxFlat.new()
 	dialogue_style.bg_color = Color(0.07, 0.08, 0.14, 0.88)
@@ -309,11 +309,12 @@ func _create_hud() -> void:
 
 	dialogue_label = Label.new()
 	dialogue_label.position = Vector2(28, 43)
-	dialogue_label.size = Vector2(1024, 112)
+	dialogue_label.size = Vector2(1024, 124)
 	dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	dialogue_label.clip_text = true
 	dialogue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	dialogue_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	dialogue_label.add_theme_font_size_override("font_size", 22)
+	dialogue_label.add_theme_font_size_override("font_size", 21)
 	dialogue_label.add_theme_color_override("font_color", Color(0.97, 0.97, 1.0))
 	dialogue_label.add_theme_color_override("font_outline_color", Color(0.04, 0.03, 0.10, 0.7))
 	dialogue_label.add_theme_constant_override("outline_size", 1)
