@@ -57,10 +57,8 @@ const MAIN_GROUND := [
 	Rect2(1920, 570, 830, 90),
 ]
 
-# Extra platforms: Rect2(left, top, width, height). The same list draws and
-# collides. Steps are 50px up, gaps 70px, so a plain jump clears each one (no
-# double jump needed). The first step of each climb is a solid block down to the
-# ground so Lumi can still walk beneath the rest.
+# Extra shelves: Rect2(left, top, width, height). One shared silhouette helper
+# defines both the visible rock shape and its collision polygon.
 const EXTRA_PLATFORMS := [
 	# Opening ledge: one optional pickup, not a chain of tutorial blocks.
 	Rect2(440, 490, 120, 20),
@@ -222,9 +220,10 @@ func _draw() -> void:
 	draw_rect(VAULT_GROUND, ground)
 	draw_rect(Rect2(VAULT_GROUND.position, Vector2(VAULT_GROUND.size.x, 5)), top)
 
-	# A deliberately subtle coin-glint points upward from the hidden treasury shelf.
-	draw_line(Vector2(-1800, 407), Vector2(-1780, 390), Color(1.0, 0.83, 0.38, 0.8), 2.0)
-	draw_circle(Vector2(-1780, 390), 3.0, Color(1.0, 0.9, 0.55, 0.85))
+	# A small glint hints at the treasury pocket without exposing its cache marker.
+	if not secret_cache_found:
+		draw_line(Vector2(-1800, 407), Vector2(-1780, 390), Color(1.0, 0.83, 0.38, 0.8), 2.0)
+		draw_circle(Vector2(-1780, 390), 3.0, Color(1.0, 0.9, 0.55, 0.85))
 
 	# Foreground flower clumps make the garden feel overgrown.
 	for i in range(42):
