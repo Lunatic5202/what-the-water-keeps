@@ -85,8 +85,9 @@ var overlay_layer: CanvasLayer
 var overlay: ColorRect
 var stats_label: Label
 var prompt_label: Label
-var dialogue_panel: ColorRect
+var dialogue_panel: Panel
 var dialogue_label: Label
+var dialogue_location_label: Label
 var dialogue_target: Node2D
 var drowse_fill: ColorRect
 var interactables: Array[Dictionary] = []
@@ -332,21 +333,42 @@ func _create_hud() -> void:
 	prompt_label.add_theme_constant_override("outline_size", 6)
 	hud.add_child(prompt_label)
 
-	dialogue_panel = ColorRect.new()
-	dialogue_panel.position = Vector2(180, 482)
-	dialogue_panel.size = Vector2(920, 124)
-	dialogue_panel.color = Color(0.06, 0.07, 0.15, 0.97)
+	dialogue_panel = Panel.new()
+	dialogue_panel.position = Vector2(100, 468)
+	dialogue_panel.size = Vector2(1080, 182)
 	dialogue_panel.visible = false
+	var dialogue_style := StyleBoxFlat.new()
+	dialogue_style.bg_color = Color(0.07, 0.08, 0.14, 0.88)
+	dialogue_style.border_color = Color(0.77, 0.70, 1.0, 1.0)
+	dialogue_style.set_border_width_all(2)
+	dialogue_style.set_corner_radius_all(16)
+	dialogue_style.shadow_color = Color(0.04, 0.03, 0.10, 0.45)
+	dialogue_style.shadow_size = 12
+	dialogue_style.shadow_offset = Vector2(0, 5)
+	dialogue_panel.add_theme_stylebox_override("panel", dialogue_style)
 	hud.add_child(dialogue_panel)
 
+	dialogue_location_label = Label.new()
+	dialogue_location_label.position = Vector2(28, 12)
+	dialogue_location_label.size = Vector2(1024, 26)
+	dialogue_location_label.text = "SLUMBER HOLLOW"
+	dialogue_location_label.add_theme_font_size_override("font_size", 17)
+	dialogue_location_label.add_theme_color_override("font_color", Color(0.77, 0.70, 1.0, 1.0))
+	dialogue_location_label.add_theme_color_override("font_outline_color", Color(0.04, 0.03, 0.10, 0.8))
+	dialogue_location_label.add_theme_constant_override("outline_size", 2)
+	dialogue_panel.add_child(dialogue_location_label)
+
 	dialogue_label = Label.new()
-	dialogue_label.position = Vector2(22, 16)
-	dialogue_label.size = Vector2(876, 92)
+	dialogue_label.position = Vector2(28, 43)
+	dialogue_label.size = Vector2(1024, 124)
 	dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	dialogue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	dialogue_label.clip_text = true
+	dialogue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	dialogue_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	dialogue_label.add_theme_font_size_override("font_size", 24)
+	dialogue_label.add_theme_font_size_override("font_size", 21)
 	dialogue_label.add_theme_color_override("font_color", Color(0.97, 0.97, 1.0))
+	dialogue_label.add_theme_color_override("font_outline_color", Color(0.04, 0.03, 0.10, 0.7))
+	dialogue_label.add_theme_constant_override("outline_size", 1)
 	dialogue_panel.add_child(dialogue_label)
 
 func _connect_signals() -> void:
