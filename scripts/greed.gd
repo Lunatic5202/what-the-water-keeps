@@ -46,6 +46,16 @@ const VAULT_END_X := -1930.0   # far left wall, past the vault
 const VAULT_GROUND := Rect2(-1900, 470, 570, 60)   # the old treasury floor
 const VAULT_EXIT_POS := Vector2(-1730, 440)
 
+# Main route deliberately has three readable breaks. They are short enough to
+# jump, but make the garden feel like terrain rather than one uninterrupted floor.
+# Keep these rectangles in sync for both drawing and collision.
+const MAIN_GROUND := [
+	Rect2(0, 570, 600, 90),
+	Rect2(700, 570, 550, 90),
+	Rect2(1370, 570, 460, 90),
+	Rect2(1920, 570, 830, 90),
+]
+
 # Extra platforms: Rect2(left, top, width, height). The same list draws and
 # collides. Steps are 50px up, gaps 70px, so a plain jump clears each one (no
 # double jump needed). The first step of each climb is a solid block down to the
@@ -141,8 +151,9 @@ func _draw() -> void:
 	# Ground and platforms (same rectangles as the colliders in _create_ground)
 	var ground := Palette.GREED_GROUND
 	var top := Palette.GREED_GROUND_TOP
-	draw_rect(Rect2(0, 570, 2750, 90), ground)
-	draw_rect(Rect2(0, 570, 2750, 5), top)
+	for section: Rect2 in MAIN_GROUND:
+		draw_rect(section, ground)
+		draw_rect(Rect2(section.position, Vector2(section.size.x, 5)), top)
 	for plat: Rect2 in EXTRA_PLATFORMS + [VAULT_GROUND]:
 		draw_rect(plat, ground)
 		draw_rect(Rect2(plat.position, Vector2(plat.size.x, 4)), top)
@@ -207,11 +218,10 @@ func _draw_mountain() -> void:
 
 
 func _create_ground() -> void:
-	# Ground sections - leaving gaps for platforms
-	_create_ground_section(Vector2(300, 610), Vector2(600, 80), "GreedGround1")
-	_create_ground_section(Vector2(700, 610), Vector2(600, 80), "GreedGround2")
-	_create_ground_section(Vector2(1500, 610), Vector2(1000, 80), "GreedGround3")
-	_create_ground_section(Vector2(2375, 610), Vector2(750, 80), "GreedArena")
+	# Main route: broken ground creates three small traversal decisions.
+	for i in range(MAIN_GROUND.size()):
+		var section: Rect2 = MAIN_GROUND[i]
+		_create_ground_section(section.get_center(), section.size, "GreedGround%d" % (i + 1))
 
 	# Platforms
 	_create_platform(Vector2(500, 500), Vector2(120, 20))
@@ -384,7 +394,7 @@ func _create_hud() -> void:
 
 func _create_greed_level() -> void:
 	# Lore tablets
-	var lore_positions := [Vector2(380, 570), Vector2(850, 570), Vector2(1600, 570)]
+	var lore_positions := [Vector2(380, 570), Vector2(-1770, 440), Vector2(1600, 570)]
 	var lore_messages := [
 		"I only wanted enough. Then enough was a little more.",
 		"The flowers grew from the coins we dropped. Nobody remembered who dropped them.",
@@ -395,19 +405,19 @@ func _create_greed_level() -> void:
 		interactables.append({"node": lore, "message": lore_messages[i], "kind": "lore", "used": false})
 
 	# Shrines (offer gold to reduce weight)
-	var shrine_positions := [Vector2(550, 500), Vector2(1050, 440), Vector2(1450, 570)]
+	var shrine_positions := [Vector2(550, 500), Vector2(1120, 545), Vector2(1460, 545)]
 	for i in range(shrine_positions.size()):
 		var shrine := _make_interactable("SHRINE\n[E] OFFER", shrine_positions[i], Color(0.95, 0.85, 0.5))
 		interactables.append({"node": shrine, "message": "A small golden bowl. \"Give what you carry.\"\n\nPress E to offer all carried gold.", "kind": "shrine", "used": false, "shrine_id": i})
 
 	# Coin pickups
-	var coin_positions := [Vector2(300, 560), Vector2(450, 490), Vector2(650, 560), Vector2(750, 490), Vector2(950, 560), Vector2(1150, 370), Vector2(1350, 560), Vector2(1550, 490), Vector2(1750, 560)]
+	var coin_positions := [Vector2(300, 560), Vector2(450, 490), Vector2(680, 535), Vector2(780, 560), Vector2(980, 430), Vector2(1190, 545), Vector2(1340, 485), Vector2(1535, 435), Vector2(1780, 545)]
 	for i in range(coin_positions.size()):
 		var coin := _make_interactable("COIN", coin_positions[i], Color(1.0, 0.85, 0.3))
 		interactables.append({"node": coin, "message": "A gleaming gold coin. It feels heavier than it should.\n\n+10 Gold", "kind": "coin", "used": false, "value": 10})
 
 	# The Featherweight Charm unlocks the player's double jump.
-	var charm := _make_interactable("FEATHERWEIGHT\n[E] TAKE", Vector2(1680, 500), Color(0.72, 0.9, 1.0))
+	var charm := _make_interactable("FEATHERWEIGHT\n[E] TAKE", Vector2(1545, 435), Color(0.72, 0.9, 1.0))
 	interactables.append({
 		"node": charm,
 		"message": "A feather-light charm rests among the flowers.\n\nLumi feels able to rise once more in mid-air.",
@@ -429,7 +439,7 @@ func _create_greed_level() -> void:
 		interactables.append({"node": bowl, "message": "An offering bowl.", "kind": "bowl", "used": false})
 	_create_collector()
 
-	var ridge_seal := _make_interactable("SEAL\n[E] TAKE", Vector2(1890, 345), Color(1.0, 0.9, 0.5))
+	var ridge_seal := _make_interactable("SEAL\n[E] TAKE", Vector2(1885, 325), Color(1.0, 0.9, 0.5))
 	interactables.append({"node": ridge_seal, "message": "A heavy gold seal, warm from the sun.", "kind": "seal", "seal_id": "ridge", "used": false})
 
 	# Exit to hub
@@ -887,7 +897,7 @@ func _on_collector_defeated() -> void:
 
 func _create_expanded_content() -> void:
 	# Small mobs spread across expanded areas
-	var mite_positions := [Vector2(700, 550), Vector2(1050, 550), Vector2(1450, 550), Vector2(1750, 550), Vector2(1550, 445), Vector2(1890, 345), Vector2(305, 495), Vector2(-55, 395), Vector2(-415, 295), Vector2(-775, 295), Vector2(-955, 345), Vector2(-1650, 445)]
+	var mite_positions := [Vector2(790, 550), Vector2(1110, 550), Vector2(1495, 550), Vector2(1760, 550), Vector2(1550, 405), Vector2(1880, 325), Vector2(305, 495), Vector2(-55, 395), Vector2(-415, 295), Vector2(-775, 295), Vector2(-955, 345), Vector2(-1650, 445)]
 	for pos in mite_positions:
 		var mite := CharacterBody2D.new()
 		mite.set_script(GREEDY_MITE)
@@ -919,7 +929,7 @@ func _create_expanded_content() -> void:
 			coin_guard.connect("defeated", Callable(self, "_on_coin_guard_defeated"))
 
 	# Extra coins in expanded wings
-	var extra_coins := [Vector2(1550, 440), Vector2(125, 440), Vector2(-305, 340), Vector2(-665, 240), Vector2(-1025, 340), Vector2(-1205, 390), Vector2(-1800, 440), Vector2(1380, 490)]
+	var extra_coins := [Vector2(1610, 405), Vector2(125, 440), Vector2(-305, 340), Vector2(-665, 240), Vector2(-1025, 340), Vector2(-1205, 390), Vector2(-1800, 440), Vector2(1380, 490)]
 	for pos in extra_coins:
 		var marker := _make_interactable("GOLD\n[E] TAKE", pos, Color(1.0, 0.9, 0.5))
 		interactables.append({"node": marker, "message": "Lumi picks up gold.", "kind": "coin_extra", "used": false, "value": 15, "marker": marker})
