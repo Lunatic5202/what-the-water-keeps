@@ -1767,3 +1767,8 @@ These are prototype adaptations, not decisions. Say if the bible should win.
 - The Wake is split into four rooms with a locked camera.
 - Nim's Lantern Post gives short gameplay hints (what each region teaches). They are hints, not lore. After seven regions it shows its normal text.
 - The hub is built from stepped platforms so every step is jumpable, and has a killbox.
+
+### Prototype additions (not canon yet)
+
+- Greedy Mites, the Coin Guard (Greed Vault mini-boss) and the Dozy Warden (Sloth sky-route mini-boss) are prototype content. Names and rewards are not decided.
+- Defeating a region boss does not return the player to the hub; they climb out via the Vault Exit or Dream Exit on purpose.

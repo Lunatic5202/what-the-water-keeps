@@ -39,6 +39,31 @@ const COIN_GUARD := preload("res://scripts/coin_guard.gd")
 const ARENA_LOCK_X := 2000.0   # left lock wall while the fight is on (marker is at 2130)
 const ARENA_END_X := 2750.0    # permanent end wall of Greed
 const COLLECTOR_X := 2500.0
+const VAULT_END_X := -1930.0   # far left wall, past the vault
+const VAULT_GROUND := Rect2(-1900, 470, 570, 60)   # the old treasury floor
+const VAULT_EXIT_POS := Vector2(-1730, 440)
+
+# Extra platforms: Rect2(left, top, width, height). The same list draws and
+# collides. Steps are 50px up, gaps 70px, so a plain jump clears each one (no
+# double jump needed). The first step of each climb is a solid block down to the
+# ground so Lumi can still walk beneath the rest.
+const EXTRA_PLATFORMS := [
+	# Vault Route: up and left over the pit, then down to the treasury floor.
+	Rect2(250, 520, 110, 50),
+	Rect2(70, 470, 110, 18),
+	Rect2(-110, 420, 110, 18),
+	Rect2(-290, 370, 110, 18),
+	Rect2(-470, 320, 110, 18),
+	Rect2(-650, 270, 110, 18),
+	Rect2(-830, 320, 110, 18),
+	Rect2(-1010, 370, 110, 18),
+	Rect2(-1190, 420, 110, 18),
+	# Gold Ridge: a high road above the way to the arena, ends before the lock wall.
+	Rect2(1330, 520, 100, 50),
+	Rect2(1500, 470, 100, 18),
+	Rect2(1670, 420, 100, 18),
+	Rect2(1840, 370, 100, 18),
+]
 const MOUNTAIN_X := 2580.0
 var collector: CharacterBody2D
 var arena_wall: StaticBody2D
@@ -113,6 +138,10 @@ func _draw() -> void:
 	var top := Palette.GREED_GROUND_TOP
 	draw_rect(Rect2(0, 570, 2750, 90), ground)
 	draw_rect(Rect2(0, 570, 2750, 5), top)
+	for plat: Rect2 in EXTRA_PLATFORMS + [VAULT_GROUND]:
+		draw_rect(plat, ground)
+		draw_rect(Rect2(plat.position, Vector2(plat.size.x, 4)), top)
+		draw_rect(plat, Palette.GOLD_OUTLINE, false, 2.0)
 	for plat in [Rect2(440, 490, 120, 20), Rect2(850, 440, 100, 20), Rect2(1050, 370, 100, 20)]:
 		draw_rect(plat, ground)
 		draw_rect(Rect2(plat.position, Vector2(plat.size.x, 4)), top)
@@ -142,11 +171,12 @@ func _draw_mountain() -> void:
 
 	# Vault exit post-boss
 	if post_boss_open:
-		draw_rect(Rect2(-360, 200, 40, 400), Color(0.4, 0.32, 0.16, 1.0))
-		draw_rect(Rect2(-360, 200, 40, 8), Color(0.62, 0.5, 0.26, 1.0))
-		draw_circle(Vector2(-340, 210), 46, Color(0.98, 0.84, 0.38, 0.9))
-		draw_circle(Vector2(-340, 210), 28, Color(1.0, 0.94, 0.6, 1.0))
-		draw_rect(Rect2(-370, 570, 60, 40), Color(0.38, 0.3, 0.16, 1.0))
+		var d := VAULT_EXIT_POS
+		draw_rect(Rect2(d.x - 34, d.y - 150, 68, 180), Color(0.4, 0.32, 0.16, 1.0))
+		draw_rect(Rect2(d.x - 34, d.y - 150, 68, 180), Palette.GOLD_OUTLINE, false, 3.0)
+		draw_circle(d + Vector2(0, -110), 34, Color(0.98, 0.84, 0.38, 0.9))
+		draw_circle(d + Vector2(0, -110), 20, Color(1.0, 0.94, 0.6, 1.0))
+		draw_rect(Rect2(d.x - 18, d.y - 44, 36, 74), Color(0.22, 0.17, 0.08, 1.0))
 
 
 func _create_ground() -> void:
@@ -161,39 +191,15 @@ func _create_ground() -> void:
 	_create_platform(Vector2(900, 450), Vector2(100, 20))
 	_create_platform(Vector2(1100, 380), Vector2(100, 20))
 
-	# Expanded platforming wings - branching routes
-	_create_platform(Vector2(1350, 500), Vector2(110, 18))
-	_create_platform(Vector2(1500, 440), Vector2(100, 18))
-	_create_platform(Vector2(1650, 380), Vector2(90, 18))
-	_create_platform(Vector2(1820, 330), Vector2(110, 18))
-	_create_platform(Vector2(1980, 290), Vector2(100, 18))
-	_create_platform(Vector2(2160, 330), Vector2(90, 18))
-	_create_platform(Vector2(2320, 390), Vector2(100, 18))
-	_create_platform(Vector2(2480, 450), Vector2(110, 18))
-	_create_platform(Vector2(2640, 420), Vector2(100, 18))
-	_create_platform(Vector2(2800, 370), Vector2(110, 18))
-	_create_platform(Vector2(2960, 320), Vector2(100, 18))
-
-	# Left wing (vault approach) - longer branching path
-	_create_platform(Vector2(320, 460), Vector2(100, 18))
-	_create_platform(Vector2(160, 400), Vector2(90, 18))
-	_create_platform(Vector2(20, 340), Vector2(90, 18))
-	_create_platform(Vector2(-140, 290), Vector2(100, 18))
-	_create_platform(Vector2(-320, 250), Vector2(110, 18))
-	_create_platform(Vector2(-500, 210), Vector2(110, 18))
-	_create_platform(Vector2(-680, 170), Vector2(100, 18))
-	_create_platform(Vector2(-840, 210), Vector2(90, 18))
-	_create_platform(Vector2(-980, 260), Vector2(100, 18))
-	_create_platform(Vector2(-1120, 320), Vector2(110, 18))
-	_create_ground_section(Vector2(-1400, 380), Vector2(600, 60), "VaultApproach")
-	_create_platform(Vector2(-1500, 300), Vector2(90, 18))
-	_create_platform(Vector2(-1640, 240), Vector2(110, 18))
+	# Expanded wings: the Gold Ridge over the road to the arena, and the long
+	# Vault Route out over the pit to the old treasury. See EXTRA_PLATFORMS.
+	for rect: Rect2 in EXTRA_PLATFORMS:
+		_create_platform(rect.get_center(), rect.size)
+	_create_ground_section(VAULT_GROUND.get_center(), VAULT_GROUND.size, "VaultApproach")
 
 	# Boundary walls
-	_create_boundary(Vector2(50, 0))
 	_create_boundary(Vector2(ARENA_END_X, 0))
-	_create_boundary(Vector2(-400, 0))
-	_create_boundary(Vector2(3200, 0))
+	_create_boundary(Vector2(VAULT_END_X, 0))
 
 	# Killbox at bottom
 	_create_killbox()
@@ -511,10 +517,8 @@ func _interact(item: Dictionary) -> void:
 		"exit":
 			return_to_hub.emit()
 		"vault_exit":
-			if get_parent() and get_parent().has_method("_return_to_hub"):
-				get_parent()._return_to_hub(true)
-			else:
-				return_to_hub.emit()
+			# Lands Lumi on the hub's upper platform instead of the start.
+			get_tree().call_group("game_main", "_return_to_hub", true)
 		"coin_extra":
 			if item.get("used", false):
 				return
@@ -580,7 +584,8 @@ func save_state() -> Dictionary:
 		"featherweight_found": featherweight_found,
 		"boss_defeated": boss_defeated,
 		"has_open_hand": has_open_hand,
-		"has_gold_key": has_gold_key
+		"has_gold_key": has_gold_key,
+		"coin_guard_defeated": miniboss_defeated
 	}
 
 # Puts Greed back the way a save left it: the charm taken, the Collector gone.
@@ -592,6 +597,10 @@ func apply_save(d: Dictionary) -> void:
 			if item["kind"] == "featherweight":
 				item["used"] = true
 				item["node"].visible = false
+	if bool(d.get("coin_guard_defeated", false)):
+		miniboss_defeated = true
+		if is_instance_valid(coin_guard):
+			coin_guard.queue_free()
 	if bool(d.get("boss_defeated", false)):
 		boss_defeated = true
 		has_open_hand = bool(d.get("has_open_hand", true))
@@ -785,7 +794,7 @@ func _on_collector_defeated() -> void:
 
 func _create_expanded_content() -> void:
 	# Small mobs spread across expanded areas
-	var mite_positions := [Vector2(620, 470), Vector2(980, 420), Vector2(1180, 350), Vector2(1440, 470), Vector2(1740, 350), Vector2(2100, 300), Vector2(2600, 390), Vector2(80, 370), Vector2(-260, 260), Vector2(-620, 180), Vector2(-900, 230), Vector2(-1500, 270)]
+	var mite_positions := [Vector2(700, 550), Vector2(1050, 550), Vector2(1450, 550), Vector2(1750, 550), Vector2(1550, 445), Vector2(1890, 345), Vector2(305, 495), Vector2(-125, 395), Vector2(-485, 295), Vector2(-845, 295), Vector2(-1025, 345), Vector2(-1650, 445)]
 	for pos in mite_positions:
 		var mite := CharacterBody2D.new()
 		mite.set_script(GREEDY_MITE)
@@ -803,7 +812,7 @@ func _create_expanded_content() -> void:
 	if not miniboss_defeated:
 		coin_guard = CharacterBody2D.new()
 		coin_guard.set_script(COIN_GUARD)
-		coin_guard.position = Vector2(-400, 150)
+		coin_guard.position = Vector2(-1500, 440)
 		var c2 := CollisionShape2D.new()
 		var s2 := CapsuleShape2D.new()
 		s2.radius = 26.0
@@ -817,7 +826,7 @@ func _create_expanded_content() -> void:
 			coin_guard.connect("defeated", Callable(self, "_on_coin_guard_defeated"))
 
 	# Extra coins in expanded wings
-	var extra_coins := [Vector2(1420, 470), Vector2(1900, 300), Vector2(2240, 360), Vector2(-60, 310), Vector2(2680, 390), Vector2(-420, 220), Vector2(-760, 180), Vector2(-1200, 290), Vector2(-1600, 210)]
+	var extra_coins := [Vector2(1550, 440), Vector2(1890, 340), Vector2(125, 440), Vector2(-305, 340), Vector2(-665, 240), Vector2(-1025, 340), Vector2(-1205, 390), Vector2(-1800, 440), Vector2(1380, 490)]
 	for pos in extra_coins:
 		var marker := _make_interactable("GOLD\n[E] TAKE", pos, Color(1.0, 0.9, 0.5))
 		interactables.append({"node": marker, "message": "Lumi picks up gold.", "kind": "coin_extra", "used": false, "value": 15, "marker": marker})
@@ -830,12 +839,12 @@ func _on_guard_dropped(amount: int) -> void:
 
 func _on_coin_guard_defeated() -> void:
 	miniboss_defeated = true
-	_show_status("COIN GUARD DEFEATED. THE VAULT UNLOCKS.")
+	_show_status("COIN GUARD DEFEATED.")
 
 func _open_vault_route() -> void:
 	post_boss_open = true
 	queue_redraw()
-	vault_exit = _make_interactable("VAULT EXIT\n[E] RETURN", Vector2(-340, 560), Color(1.0, 0.92, 0.6))
+	vault_exit = _make_interactable("VAULT EXIT\n[E] RETURN", VAULT_EXIT_POS, Color(1.0, 0.92, 0.6))
 	interactables.append({"node": vault_exit, "message": "A heavy golden door leads back to the Still Pond from the old vault.\n\nReturn to hub?", "kind": "vault_exit", "used": false})
 	_show_status("VAULT ROUTE OPEN - EXIT THROUGH THE OLD TREASURY")
 

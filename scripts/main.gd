@@ -540,7 +540,7 @@ func _transition_to_greed() -> void:
 	greed_scene.add_child(player)
 	player.position = greed_scene.get("respawn_point")
 	player.set("respawn_point", greed_scene.get("respawn_point"))
-	_set_camera_limits(0, 2850, 100, 750)
+	_set_camera_limits(-1950, 2850, -100, 780)
 	current_region = "greed"
 
 func _transition_to_sloth() -> void:
@@ -574,7 +574,7 @@ func _return_to_hub(from_vault: bool = false) -> void:
 			scene.call("set_region_active", false)
 	hub_scene.add_child(player)
 	if from_vault:
-		player.position = Vector2(1200, 400)
+		player.position = Vector2(1200, 375)
 	else:
 		player.position = hub_scene.get("respawn_point")
 	player.set("respawn_point", hub_scene.get("respawn_point"))

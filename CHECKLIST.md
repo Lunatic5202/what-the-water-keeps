@@ -99,3 +99,5 @@
 - [x] Post-Greed and post-Sloth hub dialogue
 - [x] Reflection figure grows with regions cleared (visual only, never explained)
 - [ ] Gluttony onward, Mirror Gate, endings, side quests
+
+- [ ] Playtest Vault Route, Gold Ridge, loft stair, sky route, both mini-bosses and both exits.

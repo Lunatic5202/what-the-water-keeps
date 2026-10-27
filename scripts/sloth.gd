@@ -10,6 +10,7 @@ const Settings := preload("res://scripts/game_settings.gd")
 const RunState := preload("res://scripts/run_state.gd")
 const BOB := preload("res://scripts/bob_platform.gd")
 const DREAMER := preload("res://scripts/dreamer.gd")
+const WARDEN := preload("res://scripts/dozy_warden.gd")
 const SNAIL := preload("res://scripts/snoozle_snail.gd")
 const NIMBUS := preload("res://scripts/nimbus.gd")
 const SPIDER := preload("res://scripts/hammock_spider.gd")
@@ -38,6 +39,16 @@ const PLATFORMS := [
 	Rect2(3410, 240, 550, 40),     # high ledge
 	Rect2(3700, 600, 1550, 120),   # pre-boss ground and arena
 ]
+# Extra routes. Same rules as PLATFORMS, drawn and solid.
+# Loft: a stair of ledges up and left from the first landing, with lanterns.
+# Sky route: from the high ledge across the roof of the arena, past the Dozy
+# Warden's ledge, and down into the arena's far end.
+const EXTRA_PLATFORMS := [
+	Rect2(1350, 480, 90, 18), Rect2(1180, 440, 90, 18), Rect2(1010, 400, 90, 18),
+	Rect2(840, 360, 90, 18), Rect2(670, 320, 90, 18), Rect2(500, 280, 90, 18),
+	Rect2(4020, 200, 110, 20), Rect2(4190, 160, 110, 20), Rect2(4360, 120, 340, 24),
+	Rect2(4760, 160, 110, 20), Rect2(4930, 200, 110, 20), Rect2(5100, 240, 70, 20),
+]
 # Bobbing pillows over the first pit: [centre, phase]
 const PILLOWS := [[Vector2(1025, 560), 0.0], [Vector2(1235, 520), 1.6]]
 
@@ -63,6 +74,9 @@ const SPAWNS := [
 	{"type": "nimbus", "pos": Vector2(3550, 100)},
 	{"type": "spider", "pos": Vector2(3700, 150), "anchor": 40.0, "floor": 210.0},
 	{"type": "snail", "pos": Vector2(4050, 570), "patrol": 110.0},
+	{"type": "nimbus", "pos": Vector2(800, 250)},
+	{"type": "snail", "pos": Vector2(1055, 370), "patrol": 25.0},
+	{"type": "nimbus", "pos": Vector2(4850, 90)},
 ]
 
 var player: CharacterBody2D
@@ -411,7 +425,7 @@ func _draw() -> void:
 		var y := 330.0 + i * 70.0
 		draw_rect(Rect2(-300, y, 5800, 38), Color(Palette.FOG, 0.10))
 	# Platforms.
-	for rect: Rect2 in PLATFORMS:
+	for rect: Rect2 in PLATFORMS + EXTRA_PLATFORMS:
 		draw_rect(rect, Palette.SLOTH_GROUND)
 		draw_rect(Rect2(rect.position, Vector2(rect.size.x, 5)), Palette.SLOTH_GROUND_TOP)
 	# Lanterns.
@@ -544,10 +558,8 @@ func _interact(item: Dictionary) -> void:
 		"bench":
 			_rest(target.global_position)
 		"dream_exit":
-			if get_parent() and get_parent().has_method("_return_to_hub"):
-				get_parent()._return_to_hub(true)
-			else:
-				return_to_hub.emit()
+			# Lands Lumi on the hub's upper platform instead of the start.
+			get_tree().call_group("game_main", "_return_to_hub", true)
 		"exit":
 			return_to_hub.emit()
 		"boss":
@@ -563,7 +575,8 @@ func save_state() -> Dictionary:
 		"boss_defeated": boss_defeated,
 		"has_hourglass": has_hourglass,
 		"has_dusk_key": has_dusk_key,
-		"has_snail_grips": has_snail_grips
+		"has_snail_grips": has_snail_grips,
+		"warden_defeated": sloth_miniboss_defeated
 	}
 
 # Puts Slumber Hollow back the way a save left it: the Dreamer at rest.
@@ -571,6 +584,10 @@ func apply_save(d: Dictionary) -> void:
 	has_hourglass = bool(d.get("has_hourglass", false))
 	has_dusk_key = bool(d.get("has_dusk_key", false))
 	has_snail_grips = bool(d.get("has_snail_grips", false))
+	if bool(d.get("warden_defeated", false)):
+		sloth_miniboss_defeated = true
+		if is_instance_valid(sloth_miniboss):
+			sloth_miniboss.queue_free()
 	if bool(d.get("boss_defeated", false)):
 		boss_defeated = true
 		boss_item["used"] = true
@@ -763,54 +780,27 @@ func _on_dreamer_defeated() -> void:
 	region_cleared.emit("sloth")
 
 func _create_sloth_expanded() -> void:
-	_solid(Rect2(3410, 190, 110, 24))
-	_solid(Rect2(3580, 150, 110, 24))
-	_solid(Rect2(3750, 120, 110, 24))
-	_solid(Rect2(3920, 90, 110, 24))
-	_solid(Rect2(4090, 60, 130, 24))
-	_solid(Rect2(4260, 30, 110, 24))
-	_solid(Rect2(4430, -10, 110, 24))
-	_solid(Rect2(4600, -50, 110, 24))
-	_solid(Rect2(4770, -10, 110, 24))
-	_solid(Rect2(4940, 30, 110, 24))
-	_solid(Rect2(5110, 70, 150, 24))
-
-	# Side branches - non-linear exploration
-	_solid(Rect2(1350, 480, 90, 18))
-	_solid(Rect2(1180, 440, 90, 18))
-	_solid(Rect2(1010, 400, 90, 18))
-	_solid(Rect2(840, 360, 90, 18))
-	_solid(Rect2(670, 320, 90, 18))
-	_solid(Rect2(500, 280, 90, 18))
-
-	_solid(Rect2(2600, 370, 110, 24))
-	_solid(Rect2(2770, 340, 110, 24))
-	_solid(Rect2(2940, 310, 110, 24))
-	_solid(Rect2(3110, 280, 110, 24))
-
-	_solid(Rect2(2250, 520, 100, 18))
-	_solid(Rect2(2420, 500, 100, 18))
-	_solid(Rect2(2590, 480, 100, 18))
-
-	for pos in [Vector2(1150, 380), Vector2(3450, 170), Vector2(700, 300), Vector2(2650, 350)]:
+	for rect: Rect2 in EXTRA_PLATFORMS:
+		_solid(rect)
+	for pos in [Vector2(1055, 360), Vector2(545, 240), Vector2(4245, 120)]:
 		_add_lantern(pos)
 	if not sloth_miniboss_defeated:
-		sloth_miniboss = DREAMER.new()
-		sloth_miniboss.set_script(DREAMER)
-		sloth_miniboss.position = Vector2(5000, 200)
-		sloth_miniboss.scale = Vector2(0.7, 0.7)
-		var mc := CollisionShape2D.new()
-		var mshape := CircleShape2D.new()
-		mshape.radius = 38.0
-		mc.shape = mshape
-		sloth_miniboss.add_child(mc)
+		sloth_miniboss = CharacterBody2D.new()
+		sloth_miniboss.set_script(WARDEN)
+		sloth_miniboss.position = Vector2(4530, 90)
+		sloth_miniboss.set("left_x", 4390.0)
+		sloth_miniboss.set("right_x", 4670.0)
+		var shape := CollisionShape2D.new()
+		var circle := CircleShape2D.new()
+		circle.radius = 30.0
+		shape.shape = circle
+		sloth_miniboss.add_child(shape)
 		add_child(sloth_miniboss)
-		if sloth_miniboss.has_signal("defeated"):
-			sloth_miniboss.connect("defeated", Callable(self, "_on_sloth_mb_defeated"))
+		sloth_miniboss.connect("defeated", Callable(self, "_on_sloth_mb_defeated"))
 
 func _on_sloth_mb_defeated() -> void:
 	sloth_miniboss_defeated = true
-	_show_status("DOZY WARDEN SLAIN. PATHS SHIFT.")
+	_show_status("DOZY WARDEN DEFEATED.")
 
 func _open_dream_exit() -> void:
 	dream_exit_open = true

@@ -41,6 +41,9 @@ func _physics_process(delta: float) -> void:
 
 	if dead:
 		return
+	if global_position.y > 1400.0:
+		queue_free()  # fell off a ledge
+		return
 
 	if not is_on_floor():
 		velocity.y += GRAVITY * delta

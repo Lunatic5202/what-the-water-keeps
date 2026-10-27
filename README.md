@@ -104,6 +104,9 @@ Run: open `project.godot` in the Godot Project Manager and press F5.
 | `scripts/open_hand.gd` | Open Hand style: combo, Offer, heavy, air, dash attack, Coin Toss, guard, Overture. Child node `OpenHand` of Lumi |
 | `scripts/lantern_kit.gd` | Lantern Swing extras: heavy, Lantern Flash, guard, Warm Light. Child node `LanternKit` of Lumi |
 | `scripts/palm_shot.gd` | Moving palm waves (shockwave, coins, orbs, reflected spores) |
+| `scripts/coin_guard.gd` | Greed mini-boss in the Vault (48 HP, 8 shield, slam deals 2) |
+| `scripts/greedy_mite.gd` | Greed mite enemy |
+| `scripts/dozy_warden.gd` | Slumber Hollow mini-boss on the sky route (70 HP, slam, sleep-note yawn) |
 | `scripts/sloth.gd` | Slumber Hollow: level, Drowse, lanterns, benches, enemy spawns, Dreamer fight flow and rewards |
 | `scripts/dreamer.gd` | The Dreamer boss, plus `pillow.gd` and `dreamer_heart.gd` |
 | `scripts/sleep_spore.gd` | Sleep spores and lullaby notes (they add Drowse) |
@@ -229,3 +232,11 @@ Platforms are listed in `PLATFORMS` in `sloth.gd`. Steps up are 55px or less, ga
 - Ask the user to playtest and report exact errors or feel problems.
 - Known rough spots: the dash gap width is tight and may need tuning. The Collector's health (360), timings, growth rate and squeeze are untested guesses.
 - Runtime testing is still required after the progression and transition changes.
+
+## Expanded, non-linear levels (by design)
+
+- Greed and Sloth are larger with branching routes: Greed has a Vault Route (left, to the Vault and Coin Guard) and a Gold Ridge (right). Sloth has a loft stair (left) and a sky route (right) to the Dozy Warden.
+- Beating a region does not teleport the player home. They must crawl out through the Vault Exit (Greed) or Dream Exit (Sloth), which return to the hub at about (1200, 375). This is intentional.
+- "Coin Guard" and "Dozy Warden" are prototype names, not in the bible yet. Their rewards are undefined.
+- Extra platforms live in `EXTRA_PLATFORMS` in `greed.gd` and `sloth.gd`; same step and gap rules as above.
+- Headless-tested only (jump hops, mini-boss flow, exits, saves). Not played in the Godot editor.
