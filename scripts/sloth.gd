@@ -804,7 +804,7 @@ func _on_sloth_mb_defeated() -> void:
 
 func _open_dream_exit() -> void:
 	dream_exit_open = true
-	dream_exit = _make_interactable("DREAM EXIT\n[E] RETURN", Vector2(5100, 520), Color(0.88, 0.84, 1.0))
+	dream_exit = _make_interactable("DREAM EXIT\n[E] RETURN", Vector2(520, 262), Color(0.88, 0.84, 1.0))
 	interactables.append({"node": dream_exit, "message": "A shimmering doorway of half-remembered pillows leads back to the Still Pond through the Dream.\n\nReturn to hub?", "kind": "dream_exit", "used": false})
 	_show_status("DREAM EXIT OPEN - WAKE THROUGH THE DREAMING")
 

@@ -236,7 +236,7 @@ Platforms are listed in `PLATFORMS` in `sloth.gd`. Steps up are 55px or less, ga
 ## Expanded, non-linear levels (by design)
 
 - Greed and Sloth are larger with branching routes: Greed has a Vault Route (left, to the Vault and Coin Guard) and a Gold Ridge (right). Sloth has a loft stair (left) and a sky route (right) to the Dozy Warden.
-- Beating a region does not teleport the player home. They must crawl out through the Vault Exit (Greed) or Dream Exit (Sloth), which return to the hub at about (1200, 375). This is intentional.
+- Beating a region does not teleport the player home. They must crawl out through the Vault Exit (Greed) or Dream Exit (Sloth, at the far end of the left loft stair), which return to the hub at about (1200, 375). This is intentional.
 - "Coin Guard" and "Dozy Warden" are prototype names, not in the bible yet. Their rewards are undefined.
 - Extra platforms live in `EXTRA_PLATFORMS` in `greed.gd` and `sloth.gd`; same step and gap rules as above.
 - Headless-tested only (jump hops, mini-boss flow, exits, saves). Not played in the Godot editor.
