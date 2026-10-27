@@ -44,22 +44,21 @@ const ARENA_LOCK_X := 2000.0   # left lock wall while the fight is on (marker is
 const ARENA_END_X := 2750.0    # permanent end wall of Greed
 const COLLECTOR_X := 2500.0
 const VAULT_END_X := -1930.0   # far left wall, past the vault
-const VAULT_GROUND := Rect2(-1900, 470, 570, 60)   # the old treasury floor
+const VAULT_GROUND := Rect2(-1900, 470, 900, 60)   # the old treasury floor
 const VAULT_EXIT_POS := Vector2(-1730, 440)
 
-# Main route deliberately has three readable breaks. They are short enough to
+# Main route deliberately has three readable 60px breaks. They are easy to
 # jump, but make the garden feel like terrain rather than one uninterrupted floor.
 # Keep these rectangles in sync for both drawing and collision.
 const MAIN_GROUND := [
-	Rect2(0, 570, 600, 90),
-	Rect2(700, 570, 550, 90),
-	Rect2(1370, 570, 460, 90),
-	Rect2(1920, 570, 830, 90),
+	Rect2(0, 570, 620, 90),
+	Rect2(680, 570, 570, 90),
+	Rect2(1310, 570, 520, 90),
+	Rect2(1890, 570, 860, 90),
 ]
 
 # Extra floors: Rect2(left, top, width, height). Their visible tops and collision
 # tops come from the same flat-sided silhouette.
-const CANOPY_PLATFORM_COUNT := 6
 const EXTRA_PLATFORMS := [
 	# Canopy stairs: five level treads rise 40px each from the road. Their flat
 	# tops are 106px wide with 74px between landing edges. The broad upper floor
@@ -70,25 +69,23 @@ const EXTRA_PLATFORMS := [
 	Rect2(390, 410, 130, 40),
 	Rect2(210, 370, 130, 40),
 	Rect2(380, 330, 980, 40),
-	# Vault Route: a deliberate climb out over the broken garden wall.
-	Rect2(250, 520, 110, 50),
-	Rect2(70, 470, 110, 18),
-	Rect2(-110, 420, 110, 18),
-	Rect2(-290, 370, 110, 18),
-	Rect2(-470, 320, 110, 18),
-	Rect2(-650, 270, 110, 18),
-	Rect2(-830, 320, 110, 18),
-	Rect2(-1010, 370, 110, 18),
-	Rect2(-1190, 420, 110, 18),
-	# Hidden treasury shelf: the upper pocket is reached with the Featherweight Charm.
-	Rect2(-1830, 410, 100, 18),
-	Rect2(-1830, 300, 100, 18),
-	# Gold Ridge: four broad, rising shelves form one readable climb to the seal.
-	# The first is a substantial broken outcrop; the next three keep a steady jump rhythm.
-	Rect2(1240, 500, 150, 70),
-	Rect2(1405, 445, 155, 24),
-	Rect2(1575, 390, 155, 24),
-	Rect2(1745, 335, 165, 24),
+	# Vault Route: six broad ledges make one arch over the broken wall. Each 50px
+	# rise has a 74px flat-edge gap, with the turn back down into the treasury.
+	Rect2(250, 520, 200, 50),
+	Rect2(0, 470, 200, 18),
+	Rect2(-250, 420, 200, 18),
+	Rect2(-500, 370, 200, 18),
+	Rect2(-750, 420, 200, 18),
+	Rect2(-1000, 420, 200, 18),
+	# The high treasury nook needs a normal jump onto its first shelf, then
+	# Double Jump to reach the cache 90px above it.
+	Rect2(-1830, 420, 120, 18),
+	Rect2(-1830, 330, 120, 18),
+	# Gold Ridge: four level-topped shelves rise in 40px steps to the seal.
+	Rect2(1240, 530, 150, 40),
+	Rect2(1436, 490, 155, 24),
+	Rect2(1637, 450, 155, 24),
+	Rect2(1840, 410, 170, 24),
 ]
 const MOUNTAIN_X := 2580.0
 var collector: CharacterBody2D
@@ -230,9 +227,10 @@ func _draw() -> void:
 		draw_line(Vector2(-1800, 407), Vector2(-1780, 390), Color(1.0, 0.83, 0.38, 0.8), 2.0)
 		draw_circle(Vector2(-1780, 390), 3.0, Color(1.0, 0.9, 0.55, 0.85))
 
-	# Miniboss wayfinding: point players into the left vault branch and mark the arena.
-	draw_string(ThemeDB.fallback_font, Vector2(-1110, 392), "VAULT ROUTE  →", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.36, 0.22, 0.08, 1.0))
 	if not miniboss_defeated:
+		# Route marks appear at the branch, the last turn and the arena.
+		draw_string(ThemeDB.fallback_font, Vector2(355, 510), "← VAULT", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(0.36, 0.22, 0.08, 1.0))
+		draw_string(ThemeDB.fallback_font, Vector2(-1225, 398), "COIN GUARD  ←", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.36, 0.22, 0.08, 1.0))
 		draw_circle(Vector2(-1400, 440), 48.0, Color(1.0, 0.76, 0.20, 0.12))
 		draw_arc(Vector2(-1400, 440), 40.0, 0.0, TAU, 32, Color(1.0, 0.77, 0.22, 0.9), 3.0)
 		draw_string(ThemeDB.fallback_font, Vector2(-1505, 385), "COIN GUARD", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.32, 0.20, 0.08, 1.0))
@@ -347,7 +345,7 @@ func _create_ground() -> void:
 	# Vault Route out over the pit to the old treasury. See EXTRA_PLATFORMS.
 	for i in range(EXTRA_PLATFORMS.size()):
 		var rect: Rect2 = EXTRA_PLATFORMS[i]
-		_create_platform(rect.get_center(), rect.size, i < CANOPY_PLATFORM_COUNT)
+		_create_platform(rect.get_center(), rect.size, true)
 	_create_ground_section(VAULT_GROUND.get_center(), VAULT_GROUND.size, "VaultApproach")
 
 	# Boundary walls
@@ -541,7 +539,7 @@ func _create_greed_level() -> void:
 		interactables.append({"node": lore, "message": lore_messages[i], "kind": "lore", "used": false})
 
 	# Shrines (offer gold to reduce weight)
-	var shrine_positions := [Vector2(800, 560), Vector2(-1600, 430), Vector2(1640, 545)]
+	var shrine_positions := [Vector2(800, 560), Vector2(-1120, 440), Vector2(1640, 545)]
 	for i in range(shrine_positions.size()):
 		var shrine := _make_interactable("SHRINE\n[E] OFFER", shrine_positions[i], Color(0.95, 0.85, 0.5))
 		interactables.append({"node": shrine, "message": "A small golden bowl. \"Give what you carry.\"\n\nPress E to offer all carried gold.", "kind": "shrine", "used": false, "shrine_id": i})
@@ -550,7 +548,7 @@ func _create_greed_level() -> void:
 	var coin_positions := [
 		Vector2(300, 560), Vector2(500, 545), Vector2(730, 545),
 		Vector2(1100, 320), Vector2(1140, 545), Vector2(1380, 545),
-		Vector2(1540, 435), Vector2(1730, 545), Vector2(1860, 350),
+		Vector2(1600, 545), Vector2(1730, 545), Vector2(1760, 420),
 	]
 	for i in range(coin_positions.size()):
 		var coin := _make_interactable("COIN", coin_positions[i], Color(1.0, 0.85, 0.3))
@@ -593,11 +591,11 @@ func _create_greed_level() -> void:
 		interactables.append({"node": bowl, "message": "An offering bowl.", "kind": "bowl", "used": false})
 	_create_collector()
 
-	var ridge_seal := _make_interactable("SEAL\n[E] TAKE", Vector2(1885, 325), Color(1.0, 0.9, 0.5))
+	var ridge_seal := _make_interactable("SEAL\n[E] TAKE", Vector2(1925, 380), Color(1.0, 0.9, 0.5))
 	interactables.append({"node": ridge_seal, "message": "A heavy gold seal, warm from the sun.", "kind": "seal", "seal_id": "ridge", "used": false})
 
-	# Optional secret: an upper shelf beyond the treasury tablet. No stat buff.
-	var secret_cache := _make_interactable("???", Vector2(-1780, 260), Color(0.95, 0.82, 0.5))
+	# Optional secret: a high treasury nook beyond the tablet. No stat buff.
+	var secret_cache := _make_interactable("???", Vector2(-1780, 300), Color(0.95, 0.82, 0.5))
 	interactables.append({
 		"node": secret_cache,
 		"message": "A forgotten purse spills 35 gold into Lumi's hands.",
@@ -623,6 +621,7 @@ func _make_interactable(marker_text: String, at: Vector2, tint: Color) -> Node2D
 	label.add_theme_color_override("font_color", tint)
 	label.add_theme_color_override("font_outline_color", Color(0.12, 0.10, 0.24))
 	label.add_theme_constant_override("outline_size", 5)
+	label.visible = false
 	marker.add_child(label)
 	add_child(marker)
 	return marker
@@ -698,14 +697,26 @@ func _process(delta: float) -> void:
 
 	var nearest: Dictionary = {}
 	var nearest_distance := 95.0
+	var nearest_label_target: Node2D = null
+	var nearest_label_distance := 180.0
 	for item in interactables:
 		var target: Node2D = item["node"]
-		if not is_instance_valid(target) or item.get("used", false):
+		if not is_instance_valid(target) or item.get("used", false) or not target.visible:
 			continue
 		var distance := player.global_position.distance_to(target.global_position)
+		if distance < nearest_label_distance:
+			nearest_label_distance = distance
+			nearest_label_target = target
 		if distance < nearest_distance:
 			nearest_distance = distance
 			nearest = item
+	for item in interactables:
+		var target: Node2D = item["node"]
+		if not is_instance_valid(target):
+			continue
+		var label := target.get_node_or_null("Label") as Label
+		if is_instance_valid(label):
+			label.visible = target == nearest_label_target
 
 	prompt_label.text = "E  •  interact" if not nearest.is_empty() else ""
 	if not nearest.is_empty() and Input.is_action_just_pressed("interact"):
@@ -1105,7 +1116,10 @@ func _on_collector_defeated() -> void:
 
 func _create_expanded_content() -> void:
 	# Small mobs spread across expanded areas
-	var mite_positions := [Vector2(790, 550), Vector2(1110, 550), Vector2(1495, 550), Vector2(1760, 550), Vector2(1550, 405), Vector2(1880, 325), Vector2(-55, 395), Vector2(-415, 295), Vector2(-775, 295), Vector2(-955, 345)]
+	var mite_positions := [
+		Vector2(790, 550), Vector2(1110, 550), Vector2(1495, 550), Vector2(1760, 550),
+		Vector2(100, 445), Vector2(-400, 345), Vector2(-650, 395),
+	]
 	for pos in mite_positions:
 		var mite := CharacterBody2D.new()
 		mite.set_script(GREEDY_MITE)
@@ -1137,7 +1151,9 @@ func _create_expanded_content() -> void:
 			coin_guard.connect("defeated", Callable(self, "_on_coin_guard_defeated"))
 
 	# Extra coins in expanded wings
-	var extra_coins := [Vector2(1610, 405), Vector2(125, 440), Vector2(-305, 340), Vector2(-665, 240), Vector2(-1025, 340), Vector2(-1205, 390), Vector2(1380, 490)]
+	var extra_coins := [
+		Vector2(1360, 470), Vector2(-150, 390), Vector2(-820, 390),
+	]
 	for pos in extra_coins:
 		var marker := _make_interactable("GOLD\n[E] TAKE", pos, Color(1.0, 0.9, 0.5))
 		interactables.append({"node": marker, "message": "Lumi picks up gold.", "kind": "coin_extra", "used": false, "value": 15, "marker": marker})
