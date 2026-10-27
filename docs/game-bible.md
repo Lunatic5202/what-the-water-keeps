@@ -1761,6 +1761,8 @@ These are prototype adaptations, not decisions. Say if the bible should win.
 - Sloth only opens after Greed is cleared (the bible does not gate door order).
 - Fighting styles are swapped with Tab. K heavy, L skill, I guard, O overture are new key bindings.
 - The Hourglass Shard and Dusk Key are flags only. Tempo Style is not built.
+- Debuffs are harsher than the bible's first description: Drowse and Weight add +1 damage per hit at their upper tiers, Drowse blocks healing at 80 and Weight blocks dash and double jump. The bible's Drowse still approximated by slowing, not the 0.1s input delay.
+- Difficulty (Gentle / Normal / Hard), bench-only saves with Continue, and a secret No-Hit Challenge (one hit ends the run, unlocked by beating the game) are user-requested prototype features, not in the bible.
 - W and S are new aim keys. W + J swings up, S + J in the air pogos, W + J with the Open Hand is Rising Palm, and Coin Toss throws in 8 directions (straight shots; the bible only says it throws coins). User-requested, not from the bible.
 - The Wake is split into four rooms with a locked camera.
 - Nim's Lantern Post gives short gameplay hints (what each region teaches). They are hints, not lore. After seven regions it shows its normal text.

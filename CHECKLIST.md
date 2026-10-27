@@ -78,6 +78,14 @@
 - [ ] Open Hand as a real fighting style (Offering Style)
 - [ ] Boss music and sound
 
+## Difficulty, saves and challenge (headless-tested logic, not played)
+- [x] Gentle / Normal / Hard on New Game
+- [x] Escalating debuff costs (Drowse, Weight)
+- [x] Bench-only save, Continue, Return to title
+- [x] Secret No-Hit Challenge (hidden until the game is beaten)
+- [ ] Call `Settings.mark_beaten()` from the real ending
+- [ ] Save more state as regions are added (keys, petals, side quests)
+
 ## Directional moves (headless-tested, feel untested)
 - [x] W / S aim keys
 - [x] Lantern up swing and downward pogo

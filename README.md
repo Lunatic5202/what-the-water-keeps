@@ -59,12 +59,18 @@ Implemented in code:
   - Rewards set flags only: Hourglass Shard (Tempo Style is not built yet) and Dusk Key
 - Story pass (never run in Godot): a short hub arrival plays at the start (Nim, seven keyholes, seven doors), Nim comments in Greed (entry, first shrine, getting heavy), and after Greed and after Sloth Nim says a line in the hub. The Reflection is never named or spoken about in text: it is only a figure in the pond that the player can notice (eyes follow, brighter with each clear). Do not add dialogue that explains it Nim's post gives gameplay hints. See bible Part 6
 - Directional moves (headless-tested only for hit and aim logic): W / S are new aim keys. Lantern: W + J upward swing (9), S + J in the air downward pogo (9 and a bounce). Open Hand: W + J Rising Palm (9). Coin Toss throws in 8 directions with W / A / S / D (straight shots, fan of coins around the aim), with an aim dot when Glow is enough. Headless Godot 4.6 was used to check that scripts load and these moves hit/aim correctly, not how they feel
+- Difficulty, harsher debuffs, bench saves and a secret challenge (headless-tested for logic, never played):
+  - New Game asks for Gentle, Normal or Hard. Damage: about 0.75x / 1x / 1.5x per hit (fractions carry over). Debuffs build 0.5x / 1x / 1.4x. Heals: 4 / 3 / 2. Falling asleep lasts 3 / 4 / 5 seconds. The Gentle Mode toggle in Settings still works and acts as Gentle
+  - Drowse now costs: 50 = 20% slower, jump -8%, +1 damage per hit. 80 = 35% slower, jump -15%, +1 damage, no healing. 100 = asleep (4s on Normal), sleepers take +1 damage, then Drowse drops to 70 (was 60)
+  - Weight (Greed): speed and jump both drop up to 50% (felt weight 0.7 caps the speed at -35%). From felt weight 0.5 hits do +1 damage, from 0.6 no dash and no double jump. The HUD names the tier
+  - Saving is bench-only: the hub bench and Sloth's hammocks write `user://save.json`. Title has Continue (only if a save exists) and New Game. It stores difficulty, where Lumi rested (hub or Sloth), heals, style, unlocked styles, dash / double jump / wall climb, regions cleared, whether the Charm was taken and which bosses are beaten. Pause has Return to title (two presses)
+  - Secret No-Hit Challenge: hidden on the difficulty screen until `Settings.mark_beaten()` has run. Any hit that gets past a guard ends the run (a RUN ENDS screen, then title). It never writes a save. The ending is not built, so nothing calls `mark_beaten()` yet. To try it now, add `[meta]` and `game_beaten=true` to `user://settings.cfg`
 - Pit recovery, checkpoint-aware death respawn, visible Wake boundaries, hit-stop and camera-shake feedback
 
 Still incomplete:
 - Slumber Hollow is untested. Missing from it: the Unwound Clock quest, Memory Petals, a Soft Shortcut, hidden areas, music, the bible's 0.1s input delay (approximated by slowing)
 - Playtesting and tuning The Collector and the Open Hand. The Gold Key is only a flag. Lantern Swing still lacks the dash attack passing through small enemies. The Open Hand does not yet clean sticky coins off Lumi, return Collector coins with its guard, or use the Altar for swapping
-- Other region implementations, full fighting styles, memory petals, saves, the map/loadout/Memory Tree/keepsake screens, key remapping, audio sliders, music and imported art
+- Other region implementations, full fighting styles, memory petals, the map/loadout/Memory Tree/keepsake screens, key remapping, audio sliders, music and imported art
 - Full hub-door progression and final Mirror Gate
 - Runtime verification of the current transition loop and combat feedback
 
@@ -90,7 +96,9 @@ Run: open `project.godot` in the Godot Project Manager and press F5.
 | `scripts/greed.gd` | The Gilded Garden: level, gold and weight, shrines and bowls, Collector fight flow and rewards |
 | `scripts/collector.gd` | The Collector boss: phases, attacks, growth, purse grab, drawing |
 | `scripts/menu_overlay.gd` | Title, pause, settings and controls menus. Lives on the root as `MenuOverlay`, pauses the tree while open |
-| `scripts/game_settings.gd` | Saved options (`user://settings.cfg`), Gentle Mode damage scaling |
+| `scripts/game_settings.gd` | Saved options (`user://settings.cfg`), Gentle Mode toggle, the `game_beaten` unlock flag |
+| `scripts/run_state.gd` | Current run: difficulty, damage / debuff / heal scaling, no-hit challenge flag |
+| `scripts/save_game.gd` | Reads and writes the bench save (`user://save.json`) |
 | `scripts/palette.gd` | Shared colours and the contrast rule |
 | `scripts/lantern_meter.gd` | HUD health lantern, reads the `player` group |
 | `scripts/open_hand.gd` | Open Hand style: combo, Offer, heavy, air, dash attack, Coin Toss, guard, Overture. Child node `OpenHand` of Lumi |
@@ -187,7 +195,8 @@ Platforms are listed in `PLATFORMS` in `sloth.gd`. Steps up are 55px or less, ga
 - Styles: `player.gd` holds `style`, `unlocked_styles` and `glow`. `greed.gd` calls `unlock_style("open_hand")` after the Collector. While `style == "open_hand"` the `OpenHand` node reads the combat inputs and `player.gd` skips the Lantern swing. Guard works through `player.take_damage` asking `OpenHand.block_hit()`. Gold is read from nodes in the `gold_holder` group (Greed) and spent with `spend_gold()`. Moss spores join the `enemy_projectile` group so a perfect guard can return them.
 - Wake rooms: `_update_wake_room()` in `main.gd` runs each frame while `current_region == "wake"`. A respawn that jumps rooms snaps the camera instead of sliding. Rooms have no names on screen because the bible gives none.
 - Story: add or edit text only in `story.gd`, and only text that is in the bible. Hard rule: never spoil or point at the Reflection in text. Players find out slowly. `Story.play(scene, panel, label, lines)` shows a beat and sets meta `story_busy`, which makes the scene's interact code hide the E prompt. Playing a new beat cancels the old one. `hub.gd` stores `pending_story` when a region is cleared and plays it when the hub becomes active.
-- Menus: `main.gd` adds `MenuOverlay` to the root once. Esc opens pause only when the tree is not already paused (hit-freeze owns that pause). Options are read from `game_settings.gd` (`Settings.reduce_shake`, `Settings.gentle_mode`). Return to title is intentionally missing: reloading the scene would orphan the hub/region nodes on the root.
+- Menus: `main.gd` adds `MenuOverlay` to the root once. Esc opens pause only when the tree is not already paused (hit-freeze owns that pause). Options are read from `game_settings.gd` (`Settings.reduce_shake`, `Settings.gentle_mode`). Return to title is `main.restart_to_title()`: it frees the hub and region scenes (they live on the root), then reloads the scene and tells the overlay to show the title.
+- Run state and saves: difficulty lives in `run_state.gd` (read `RunState.damage()`, `debuff_scale()`, `max_heals()`, never `Settings.gentle_mode` directly). `main.gd` is in group `game_main`; scenes call `get_tree().call_group("game_main", "save_game", where, respawn)` when Lumi rests. Each region has `save_state()` / `apply_save()`; `main.save_cache` holds the sections of regions not loaded this session. Add new saved facts to `save_game()` and `continue_game()` in `main.gd` plus the region's two functions. The arrival story starts from `main.begin_new_game()`, not `_ready`. Debuffs reach the player through `player.vulnerable`, `heal_blocked` and `weighed_down`, set by the region each frame and cleared when it goes inactive.
 
 - `main.gd` keeps a list of `interactables` (dictionaries with `node`, `message`, `kind`, `used`). `_process` finds the nearest one within 95px, shows the E prompt and handles opening and closing dialogue.
 - New interactables go through `_make_marker()` and `interactables.append(...)`.
@@ -204,7 +213,7 @@ Platforms are listed in `PLATFORMS` in `sloth.gd`. Steps up are 55px or less, ga
 3. Connect region-clear rewards to hub door unlocks and gadget progression.
 4. Build the remaining six regions and their bosses, keeping the game bible as the source of truth.
 5. Add the Mirror Gate, Memory Path, final fight and both endings.
-6. Add saves, side quests, Memory Petals, then polish art, music and sound.
+6. Add side quests, Memory Petals, then polish art, music and sound.
 
 ## Design pillars (short version)
 

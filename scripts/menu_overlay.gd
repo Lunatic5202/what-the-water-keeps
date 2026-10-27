@@ -5,6 +5,7 @@ extends CanvasLayer
 # the tree is paused. Created by main.gd. Esc opens or closes the pause menu.
 
 const Settings := preload("res://scripts/game_settings.gd")
+const SaveGame := preload("res://scripts/save_game.gd")
 
 const INDIGO := Color(0.29, 0.23, 0.48)
 const LAVENDER := Color(0.79, 0.72, 0.94)
@@ -39,6 +40,15 @@ var title_panel: Control
 var pause_panel: Control
 var settings_panel: Control
 var controls_panel: Control
+var difficulty_panel: Control
+var over_panel: Control
+var over_title: Label
+var over_text: Label
+var continue_button: Button
+var challenge_button: Button
+var title_button: Button
+var title_armed := false
+var all_panels: Array[Control] = []
 var current: Control = null
 var return_to: Control = null
 var game_running := false
@@ -78,9 +88,13 @@ func _ready() -> void:
 	pause_panel = _build_pause()
 	settings_panel = _build_settings()
 	controls_panel = _build_controls()
-	for panel in [title_panel, pause_panel, settings_panel, controls_panel]:
+	difficulty_panel = _build_difficulty()
+	over_panel = _build_over()
+	for panel in [title_panel, pause_panel, settings_panel, controls_panel, difficulty_panel, over_panel]:
 		panel.visible = false
 		root_ui.add_child(panel)
+		all_panels.append(panel)
+	add_to_group("menu_overlay")
 	get_tree().paused = true
 	_show_panel(title_panel)
 
@@ -176,7 +190,9 @@ func _build_title() -> Control:
 	box.add_child(_label("WHAT THE WATER KEEPS", 54, LAVENDER))
 	box.add_child(_label("Some things are only safe when you let go.", 20, PEACH))
 	box.add_child(_spacer(30))
-	var begin := _button("Begin", _on_begin)
+	continue_button = _button("Continue", _on_continue)
+	box.add_child(continue_button)
+	var begin := _button("New Game", _open_difficulty)
 	box.add_child(begin)
 	box.add_child(_button("Controls", _open_controls.bind(title_panel_ref)))
 	box.add_child(_button("Settings", _open_settings.bind(title_panel_ref)))
@@ -185,6 +201,39 @@ func _build_title() -> Control:
 	box.add_child(_label("W / S or arrows to move   Enter or Space to choose   Esc to go back", 17, MUTED))
 	box.add_child(_label("Prototype 02", 16, MUTED))
 	root.set_meta("first", begin)
+	return root
+
+func _build_difficulty() -> Control:
+	var root := _backdrop(true)
+	var box := _column(root, false)
+	box.add_child(_label("CHOOSE YOUR WAY", 40, LAVENDER))
+	box.add_child(_label("Debuffs (Drowse, Weight) bite harder as they build, on every setting.", 18, MUTED))
+	box.add_child(_spacer(10))
+	box.add_child(_button("Gentle", _start_new.bind("gentle", false)))
+	box.add_child(_label("About a quarter less damage, slower debuffs, 4 heals.", 16, MUTED))
+	var normal := _button("Normal", _start_new.bind("normal", false))
+	box.add_child(normal)
+	box.add_child(_label("The intended way. 3 heals.", 16, MUTED))
+	box.add_child(_button("Hard", _start_new.bind("hard", false)))
+	box.add_child(_label("Hits hurt half again as much, debuffs build faster, 2 heals.", 16, MUTED))
+	challenge_button = _button("No-Hit Challenge", _start_new.bind("normal", true))
+	box.add_child(challenge_button)
+	box.add_child(_spacer(8))
+	box.add_child(_button("Back", _go_back))
+	root.set_meta("first", normal)
+	return root
+
+func _build_over() -> Control:
+	var root := _backdrop(false)
+	var box := _column(root, true)
+	over_title = _label("", 36, PEACH)
+	box.add_child(over_title)
+	over_text = _label("", 20, MUTED)
+	box.add_child(over_text)
+	box.add_child(_spacer(8))
+	var back := _button("Return to title", _return_to_title_now)
+	box.add_child(back)
+	root.set_meta("first", back)
 	return root
 
 func _build_pause() -> Control:
@@ -198,7 +247,9 @@ func _build_pause() -> Control:
 	box.add_child(_button("Settings", _open_settings.bind(pause_panel_ref)))
 	quit_button = _button("Quit game", _on_quit_pressed)
 	box.add_child(quit_button)
-	box.add_child(_label("Progress is not saved yet.", 17, MUTED))
+	title_button = _button("Return to title", _on_title_pressed)
+	box.add_child(title_button)
+	box.add_child(_label("The game saves when you rest at a bench or hammock.", 17, MUTED))
 	root.set_meta("first", resume)
 	return root
 
@@ -262,16 +313,22 @@ func _panel_for(ref: Variant) -> Control:
 # --- Navigation ---------------------------------------------------------------
 
 func _show_panel(panel: Control) -> void:
-	for p in [title_panel, pause_panel, settings_panel, controls_panel]:
+	for p in all_panels:
 		p.visible = false
 	panel.visible = true
 	current = panel
+	if panel == title_panel:
+		continue_button.visible = SaveGame.has_save()
+	if panel == difficulty_panel:
+		challenge_button.visible = Settings.game_beaten
 	if panel == settings_panel:
 		for key in option_buttons:
 			(option_buttons[key] as CheckButton).set_pressed_no_signal(Settings.get_option(key))
 	if panel == pause_panel:
 		quit_armed = false
 		quit_button.text = "Quit game"
+		title_armed = false
+		title_button.text = "Return to title"
 	_focus_first.call_deferred(panel)
 
 func _focus_first(panel: Control) -> void:
@@ -290,16 +347,52 @@ func _open_settings(from_ref: Variant) -> void:
 func _go_back() -> void:
 	_show_panel(return_to if return_to else pause_panel)
 
-func _on_begin() -> void:
+func _open_difficulty() -> void:
+	return_to = title_panel
+	_show_panel(difficulty_panel)
+
+func _start_new(chosen: String, challenge: bool) -> void:
 	game_running = true
+	get_tree().call_group("game_main", "begin_new_game", chosen, challenge)
 	_resume()
+
+func _on_continue() -> void:
+	var ok := false
+	for node in get_tree().get_nodes_in_group("game_main"):
+		ok = bool(node.call("continue_game"))
+	if ok:
+		game_running = true
+		_resume()
+
+func _on_title_pressed() -> void:
+	if not title_armed:
+		title_armed = true
+		title_button.text = "Really? Unsaved progress is lost"
+		return
+	_return_to_title_now()
+
+func _return_to_title_now() -> void:
+	game_running = false
+	get_tree().call_group("game_main", "restart_to_title")
+
+func show_title() -> void:
+	game_running = false
+	get_tree().paused = true
+	_show_panel(title_panel)
+
+func show_run_over(title: String, text: String) -> void:
+	game_running = false
+	over_title.text = title
+	over_text.text = text
+	get_tree().paused = true
+	_show_panel(over_panel)
 
 func _open_pause() -> void:
 	get_tree().paused = true
 	_show_panel(pause_panel)
 
 func _resume() -> void:
-	for p in [title_panel, pause_panel, settings_panel, controls_panel]:
+	for p in all_panels:
 		p.visible = false
 	current = null
 	get_tree().paused = false
@@ -332,10 +425,13 @@ func _handle_cancel() -> bool:
 	if current == settings_panel or current == controls_panel:
 		_go_back()
 		return true
+	if current == difficulty_panel:
+		_show_panel(title_panel)
+		return true
+	if current == over_panel or current == title_panel:
+		return true
 	if current == pause_panel:
 		_resume()
-		return true
-	if current == title_panel:
 		return true
 	# No menu open: only pause during normal play, never during a hit freeze.
 	if game_running and not get_tree().paused:

@@ -3,7 +3,7 @@ extends Control
 # a thin health bar, and small oil drops for heal charges.
 # It reads Lumi directly (group "player"), so every region can reuse it.
 
-const MAX_DROPS := 3
+const RunState := preload("res://scripts/run_state.gd")
 const INDIGO := Color(0.29, 0.23, 0.48)
 const LAVENDER := Color(0.79, 0.72, 0.94)
 
@@ -89,7 +89,7 @@ func _draw_bar(frac: float, health: int, max_health: int) -> void:
 	draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.95, 0.93, 1.0))
 
 func _draw_drops(heals: int) -> void:
-	for i in range(MAX_DROPS):
+	for i in range(RunState.max_heals()):
 		var at := Vector2(76 + i * 24, 48)
 		var tip := PackedVector2Array([at + Vector2(-4.5, 2), at + Vector2(0, -9), at + Vector2(4.5, 2)])
 		if i < heals:

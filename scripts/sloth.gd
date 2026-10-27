@@ -7,6 +7,7 @@ extends Node2D
 
 const Palette := preload("res://scripts/palette.gd")
 const Settings := preload("res://scripts/game_settings.gd")
+const RunState := preload("res://scripts/run_state.gd")
 const BOB := preload("res://scripts/bob_platform.gd")
 const DREAMER := preload("res://scripts/dreamer.gd")
 const SNAIL := preload("res://scripts/snoozle_snail.gd")
@@ -344,7 +345,7 @@ func set_region_active(active: bool) -> void:
 	overlay_layer.visible = active
 	process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
 	if is_instance_valid(player):
-		player.set("move_speed_mod", 1.0)
+		_clear_player_debuffs()
 
 # --- Drawing ------------------------------------------------------------------
 
@@ -473,7 +474,7 @@ func _unlit_near() -> int:
 	return count
 
 func add_drowse(amount: float) -> void:
-	var factor := 0.5 if Settings.gentle_mode and amount > 0.0 else 1.0
+	var factor := RunState.debuff_scale() if amount > 0.0 else 1.0
 	drowse = clampf(drowse + amount * factor, 0.0, 100.0)
 
 func _update_drowse(delta: float) -> void:
@@ -485,19 +486,39 @@ func _update_drowse(delta: float) -> void:
 		elif _unlit_near() > 0:
 			add_drowse(0.5 * delta)
 	if drowse >= 100.0:
-		drowse = 60.0
-		player.call("fall_asleep", 3.0)
-		_show_status("DROWSE: LUMI FALLS ASLEEP.")
-	var stage := 0 if drowse < 25.0 else (1 if drowse < 50.0 else 2)
+		drowse = 70.0
+		player.call("fall_asleep", RunState.sleep_seconds())
+		_show_status("DROWSE: LUMI FALLS ASLEEP. SLEEPERS TAKE MORE DAMAGE.")
+	var stage := 0 if drowse < 25.0 else (1 if drowse < 50.0 else (2 if drowse < 80.0 else 3))
 	if stage > drowse_stage:
 		if stage == 1:
 			_banner("NIM: It's so peaceful. I could just... rest a bit. Just a moment.", 3.0)
+		elif stage == 2:
+			_banner("DROWSE: You put it off again. Heavy limbs, hits hurt more.", 2.8)
 		else:
-			_banner("DROWSE: You put it off again.", 2.4)
+			_banner("DROWSE: Eyes closing. No healing. Light a lantern or keep moving!", 2.8)
 	drowse_stage = stage
-	player.set("move_speed_mod", 0.85 if drowse >= 50.0 else 1.0)
+	_apply_drowse_penalties(stage)
 	drowse_fill.size.x = 200.0 * drowse / 100.0
 	drowse_fill.color = Color(0.97, 0.91, 0.63).lerp(Color(0.62, 0.45, 0.95), drowse / 100.0)
+
+# Escalating costs. Stage 2 (50): slower, shorter jumps, +1 damage per hit.
+# Stage 3 (80): slower still, no healing. Falling asleep (100) leaves Lumi
+# helpless for a few seconds and takes +1 damage on top.
+func _apply_drowse_penalties(stage: int) -> void:
+	var speed := 1.0
+	var jump := 1.0
+	match stage:
+		2:
+			speed = 0.8
+			jump = 0.92
+		3:
+			speed = 0.65
+			jump = 0.85
+	player.set("move_speed_mod", speed)
+	player.set("jump_power_mod", jump)
+	player.set("vulnerable", 1 if stage >= 2 else 0)
+	player.set("heal_blocked", stage >= 3)
 
 func _update_overlay() -> void:
 	var sleepy := clampf((drowse - 40.0) / 60.0, 0.0, 1.0) * 0.55
@@ -537,11 +558,32 @@ func _interact(item: Dictionary) -> void:
 		_:
 			_show_dialogue(item["message"], target)
 
+func save_state() -> Dictionary:
+	return {
+		"boss_defeated": boss_defeated,
+		"has_hourglass": has_hourglass,
+		"has_dusk_key": has_dusk_key,
+		"has_snail_grips": has_snail_grips
+	}
+
+# Puts Slumber Hollow back the way a save left it: the Dreamer at rest.
+func apply_save(d: Dictionary) -> void:
+	has_hourglass = bool(d.get("has_hourglass", false))
+	has_dusk_key = bool(d.get("has_dusk_key", false))
+	has_snail_grips = bool(d.get("has_snail_grips", false))
+	if bool(d.get("boss_defeated", false)):
+		boss_defeated = true
+		boss_item["used"] = true
+		boss_item["node"].visible = false
+		if is_instance_valid(dreamer):
+			dreamer.queue_free()
+	_update_hud()
+
 func _rest(at: Vector2) -> void:
 	respawn_point = at + Vector2(0, -10)
 	player.set("respawn_point", respawn_point)
 	player.health = player.max_health
-	player.heals = 3
+	player.heals = RunState.max_heals()
 	player.health_changed.emit(player.health)
 	player.heals_changed.emit(player.heals)
 	drowse = 0.0
@@ -549,7 +591,8 @@ func _rest(at: Vector2) -> void:
 		trail.queue_free()
 	if not fight_active:
 		_spawn_enemies()
-	_show_status("LUMI RESTS. THE HOLLOW STIRS.")
+	get_tree().call_group("game_main", "save_game", "sloth", respawn_point)
+	_show_status("LUMI RESTS. THE HOLLOW STIRS.%s" % ("" if RunState.no_hit else " GAME SAVED."))
 
 func _on_player_died() -> void:
 	if player.get_parent() != self:
@@ -583,8 +626,10 @@ func _update_hud(_value: int = 0) -> void:
 	if not is_instance_valid(player) or not is_instance_valid(stats_label):
 		return
 	var parts: Array[String] = []
-	if drowse >= 50.0:
-		parts.append("DROWSE: SLOWED")
+	if drowse >= 80.0:
+		parts.append("DROWSE: DEFENCELESS (+1 DAMAGE, NO HEALING)")
+	elif drowse >= 50.0:
+		parts.append("DROWSE: HEAVY (+1 DAMAGE)")
 	if _unlit_near() > 0:
 		parts.append("UNLIT LANTERNS NEARBY")
 	if bool(player.get("can_wall_climb")):
@@ -673,6 +718,13 @@ func _grant_grips() -> void:
 	has_snail_grips = true
 	player.set("can_wall_climb", true)
 	_show_status("SNAIL GRIPS! HOLD TOWARD A WALL TO CLING, HOLD JUMP TO CLIMB.")
+
+func _clear_player_debuffs() -> void:
+	player.set("move_speed_mod", 1.0)
+	player.set("jump_power_mod", 1.0)
+	player.set("vulnerable", 0)
+	player.set("heal_blocked", false)
+	player.set("weighed_down", false)
 
 func _clear_climb_walls() -> void:
 	for wall in climb_walls:

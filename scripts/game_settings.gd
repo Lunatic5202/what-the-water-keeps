@@ -9,7 +9,7 @@ const PATH := "user://settings.cfg"
 static var reduce_shake := false
 static var gentle_mode := false
 static var fullscreen := false
-static var damage_carry := 0.0
+static var game_beaten := false  # unlocks the secret no-hit challenge
 
 static func load_settings() -> void:
 	var cfg := ConfigFile.new()
@@ -18,12 +18,14 @@ static func load_settings() -> void:
 	reduce_shake = bool(cfg.get_value("accessibility", "reduce_shake", false))
 	gentle_mode = bool(cfg.get_value("accessibility", "gentle_mode", false))
 	fullscreen = bool(cfg.get_value("display", "fullscreen", false))
+	game_beaten = bool(cfg.get_value("meta", "game_beaten", false))
 
 static func save_settings() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("accessibility", "reduce_shake", reduce_shake)
 	cfg.set_value("accessibility", "gentle_mode", gentle_mode)
 	cfg.set_value("display", "fullscreen", fullscreen)
+	cfg.set_value("meta", "game_beaten", game_beaten)
 	cfg.save(PATH)
 
 static func apply() -> void:
@@ -51,12 +53,7 @@ static func get_option(key: String) -> bool:
 			return fullscreen
 	return false
 
-# Gentle Mode: 25% less damage. Hearts are whole numbers, so the fraction is
-# carried over: every fourth hit is fully absorbed.
-static func scaled_damage(amount: int) -> int:
-	if not gentle_mode:
-		return amount
-	damage_carry += amount * 0.75
-	var whole := int(damage_carry)
-	damage_carry -= whole
-	return whole
+# The ending will call this. It stays set across New Games.
+static func mark_beaten() -> void:
+	game_beaten = true
+	save_settings()

@@ -2,6 +2,7 @@ extends Node2D
 const Story := preload("res://scripts/story.gd")
 const Palette := preload("res://scripts/palette.gd")
 const Settings := preload("res://scripts/game_settings.gd")
+const RunState := preload("res://scripts/run_state.gd")
 
 signal region_cleared(region_name: String)
 signal return_to_hub
@@ -395,6 +396,8 @@ func set_region_active(active: bool) -> void:
 	if not active and is_instance_valid(player):
 		player.set("move_speed_mod", 1.0)
 		player.set("jump_power_mod", 1.0)
+		player.set("vulnerable", 0)
+		player.set("weighed_down", false)
 
 func _connect_signals() -> void:
 	player.health_changed.connect(_update_hud)
@@ -404,12 +407,18 @@ func _connect_signals() -> void:
 func _process(delta: float) -> void:
 	# Apply weight debuff to player
 	if weight_debuff > 0.0:
-		var felt := weight_debuff * (0.5 if Settings.gentle_mode else 1.0)
+		# Escalating costs. Above 30 weight: slower, lower jumps. From 50: +1 damage
+		# per hit. From 60: no dash or double jump.
+		var felt := minf(1.0, weight_debuff * RunState.debuff_scale())
 		player.set("move_speed_mod", 1.0 - felt * 0.5)
-		player.set("jump_power_mod", 1.0 - felt * 0.3)
+		player.set("jump_power_mod", 1.0 - felt * 0.5)
+		player.set("vulnerable", 1 if felt >= 0.5 else 0)
+		player.set("weighed_down", felt >= 0.6)
 	else:
 		player.set("move_speed_mod", 1.0)
 		player.set("jump_power_mod", 1.0)
+		player.set("vulnerable", 0)
+		player.set("weighed_down", false)
 
 	# Killbox
 	if player.global_position.y > 900.0:
@@ -547,7 +556,12 @@ func _update_hud(_value: int = 0) -> void:
 	var parts: Array[String] = []
 	if carried_gold > 0:
 		parts.append("GOLD: %d" % carried_gold)
-	if weight_debuff > 0.3:
+	var felt := minf(1.0, weight_debuff * RunState.debuff_scale())
+	if felt >= 0.6:
+		parts.append("WEIGHT: CRUSHING (+1 DAMAGE, NO DASH OR DOUBLE JUMP)")
+	elif felt >= 0.5:
+		parts.append("WEIGHT: HEAVY (+1 DAMAGE)")
+	elif weight_debuff > 0.3:
 		parts.append("WEIGHT: %.0f%%" % (weight_debuff * 100))
 	if has_featherweight:
 		parts.append("DOUBLE JUMP: UNLOCKED")
@@ -560,6 +574,35 @@ func _show_status(message: String) -> void:
 	await get_tree().create_timer(1.6).timeout
 	if my_id == status_id:
 		_update_hud()
+
+func save_state() -> Dictionary:
+	return {
+		"featherweight_found": featherweight_found,
+		"boss_defeated": boss_defeated,
+		"has_open_hand": has_open_hand,
+		"has_gold_key": has_gold_key
+	}
+
+# Puts Greed back the way a save left it: the charm taken, the Collector gone.
+func apply_save(d: Dictionary) -> void:
+	if bool(d.get("featherweight_found", false)):
+		featherweight_found = true
+		has_featherweight = true
+		for item in interactables:
+			if item["kind"] == "featherweight":
+				item["used"] = true
+				item["node"].visible = false
+	if bool(d.get("boss_defeated", false)):
+		boss_defeated = true
+		has_open_hand = bool(d.get("has_open_hand", true))
+		has_gold_key = bool(d.get("has_gold_key", true))
+		boss_item["used"] = true
+		boss_item["node"].visible = false
+		mountain_visible = false
+		if is_instance_valid(collector):
+			collector.queue_free()
+		queue_redraw()
+	_update_hud()
 
 func unlock_featherweight() -> void:
 	if not featherweight_found:
