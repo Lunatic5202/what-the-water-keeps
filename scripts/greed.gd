@@ -1057,7 +1057,7 @@ func _on_guard_dropped(amount: int) -> void:
 func _on_coin_guard_defeated() -> void:
 	miniboss_defeated = true
 	_grant_seal("vault")
-	_show_status("COIN GUARD DEFEATED. SEAL %d/%d" % [seals.size(), SEALS_NEEDED])
+	_show_status("COIN GUARD DEFEATED. VAULT MANUAL UNSEALED. SEAL %d/%d" % [seals.size(), SEALS_NEEDED])
 
 func _grant_seal(id: String) -> void:
 	if not seals.has(id):
