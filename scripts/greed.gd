@@ -26,7 +26,6 @@ var status_id := 0
 var carried_gold := 0
 var weight_debuff := 0.0  # 0.0 to 1.0, affects speed/jump
 var has_featherweight := false  # Double jump unlocked
-var has_golden_afterimage := false  # Optional second air dash
 
 # Progress
 var shrine_count := 0
@@ -234,8 +233,6 @@ func _draw() -> void:
 			_draw_pickup_coin(item["node"].position)
 		elif kind == "seal":
 			_draw_pickup_seal(item["node"].position)
-		elif kind == "golden_afterimage":
-			_draw_afterimage(item["node"].position)
 
 	if mountain_visible:
 		_draw_mountain()
@@ -256,14 +253,6 @@ func _draw_pickup_seal(c: Vector2) -> void:
 	draw_circle(c, 14.0, Color(0.85, 0.52, 0.16))
 	draw_circle(c, 8.0, Color(1.0, 0.88, 0.45))
 	draw_circle(c + Vector2(-4, -4), 2.5, Color(1, 1, 1, 0.9))
-
-func _draw_afterimage(c: Vector2) -> void:
-	# A cool, almost invisible glint distinguishes the optional relic from gold.
-	draw_circle(c, 31.0, Color(0.68, 0.88, 1.0, 0.12))
-	draw_arc(c, 22.0, 0.0, TAU, 36, Color(0.76, 0.92, 1.0, 0.75), 2.0)
-	draw_circle(c, 11.0, Color(0.62, 0.82, 1.0, 0.85))
-	draw_circle(c, 5.0, Color(0.94, 0.98, 1.0, 1.0))
-	draw_circle(c + Vector2(3.0, -4.0), 2.0, Color(1.0, 1.0, 1.0, 1.0))
 
 func _draw_mountain() -> void:
 	# The Collector's mountain of coins. He swallows it in phase two.
@@ -301,10 +290,8 @@ func _create_ground() -> void:
 		var section: Rect2 = MAIN_GROUND[i]
 		_create_ground_section(section.get_center(), section.size, "GreedGround%d" % (i + 1))
 
-	# Platforms
-	_create_platform(Vector2(500, 500), Vector2(120, 20))
-	_create_platform(Vector2(900, 450), Vector2(100, 20))
-	_create_platform(Vector2(1100, 380), Vector2(100, 20))
+	# Every visible platform is created from EXTRA_PLATFORMS below. Do not add
+	# one-off colliders here: that caused invisible platforms after layout edits.
 
 	# Expanded wings: the Gold Ridge over the road to the arena, and the long
 	# Vault Route out over the pit to the old treasury. See EXTRA_PLATFORMS.
@@ -503,12 +490,13 @@ func _create_greed_level() -> void:
 		"used": false
 	})
 
-	# Optional ability: hidden above the old treasury, reached with double jump.
-	var afterimage := _make_interactable("GILDED AFTERIMAGE\n[E] CLAIM", Vector2(-1780, 275), Color(0.78, 0.92, 1.0))
+	# The vault's combat manual is the reward for defeating its guardian.
+	# It can be seen before the fight, but cannot be learned until the Coin Guard falls.
+	var manual := _make_interactable("OPEN HAND MANUAL\n[E] LEARN", Vector2(-1800, 425), Color(1.0, 0.83, 0.55))
 	interactables.append({
-		"node": afterimage,
-		"message": "A second shadow follows Lumi's lantern, then slips out of step.\n\nGILDED AFTERIMAGE FOUND: dash a second time while airborne.",
-		"kind": "golden_afterimage",
+		"node": manual,
+		"message": "The old manual teaches Lumi to turn a held coin into an offering, then let it go.\n\nOPEN HAND UNLOCKED: palm combos, Rising Palm, Falling Petals, Wide Offering, Coin Toss, Open Palm guard, and Seven Hands.",
+		"kind": "open_hand_manual",
 		"used": false
 	})
 
@@ -666,13 +654,18 @@ func _interact(item: Dictionary) -> void:
 			target.visible = false
 			unlock_featherweight()
 			_show_dialogue(item["message"], target)
-		"golden_afterimage":
+		"open_hand_manual":
+			if not miniboss_defeated:
+				_show_dialogue("The manual is sealed beneath a heavy coin clasp. The Coin Guard still carries the key.", target)
+				return
 			item["used"] = true
 			target.visible = false
-			has_golden_afterimage = true
-			player.set("can_golden_dash", true)
+			has_open_hand = true
+			if is_instance_valid(player):
+				player.call("unlock_style", "open_hand")
+			collectible_found.emit("open_hand")
 			_show_dialogue(item["message"], target)
-			_show_status("GILDED AFTERIMAGE FOUND. A SECOND AIR DASH IS YOURS.")
+			_show_status("OPEN HAND LEARNED. TAB SWAPS STYLES.")
 		"boss":
 			if boss_defeated:
 				_show_dialogue("The mountain is gone. Only a small, quiet shine is left in the bowl.", target)
@@ -781,7 +774,6 @@ func _show_status(message: String) -> void:
 func save_state() -> Dictionary:
 	return {
 		"featherweight_found": featherweight_found,
-		"golden_afterimage_found": has_golden_afterimage,
 		"boss_defeated": boss_defeated,
 		"has_open_hand": has_open_hand,
 		"has_gold_key": has_gold_key,
@@ -800,12 +792,12 @@ func apply_save(d: Dictionary) -> void:
 			if item["kind"] == "featherweight":
 				item["used"] = true
 				item["node"].visible = false
-	if bool(d.get("golden_afterimage_found", false)):
-		has_golden_afterimage = true
-		if is_instance_valid(player):
-			player.set("can_golden_dash", true)
+	if bool(d.get("has_open_hand", false)):
+		has_open_hand = true
+		if is_instance_valid(player) and not player.get("unlocked_styles").has("open_hand"):
+			player.get("unlocked_styles").append("open_hand")
 		for item in interactables:
-			if item["kind"] == "golden_afterimage":
+			if item["kind"] == "open_hand_manual":
 				item["used"] = true
 				item["node"].visible = false
 	for id in d.get("seals", []):
@@ -818,7 +810,6 @@ func apply_save(d: Dictionary) -> void:
 			coin_guard.queue_free()
 	if bool(d.get("boss_defeated", false)):
 		boss_defeated = true
-		has_open_hand = bool(d.get("has_open_hand", true))
 		has_gold_key = bool(d.get("has_gold_key", true))
 		boss_item["used"] = true
 		boss_item["node"].visible = false
@@ -993,7 +984,7 @@ func _on_collector_defeated() -> void:
 		["NIM: ...You can let go. It's okay.", 2.6],
 		["(He puts the coin in the offering bowl. He fades.)", 3.0],
 		["THE COLLECTOR: It's so light.", 2.6],
-		["THE OPEN HAND (OFFERING STYLE) AND THE GOLD KEY ARE YOURS.", 3.4]
+		["THE GOLD KEY IS YOURS. THE OLD TREASURY HAS ITS OWN REWARD.", 3.4]
 	]
 	for line in lines:
 		var seconds := maxf(float(line[1]), Story.reading_time(str(line[0])))
@@ -1001,18 +992,14 @@ func _on_collector_defeated() -> void:
 		await get_tree().create_timer(seconds).timeout
 		if my_id != scene_id:
 			return
-	has_open_hand = true
-	if is_instance_valid(player):
-		player.call("unlock_style", "open_hand")
 	has_gold_key = true
-	collectible_found.emit("open_hand")
 	collectible_found.emit("gold_key")
 	_open_vault_route()
 	region_cleared.emit("greed")
 
 func _create_expanded_content() -> void:
 	# Small mobs spread across expanded areas
-	var mite_positions := [Vector2(790, 550), Vector2(1110, 550), Vector2(1495, 550), Vector2(1760, 550), Vector2(1550, 405), Vector2(1880, 325), Vector2(305, 495), Vector2(-55, 395), Vector2(-415, 295), Vector2(-775, 295), Vector2(-955, 345), Vector2(-1650, 445)]
+	var mite_positions := [Vector2(790, 550), Vector2(1110, 550), Vector2(1495, 550), Vector2(1760, 550), Vector2(1550, 405), Vector2(1880, 325), Vector2(-55, 395), Vector2(-415, 295), Vector2(-775, 295), Vector2(-955, 345), Vector2(-1650, 445)]
 	for pos in mite_positions:
 		var mite := CharacterBody2D.new()
 		mite.set_script(GREEDY_MITE)
