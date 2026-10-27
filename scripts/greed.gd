@@ -701,6 +701,13 @@ func _show_dialogue(message: String, target: Node2D = null) -> void:
 	dialogue_panel.visible = true
 	dialogue_open = true
 	dialogue_target = target
+	var shown_text := message
+	await get_tree().create_timer(Story.reading_time(shown_text)).timeout
+	# Do not let an older timer hide a newer line or a story beat.
+	if dialogue_open and dialogue_label.text == shown_text and not bool(get_meta("story_busy", false)):
+		dialogue_panel.visible = false
+		dialogue_open = false
+		dialogue_target = null
 
 func _update_hud(_value: int = 0) -> void:
 	if not is_instance_valid(player) or not is_instance_valid(stats_label):
@@ -820,7 +827,7 @@ func _banner(text: String, seconds: float) -> void:
 	dialogue_open = false
 	dialogue_label.text = text
 	dialogue_panel.visible = true
-	banner_time = seconds
+	banner_time = maxf(seconds, Story.reading_time(text))
 
 func _start_collector_fight() -> void:
 	if fight_active or boss_defeated or not is_instance_valid(collector):
@@ -846,8 +853,9 @@ func _collector_intro() -> void:
 		["THE COLLECTOR: Sad? I'm not sad. I'm full. I have so much.", 3.0]
 	]
 	for line in lines:
-		_banner(line[0], line[1])
-		await get_tree().create_timer(line[1]).timeout
+		var seconds := maxf(float(line[1]), Story.reading_time(str(line[0])))
+		_banner(str(line[0]), seconds)
+		await get_tree().create_timer(seconds).timeout
 		if my_id != scene_id:
 			return
 	if is_instance_valid(collector):
