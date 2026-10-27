@@ -57,14 +57,12 @@ const MAIN_GROUND := [
 	Rect2(1920, 570, 830, 90),
 ]
 
-# Extra platforms: Rect2(left, top, width, height). The same list draws and
-# collides. Steps are 50px up, gaps 70px, so a plain jump clears each one (no
-# double jump needed). The first step of each climb is a solid block down to the
-# ground so Lumi can still walk beneath the rest.
+# Extra shelves: Rect2(left, top, width, height). One shared silhouette helper
+# defines both the visible rock shape and its collision polygon.
 const EXTRA_PLATFORMS := [
-	# A low garden ledge gives the opening a readable landmark and a coin route.
+	# Opening ledge: one optional pickup, not a chain of tutorial blocks.
 	Rect2(440, 490, 120, 20),
-	# Vault Route: climb left over the broken pit, then loop back through the treasury.
+	# Vault Route: a deliberate climb out over the broken garden wall.
 	Rect2(250, 520, 110, 50),
 	Rect2(70, 470, 110, 18),
 	Rect2(-110, 420, 110, 18),
@@ -74,17 +72,15 @@ const EXTRA_PLATFORMS := [
 	Rect2(-830, 320, 110, 18),
 	Rect2(-1010, 370, 110, 18),
 	Rect2(-1190, 420, 110, 18),
-	# Optional secret alcove: its upper ledge requires the double jump.
+	# Hidden treasury shelf: the upper pocket is reached with the Featherweight Charm.
 	Rect2(-1830, 410, 100, 18),
 	Rect2(-1830, 300, 100, 18),
-	# Gold Ridge: a high route with a short elevated loop back into the crossroads.
-	Rect2(1330, 520, 100, 50),
-	Rect2(1500, 470, 100, 18),
-	Rect2(1670, 420, 100, 18),
-	Rect2(1840, 370, 100, 18),
-	Rect2(1240, 500, 100, 18),
-	Rect2(1120, 450, 100, 18),
-	Rect2(1000, 500, 100, 18),
+	# Gold Ridge: four broad, rising shelves form one readable climb to the seal.
+	# The first is a substantial broken outcrop; the next three keep a steady jump rhythm.
+	Rect2(1240, 500, 150, 70),
+	Rect2(1405, 445, 155, 24),
+	Rect2(1575, 390, 155, 24),
+	Rect2(1745, 335, 165, 24),
 ]
 const MOUNTAIN_X := 2580.0
 var collector: CharacterBody2D
@@ -210,15 +206,24 @@ func _draw() -> void:
 			var bx := section.position.x + 16.0 + blade * 34.0
 			draw_line(Vector2(bx, section.position.y + 3), Vector2(bx - 3, section.position.y - 7), Color(0.77, 0.68, 0.34, 1.0), 2.0)
 			draw_line(Vector2(bx, section.position.y + 3), Vector2(bx + 5, section.position.y - 5), Color(0.77, 0.68, 0.34, 1.0), 2.0)
-	for plat: Rect2 in EXTRA_PLATFORMS + [VAULT_GROUND]:
-		draw_rect(plat, ground)
-		draw_rect(Rect2(plat.position, Vector2(plat.size.x, 4)), top)
-		draw_rect(plat, Palette.GOLD_OUTLINE, false, 2.0)
-	# Walkable platforms are drawn from EXTRA_PLATFORMS, matching collision.
+	for plat: Rect2 in EXTRA_PLATFORMS:
+		var rock := _platform_world_points(plat)
+		draw_colored_polygon(rock, ground)
+		var outline := rock.duplicate()
+		outline.append(rock[0])
+		draw_polyline(outline, Palette.GOLD_OUTLINE, 2.0)
+		# A restrained highlight follows the irregular top edge instead of outlining a rectangle.
+		draw_line(rock[1], rock[2], top, 3.0)
+		draw_line(rock[2], rock[3], top, 3.0)
+		draw_line(rock[3], rock[4], top, 3.0)
+	# The treasury floor remains a broad, solid stone shelf.
+	draw_rect(VAULT_GROUND, ground)
+	draw_rect(Rect2(VAULT_GROUND.position, Vector2(VAULT_GROUND.size.x, 5)), top)
 
-	# A deliberately subtle coin-glint points upward from the hidden treasury shelf.
-	draw_line(Vector2(-1800, 407), Vector2(-1780, 390), Color(1.0, 0.83, 0.38, 0.8), 2.0)
-	draw_circle(Vector2(-1780, 390), 3.0, Color(1.0, 0.9, 0.55, 0.85))
+	# A small glint hints at the treasury pocket without exposing its cache marker.
+	if not secret_cache_found:
+		draw_line(Vector2(-1800, 407), Vector2(-1780, 390), Color(1.0, 0.83, 0.38, 0.8), 2.0)
+		draw_circle(Vector2(-1780, 390), 3.0, Color(1.0, 0.9, 0.55, 0.85))
 
 	# Foreground flower clumps make the garden feel overgrown.
 	for i in range(42):
@@ -231,7 +236,7 @@ func _draw() -> void:
 		draw_circle(Vector2(fx, fy - 11), 2.0, Color(0.48, 0.31, 0.13, 1.0))
 
 	for item in interactables:
-		if item.get("used", false) or not is_instance_valid(item["node"]):
+		if item.get("used", false) or not is_instance_valid(item["node"]) or not item["node"].visible:
 			continue
 		var kind: String = item["kind"]
 		if kind == "coin" or kind == "coin_extra":
@@ -240,6 +245,8 @@ func _draw() -> void:
 			_draw_pickup_seal(item["node"].position)
 		elif kind == "open_hand_manual":
 			_draw_open_hand_manual(item["node"].position)
+		elif kind == "secret_cache":
+			_draw_secret_cache(item["node"].position)
 
 	if mountain_visible:
 		_draw_mountain()
@@ -270,6 +277,20 @@ func _draw_open_hand_manual(c: Vector2) -> void:
 	draw_line(c + Vector2(-6, 4), c + Vector2(-6, -4), Color(1.0, 0.85, 0.52, 0.95), 2.0)
 	draw_line(c + Vector2(0, 4), c + Vector2(0, -7), Color(1.0, 0.85, 0.52, 0.95), 2.0)
 	draw_line(c + Vector2(6, 4), c + Vector2(6, -4), Color(1.0, 0.85, 0.52, 0.95), 2.0)
+
+func _draw_secret_cache(c: Vector2) -> void:
+	# Only drawn when Lumi is close enough to reveal the hidden treasury pocket.
+	draw_circle(c, 24.0, Color(1.0, 0.78, 0.24, 0.14))
+	var pouch := PackedVector2Array([
+		c + Vector2(-12, -7), c + Vector2(-8, -14), c + Vector2(8, -14),
+		c + Vector2(12, -7), c + Vector2(10, 8), c + Vector2(0, 15),
+		c + Vector2(-10, 8), c + Vector2(-12, -7)
+	])
+	draw_colored_polygon(pouch, Color(0.38, 0.24, 0.12, 1.0))
+	draw_polyline(pouch, Palette.GOLD_OUTLINE, 2.0)
+	draw_line(c + Vector2(-7, -7), c + Vector2(7, -7), Color(1.0, 0.83, 0.38, 1.0), 2.0)
+	draw_circle(c + Vector2(-4, 2), 3.0, Color(1.0, 0.85, 0.35, 1.0))
+	draw_circle(c + Vector2(4, 5), 2.5, Color(1.0, 0.92, 0.58, 1.0))
 
 func _draw_mountain() -> void:
 	# The Collector's mountain of coins. He swallows it in phase two.
@@ -337,12 +358,31 @@ func _create_ground_section(at: Vector2, size: Vector2, section_name: String) ->
 func _create_platform(at: Vector2, size: Vector2) -> void:
 	var platform := StaticBody2D.new()
 	platform.position = at
-	var collision := CollisionShape2D.new()
-	var shape := RectangleShape2D.new()
-	shape.size = size
-	collision.shape = shape
+	platform.name = "GreedRockShelf"
+	var collision := CollisionPolygon2D.new()
+	collision.polygon = _platform_local_points(Rect2(Vector2.ZERO, size))
 	platform.add_child(collision)
 	add_child(platform)
+
+# A single silhouette function feeds both drawing and collision. Broad tops and
+# bevelled sides read as broken stone outcrops rather than floating rectangles.
+func _platform_local_points(rect: Rect2) -> PackedVector2Array:
+	var half := rect.size * 0.5
+	var bevel := minf(10.0, half.y * 0.65)
+	return PackedVector2Array([
+		Vector2(-half.x, half.y),
+		Vector2(-half.x + 8.0, -half.y + bevel),
+		Vector2(-half.x * 0.28, -half.y),
+		Vector2(half.x * 0.24, -half.y + 2.0),
+		Vector2(half.x - 8.0, -half.y + bevel),
+		Vector2(half.x, half.y),
+	])
+
+func _platform_world_points(rect: Rect2) -> PackedVector2Array:
+	var points := _platform_local_points(rect)
+	for i in range(points.size()):
+		points[i] += rect.get_center()
+	return points
 
 func _create_boundary(at: Vector2) -> void:
 	var wall := StaticBody2D.new()
