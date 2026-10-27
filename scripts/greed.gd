@@ -236,7 +236,7 @@ func _draw() -> void:
 		draw_circle(Vector2(fx, fy - 11), 2.0, Color(0.48, 0.31, 0.13, 1.0))
 
 	for item in interactables:
-		if item.get("used", false) or not is_instance_valid(item["node"]):
+		if item.get("used", false) or not is_instance_valid(item["node"]) or not item["node"].visible:
 			continue
 		var kind: String = item["kind"]
 		if kind == "coin" or kind == "coin_extra":
@@ -245,6 +245,8 @@ func _draw() -> void:
 			_draw_pickup_seal(item["node"].position)
 		elif kind == "open_hand_manual":
 			_draw_open_hand_manual(item["node"].position)
+		elif kind == "secret_cache":
+			_draw_secret_cache(item["node"].position)
 
 	if mountain_visible:
 		_draw_mountain()
@@ -275,6 +277,20 @@ func _draw_open_hand_manual(c: Vector2) -> void:
 	draw_line(c + Vector2(-6, 4), c + Vector2(-6, -4), Color(1.0, 0.85, 0.52, 0.95), 2.0)
 	draw_line(c + Vector2(0, 4), c + Vector2(0, -7), Color(1.0, 0.85, 0.52, 0.95), 2.0)
 	draw_line(c + Vector2(6, 4), c + Vector2(6, -4), Color(1.0, 0.85, 0.52, 0.95), 2.0)
+
+func _draw_secret_cache(c: Vector2) -> void:
+	# Only drawn when Lumi is close enough to reveal the hidden treasury pocket.
+	draw_circle(c, 24.0, Color(1.0, 0.78, 0.24, 0.14))
+	var pouch := PackedVector2Array([
+		c + Vector2(-12, -7), c + Vector2(-8, -14), c + Vector2(8, -14),
+		c + Vector2(12, -7), c + Vector2(10, 8), c + Vector2(0, 15),
+		c + Vector2(-10, 8), c + Vector2(-12, -7)
+	])
+	draw_colored_polygon(pouch, Color(0.38, 0.24, 0.12, 1.0))
+	draw_polyline(pouch, Palette.GOLD_OUTLINE, 2.0)
+	draw_line(c + Vector2(-7, -7), c + Vector2(7, -7), Color(1.0, 0.83, 0.38, 1.0), 2.0)
+	draw_circle(c + Vector2(-4, 2), 3.0, Color(1.0, 0.85, 0.35, 1.0))
+	draw_circle(c + Vector2(4, 5), 2.5, Color(1.0, 0.92, 0.58, 1.0))
 
 func _draw_mountain() -> void:
 	# The Collector's mountain of coins. He swallows it in phase two.
