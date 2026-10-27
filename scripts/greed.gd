@@ -62,15 +62,17 @@ const MAIN_GROUND := [
 const EXTRA_PLATFORMS := [
 	# Opening ledge: one optional pickup, not a chain of tutorial blocks.
 	Rect2(440, 490, 120, 20),
-	# Upper garden loop: climb from the eastern ground shelf, cross the old
-	# canopy walk, then descend back to the main road. Shared with drawing/collision.
-	Rect2(700, 520, 130, 20),
-	Rect2(610, 465, 130, 20),
-	Rect2(520, 410, 130, 20),
-	Rect2(420, 355, 180, 24),
-	Rect2(680, 355, 150, 24),
-	Rect2(860, 410, 130, 20),
-	Rect2(950, 465, 130, 20),
+	# Canopy route: climb from the road, cross the upper garden, then descend
+	# directly onto the Gold Ridge approach. Keep each rise <= 45 and each
+	# jump gap >= 60 so the route follows the documented platforming limits.
+	Rect2(760, 530, 110, 20),
+	Rect2(590, 485, 110, 20),
+	Rect2(420, 440, 110, 20),
+	Rect2(250, 395, 110, 20),
+	Rect2(490, 350, 220, 24),
+	Rect2(820, 350, 220, 24),
+	Rect2(1130, 350, 220, 24),
+	Rect2(1370, 395, 110, 24),
 	# Vault Route: a deliberate climb out over the broken garden wall.
 	Rect2(250, 520, 110, 50),
 	Rect2(70, 470, 110, 18),
@@ -549,8 +551,8 @@ func _create_greed_level() -> void:
 		var coin := _make_interactable("COIN", coin_positions[i], Color(1.0, 0.85, 0.3))
 		interactables.append({"node": coin, "message": "A gleaming gold coin. It feels heavier than it should.\n\n+10 Gold", "kind": "coin", "used": false, "value": 10})
 
-	# A small optional reward gives the upper canopy route a clear destination.
-	var canopy_coin := _make_interactable("COIN", Vector2(680, 320), Color(1.0, 0.85, 0.3))
+	# An optional pickup gives the canopy route a small exploration reward.
+	var canopy_coin := _make_interactable("COIN", Vector2(820, 315), Color(1.0, 0.85, 0.3))
 	interactables.append({"node": canopy_coin, "message": "A gleaming coin rests in the old canopy walk.\n\n+15 Gold", "kind": "coin_extra", "used": false, "value": 15})
 
 	# The Featherweight Charm unlocks the player's double jump.

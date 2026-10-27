@@ -188,6 +188,17 @@ Platforms are listed in `PLATFORMS` in `sloth.gd`. Steps up are 55px or less, ga
 | The Collector / his coin mountain | x = 2500 / x = 2580 |
 | End wall | x = 2750 |
 
+### Greed route layout
+
+Greed is a set of connected routes at different heights, not one flat corridor:
+
+- The main road runs near y=570.
+- The canopy route climbs from the road around x=760, crosses the garden near y=350, then drops onto the Gold Ridge approach around x=1370.
+- The Gold Ridge rises from the road to its seal at x=1885, y=325, before returning to the Collector approach.
+- The western Vault Route branches off the road, climbs over the broken wall, and descends into the treasury and Coin Guard arena.
+
+The route platforms use the same beveled shapes for collision and drawing. Keep rises at 55px or less, leave 50px of headroom, and keep traversal gaps at 60px or more. Weight can lower Lumi's jump; the shrines let players shed carried gold before a climb.
+
 ## How the code works
 
 - Hub platforms live in `PLATFORMS` in `hub.gd` (used for both collision and drawing). Lumi's jump is about 77px, so keep every step up at 55px or less and leave 50px of headroom under floating platforms.
