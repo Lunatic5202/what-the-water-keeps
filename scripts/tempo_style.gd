@@ -78,11 +78,18 @@ func _physics_process(delta: float) -> void:
 		guard_timer -= delta
 		if guard_timer <= 0.0:
 			guard_cooldown = GUARD_COOLDOWN
-	if not charging and strike_delay < 0.0 and swing_timer <= 0.0 and recover_timer <= 0.0:
-		_read_input()
+	if strike_delay < 0.0 and swing_timer <= 0.0 and recover_timer <= 0.0:
+		_read_input(delta)
 	queue_redraw()
 
-func _read_input() -> void:
+func _read_input(delta: float) -> void:
+	if charging:
+		charge_time = minf(2.0, charge_time + delta)
+		if not Input.is_action_pressed("heavy"):
+			charging = false
+			strike_delay = 1.0
+			player.emit_signal("status_changed", "HOUR STRIKE: THE NEXT SECOND IS YOURS.")
+		return
 	if Input.is_action_just_pressed("attack"):
 		if not player.is_on_floor():
 			_start_swing("air")
@@ -92,12 +99,6 @@ func _read_input() -> void:
 	elif Input.is_action_just_pressed("heavy") and player.is_on_floor():
 		charging = true
 		charge_time = 0.0
-	elif charging:
-		charge_time = minf(2.0, charge_time + get_physics_process_delta_time())
-		if not Input.is_action_pressed("heavy"):
-			charging = false
-			strike_delay = 1.0
-			player.emit_signal("status_changed", "HOUR STRIKE: THE NEXT SECOND IS YOURS.")
 	elif Input.is_action_just_pressed("skill"):
 		_stopwatch()
 	elif Input.is_action_just_pressed("guard") and guard_cooldown <= 0.0:
