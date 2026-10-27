@@ -233,6 +233,8 @@ func _draw() -> void:
 			_draw_pickup_coin(item["node"].position)
 		elif kind == "seal":
 			_draw_pickup_seal(item["node"].position)
+		elif kind == "open_hand_manual":
+			_draw_open_hand_manual(item["node"].position)
 
 	if mountain_visible:
 		_draw_mountain()
@@ -253,6 +255,16 @@ func _draw_pickup_seal(c: Vector2) -> void:
 	draw_circle(c, 14.0, Color(0.85, 0.52, 0.16))
 	draw_circle(c, 8.0, Color(1.0, 0.88, 0.45))
 	draw_circle(c + Vector2(-4, -4), 2.5, Color(1, 1, 1, 0.9))
+
+func _draw_open_hand_manual(c: Vector2) -> void:
+	# A small old book with a palm mark: a visual cue for the vault's style reward.
+	draw_circle(c, 28.0, Color(1.0, 0.82, 0.42, 0.16))
+	draw_rect(Rect2(c + Vector2(-17, -12), Vector2(34, 24)), Color(0.48, 0.29, 0.13, 1.0))
+	draw_rect(Rect2(c + Vector2(-17, -12), Vector2(34, 24)), Palette.GOLD_OUTLINE, false, 2.0)
+	draw_line(c + Vector2(0, -9), c + Vector2(0, 9), Color(1.0, 0.85, 0.52, 0.95), 2.0)
+	draw_line(c + Vector2(-6, 4), c + Vector2(-6, -4), Color(1.0, 0.85, 0.52, 0.95), 2.0)
+	draw_line(c + Vector2(0, 4), c + Vector2(0, -7), Color(1.0, 0.85, 0.52, 0.95), 2.0)
+	draw_line(c + Vector2(6, 4), c + Vector2(6, -4), Color(1.0, 0.85, 0.52, 0.95), 2.0)
 
 func _draw_mountain() -> void:
 	# The Collector's mountain of coins. He swallows it in phase two.
@@ -459,7 +471,7 @@ func _create_hud() -> void:
 
 func _create_greed_level() -> void:
 	# Lore tablets
-	var lore_positions := [Vector2(380, 570), Vector2(-1770, 440), Vector2(1600, 570)]
+	var lore_positions := [Vector2(380, 570), Vector2(-1835, 440), Vector2(1600, 570)]
 	var lore_messages := [
 		"I only wanted enough. Then enough was a little more.",
 		"The flowers grew from the coins we dropped. Nobody remembered who dropped them.",
@@ -492,7 +504,7 @@ func _create_greed_level() -> void:
 
 	# The vault's combat manual is the reward for defeating its guardian.
 	# It can be seen before the fight, but cannot be learned until the Coin Guard falls.
-	var manual := _make_interactable("OPEN HAND MANUAL\n[E] LEARN", Vector2(-1800, 425), Color(1.0, 0.83, 0.55))
+	var manual := _make_interactable("OPEN HAND MANUAL\n[E] LEARN", Vector2(-1615, 425), Color(1.0, 0.83, 0.55))
 	interactables.append({
 		"node": manual,
 		"message": "The old manual teaches Lumi to turn a held coin into an offering, then let it go.\n\nOPEN HAND UNLOCKED: palm combos, Rising Palm, Falling Petals, Wide Offering, Coin Toss, Open Palm guard, and Seven Hands.",
@@ -999,7 +1011,7 @@ func _on_collector_defeated() -> void:
 
 func _create_expanded_content() -> void:
 	# Small mobs spread across expanded areas
-	var mite_positions := [Vector2(790, 550), Vector2(1110, 550), Vector2(1495, 550), Vector2(1760, 550), Vector2(1550, 405), Vector2(1880, 325), Vector2(-55, 395), Vector2(-415, 295), Vector2(-775, 295), Vector2(-955, 345), Vector2(-1650, 445)]
+	var mite_positions := [Vector2(790, 550), Vector2(1110, 550), Vector2(1495, 550), Vector2(1760, 550), Vector2(1550, 405), Vector2(1880, 325), Vector2(-55, 395), Vector2(-415, 295), Vector2(-775, 295), Vector2(-955, 345)]
 	for pos in mite_positions:
 		var mite := CharacterBody2D.new()
 		mite.set_script(GREEDY_MITE)
@@ -1017,7 +1029,7 @@ func _create_expanded_content() -> void:
 	if not miniboss_defeated:
 		coin_guard = CharacterBody2D.new()
 		coin_guard.set_script(COIN_GUARD)
-		coin_guard.position = Vector2(-1500, 440)
+		coin_guard.position = Vector2(-1400, 440)
 		var c2 := CollisionShape2D.new()
 		var s2 := CapsuleShape2D.new()
 		s2.radius = 26.0
@@ -1031,7 +1043,7 @@ func _create_expanded_content() -> void:
 			coin_guard.connect("defeated", Callable(self, "_on_coin_guard_defeated"))
 
 	# Extra coins in expanded wings
-	var extra_coins := [Vector2(1610, 405), Vector2(125, 440), Vector2(-305, 340), Vector2(-665, 240), Vector2(-1025, 340), Vector2(-1205, 390), Vector2(-1800, 440), Vector2(1380, 490)]
+	var extra_coins := [Vector2(1610, 405), Vector2(125, 440), Vector2(-305, 340), Vector2(-665, 240), Vector2(-1025, 340), Vector2(-1205, 390), Vector2(1380, 490)]
 	for pos in extra_coins:
 		var marker := _make_interactable("GOLD\n[E] TAKE", pos, Color(1.0, 0.9, 0.5))
 		interactables.append({"node": marker, "message": "Lumi picks up gold.", "kind": "coin_extra", "used": false, "value": 15, "marker": marker})
