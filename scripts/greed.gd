@@ -225,6 +225,13 @@ func _draw() -> void:
 		draw_line(Vector2(-1800, 407), Vector2(-1780, 390), Color(1.0, 0.83, 0.38, 0.8), 2.0)
 		draw_circle(Vector2(-1780, 390), 3.0, Color(1.0, 0.9, 0.55, 0.85))
 
+	# Miniboss wayfinding: point players into the left vault branch and mark the arena.
+	draw_string(ThemeDB.fallback_font, Vector2(-1110, 392), "VAULT ROUTE  →", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.36, 0.22, 0.08, 1.0))
+	if not miniboss_defeated:
+		draw_circle(Vector2(-1400, 440), 48.0, Color(1.0, 0.76, 0.20, 0.12))
+		draw_arc(Vector2(-1400, 440), 40.0, 0.0, TAU, 32, Color(1.0, 0.77, 0.22, 0.9), 3.0)
+		draw_string(ThemeDB.fallback_font, Vector2(-1505, 385), "COIN GUARD", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.32, 0.20, 0.08, 1.0))
+
 	# Foreground flower clumps make the garden feel overgrown.
 	for i in range(42):
 		var fx := fposmod(float(i * 113 + 31), 3000.0) - 150.0
