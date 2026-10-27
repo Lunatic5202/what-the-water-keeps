@@ -1774,3 +1774,4 @@ These are prototype adaptations, not decisions. Say if the bible should win.
 - Defeating a region boss does not return the player to the hub; they climb out via the Vault Exit or Dream Exit on purpose.
 
 - Each boss approach needs two seals, one from each optional branch (prototype; "seal" is not canon yet).
+- The Gilded Garden has an optional hidden relic, the Gilded Afterimage, which grants a second midair dash. It is reached with the Featherweight Charm's double jump and is not required to reach or defeat the Collector.
