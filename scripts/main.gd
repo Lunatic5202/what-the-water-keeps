@@ -274,8 +274,8 @@ func _draw() -> void:
 		draw_circle(Vector2(fx + 2, fy - 11), 3.0, flower)
 		draw_circle(Vector2(fx, fy - 10), 2.0, Color(0.70, 0.61, 0.35, 1.0))
 	for stone_x in [340.0, 980.0, 1510.0, 2010.0]:
-		draw_ellipse(Vector2(stone_x, 602), Vector2(15, 6), Color(0.48, 0.56, 0.43, 1.0))
-		draw_ellipse(Vector2(stone_x - 4, 600), Vector2(6, 3), Color(0.65, 0.70, 0.54, 1.0))
+		draw_circle(Vector2(stone_x, 602), 10.0, Color(0.48, 0.56, 0.43, 1.0))
+		draw_circle(Vector2(stone_x - 4, 600), 4.0, Color(0.65, 0.70, 0.54, 1.0))
 
 	# Boss arena - circular moss clearing framed by old trees
 	draw_circle(Vector2(2800, 610), 380, Palette.WAKE_CLEARING)
