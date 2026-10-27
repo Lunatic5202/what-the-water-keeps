@@ -54,6 +54,8 @@ var jump_power_mod := 1.0
 # Gadgets (unlocked via pickups)
 var has_dash := false  # Wind Ribbon
 var can_double_jump := false  # Featherweight Charm
+var can_golden_dash := false  # Secret Gilded Afterimage: second midair dash
+var air_dashes_used := 0
 var can_wall_climb := false  # Snail Grips
 var can_super_dash := false  # Hungry Wind Scarf
 var can_glass_step := false  # Mirror Hairpin
@@ -109,6 +111,8 @@ func _physics_process(delta: float) -> void:
 		velocity.y += GRAVITY * delta
 	elif velocity.y > 0.0:
 		velocity.y = 0.0
+	if is_on_floor():
+		air_dashes_used = 0
 
 	hurt_cooldown = maxf(0.0, hurt_cooldown - delta)
 	combo_timer = maxf(0.0, combo_timer - delta)
@@ -145,10 +149,17 @@ func _physics_process(delta: float) -> void:
 				velocity.y = JUMP_VELOCITY * jump_power_mod * 0.85
 				has_double_jumped = true
 
-		if Input.is_action_just_pressed("dash") and dash_cooldown <= 0.0 and has_dash and not weighed_down:
-			dash_timer = DASH_TIME
-			dash_cooldown = 0.55
-			velocity.y = 0.0
+		if Input.is_action_just_pressed("dash") and has_dash and not weighed_down:
+			var normal_dash_ready := dash_cooldown <= 0.0
+			var secret_air_dash_ready := can_golden_dash and not is_on_floor() and air_dashes_used == 1
+			if normal_dash_ready or secret_air_dash_ready:
+				dash_timer = DASH_TIME
+				dash_cooldown = 0.55
+				velocity.y = 0.0
+				if not is_on_floor():
+					air_dashes_used += 1
+					if secret_air_dash_ready:
+						status_changed.emit("GILDED AFTERIMAGE!")
 
 		if Input.is_action_just_pressed("attack") and style == "lantern":
 			_start_attack()
