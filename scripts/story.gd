@@ -54,6 +54,11 @@ static func after(region: String) -> Array:
 static func hint(cleared: int) -> String:
 	return NIM_HINTS.get(mini(cleared, 2), "")
 
+# Estimate reading time from the visible text. Existing authored durations are
+# minimums, not hard limits, so longer lines never vanish before they can be read.
+static func reading_time(text: String) -> float:
+	return maxf(2.8, 1.2 + float(text.length()) / 17.0)
+
 # Shows lines one after another in a scene's dialogue box. Playing a new beat
 # cancels the old one. While a beat plays the scene has meta "story_busy".
 static func play(scene: Node, panel: Control, label: Label, lines: Array) -> void:
@@ -63,7 +68,8 @@ static func play(scene: Node, panel: Control, label: Label, lines: Array) -> voi
 	for line in lines:
 		label.text = line[0]
 		panel.visible = true
-		await scene.get_tree().create_timer(float(line[1])).timeout
+		var seconds := maxf(float(line[1]), reading_time(str(line[0])))
+		await scene.get_tree().create_timer(seconds).timeout
 		if not is_instance_valid(scene) or int(scene.get_meta("story_token", 0)) != token:
 			return
 	panel.visible = false

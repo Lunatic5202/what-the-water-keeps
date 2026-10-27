@@ -473,6 +473,13 @@ func _show_dialogue(message: String, target: Node2D = null) -> void:
 	dialogue_panel.visible = true
 	dialogue_open = true
 	dialogue_target = target
+	var shown_text := message
+	await get_tree().create_timer(Story.reading_time(shown_text)).timeout
+	# Do not let an older timer hide a newer line or a story beat.
+	if dialogue_open and dialogue_label.text == shown_text and not bool(get_meta("story_busy", false)):
+		dialogue_panel.visible = false
+		dialogue_open = false
+		dialogue_target = null
 
 func _update_hud(_value: int = 0) -> void:
 	if not is_instance_valid(player) or not is_instance_valid(stats_label):
