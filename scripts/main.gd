@@ -14,6 +14,8 @@ var prompt_label: Label
 var dialogue_panel: Panel
 var dialogue_label: Label
 var dialogue_location_label: Label
+var dialogue_portrait: TextureRect
+var dialogue_portrait_text := ""
 var dialogue_target: Node2D
 var interactables: Array[Dictionary] = []
 var dialogue_open := false
@@ -166,6 +168,8 @@ func _create_menus() -> void:
 	get_tree().root.add_child.call_deferred(overlay)
 
 func _process(_delta: float) -> void:
+	if is_instance_valid(dialogue_label):
+		_update_dialogue_portrait(dialogue_label.text)
 	if pending_transition == "hub" and Input.is_action_just_pressed("enter_region"):
 		_transition_to_hub()
 		return
@@ -404,9 +408,17 @@ func _create_hud() -> void:
 	dialogue_panel.add_theme_stylebox_override("panel", dialogue_style)
 	hud.add_child(dialogue_panel)
 
+	dialogue_portrait = TextureRect.new()
+	dialogue_portrait.position = Vector2(18, 20)
+	dialogue_portrait.size = Vector2(156, 156)
+	dialogue_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	dialogue_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	dialogue_portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dialogue_panel.add_child(dialogue_portrait)
+
 	dialogue_location_label = Label.new()
-	dialogue_location_label.position = Vector2(28, 12)
-	dialogue_location_label.size = Vector2(1024, 26)
+	dialogue_location_label.position = Vector2(190, 12)
+	dialogue_location_label.size = Vector2(860, 26)
 	dialogue_location_label.text = "THE MEADOW"
 	dialogue_location_label.add_theme_font_size_override("font_size", 17)
 	dialogue_location_label.add_theme_color_override("font_color", Color(0.55, 0.83, 0.61, 1.0))
@@ -415,8 +427,8 @@ func _create_hud() -> void:
 	dialogue_panel.add_child(dialogue_location_label)
 
 	dialogue_label = Label.new()
-	dialogue_label.position = Vector2(28, 43)
-	dialogue_label.size = Vector2(1024, 124)
+	dialogue_label.position = Vector2(190, 43)
+	dialogue_label.size = Vector2(860, 124)
 	dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dialogue_label.clip_text = true
 	dialogue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -619,6 +631,24 @@ func _set_camera_limits(left: int, right: int, top: int, bottom: int) -> void:
 	camera.limit_right = right
 	camera.limit_top = top
 	camera.limit_bottom = bottom
+
+func _update_dialogue_portrait(message: String) -> void:
+	if not is_instance_valid(dialogue_portrait):
+		return
+	var lower := message.to_lower()
+	var expression := "neutral"
+	if lower.contains("exhaust") or lower.contains("tired") or lower.contains("sleep") or lower.contains("drowse") or lower.contains("can't move"):
+		expression = "exhausted"
+	elif lower.contains("surprise") or lower.contains("what?") or lower.contains("oh!") or lower.contains("hello!") or lower.contains("suddenly"):
+		expression = "surprised"
+	elif lower.contains("promise") or lower.contains("brave") or lower.contains("keep going") or lower.contains("determined") or lower.contains("fight"):
+		expression = "determined"
+	elif lower.contains("sorry") or lower.contains("miss") or lower.contains("lost") or lower.contains("lonely") or lower.contains("sad") or lower.contains("hurt") or lower.contains("forgive"):
+		expression = "sad"
+	if expression == dialogue_portrait_text and dialogue_portrait.texture != null:
+		return
+	dialogue_portrait_text = expression
+	dialogue_portrait.texture = load("res://assets/portraits/lumi/lumi_%s.png" % expression)
 
 func _show_dialogue(message: String, target: Node2D = null) -> void:
 	dialogue_label.text = message
