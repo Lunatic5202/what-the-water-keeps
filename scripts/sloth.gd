@@ -351,7 +351,7 @@ func _create_hud() -> void:
 	hud.add_child(dialogue_panel)
 
 	dialogue_portrait = TextureRect.new()
-	dialogue_portrait.position = Vector2(18, 20)
+	dialogue_portrait.position = Vector2(18, 13)
 	dialogue_portrait.size = Vector2(156, 156)
 	dialogue_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	dialogue_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
