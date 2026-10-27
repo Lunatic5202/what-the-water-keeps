@@ -234,6 +234,8 @@ func _draw() -> void:
 			_draw_pickup_coin(item["node"].position)
 		elif kind == "seal":
 			_draw_pickup_seal(item["node"].position)
+		elif kind == "golden_afterimage":
+			_draw_afterimage(item["node"].position)
 
 	if mountain_visible:
 		_draw_mountain()
@@ -254,6 +256,14 @@ func _draw_pickup_seal(c: Vector2) -> void:
 	draw_circle(c, 14.0, Color(0.85, 0.52, 0.16))
 	draw_circle(c, 8.0, Color(1.0, 0.88, 0.45))
 	draw_circle(c + Vector2(-4, -4), 2.5, Color(1, 1, 1, 0.9))
+
+func _draw_afterimage(c: Vector2) -> void:
+	# A cool, almost invisible glint distinguishes the optional relic from gold.
+	draw_circle(c, 31.0, Color(0.68, 0.88, 1.0, 0.12))
+	draw_arc(c, 22.0, 0.0, TAU, 36, Color(0.76, 0.92, 1.0, 0.75), 2.0)
+	draw_circle(c, 11.0, Color(0.62, 0.82, 1.0, 0.85))
+	draw_circle(c, 5.0, Color(0.94, 0.98, 1.0, 1.0))
+	draw_circle(c + Vector2(3.0, -4.0), 2.0, Color(1.0, 1.0, 1.0, 1.0))
 
 func _draw_mountain() -> void:
 	# The Collector's mountain of coins. He swallows it in phase two.
@@ -784,6 +794,8 @@ func apply_save(d: Dictionary) -> void:
 	if bool(d.get("featherweight_found", false)):
 		featherweight_found = true
 		has_featherweight = true
+		if is_instance_valid(player):
+			player.set("can_double_jump", true)
 		for item in interactables:
 			if item["kind"] == "featherweight":
 				item["used"] = true
@@ -814,6 +826,7 @@ func apply_save(d: Dictionary) -> void:
 		if is_instance_valid(collector):
 			collector.queue_free()
 		queue_redraw()
+	queue_redraw()
 	_update_hud()
 
 func unlock_featherweight() -> void:
