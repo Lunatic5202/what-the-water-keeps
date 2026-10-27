@@ -26,6 +26,7 @@ var status_id := 0
 var carried_gold := 0
 var weight_debuff := 0.0  # 0.0 to 1.0, affects speed/jump
 var has_featherweight := false  # Double jump unlocked
+var has_golden_afterimage := false  # Optional second air dash
 
 # Progress
 var shrine_count := 0
@@ -61,7 +62,9 @@ const MAIN_GROUND := [
 # double jump needed). The first step of each climb is a solid block down to the
 # ground so Lumi can still walk beneath the rest.
 const EXTRA_PLATFORMS := [
-	# Vault Route: up and left over the pit, then down to the treasury floor.
+	# A low garden ledge gives the opening a readable landmark and a coin route.
+	Rect2(440, 490, 120, 20),
+	# Vault Route: climb left over the broken pit, then loop back through the treasury.
 	Rect2(250, 520, 110, 50),
 	Rect2(70, 470, 110, 18),
 	Rect2(-110, 420, 110, 18),
@@ -71,11 +74,17 @@ const EXTRA_PLATFORMS := [
 	Rect2(-830, 320, 110, 18),
 	Rect2(-1010, 370, 110, 18),
 	Rect2(-1190, 420, 110, 18),
-	# Gold Ridge: a high road above the way to the arena, ends before the lock wall.
+	# Optional secret alcove: its upper ledge requires the double jump.
+	Rect2(-1830, 410, 100, 18),
+	Rect2(-1830, 300, 100, 18),
+	# Gold Ridge: a high route with a short elevated loop back into the crossroads.
 	Rect2(1330, 520, 100, 50),
 	Rect2(1500, 470, 100, 18),
 	Rect2(1670, 420, 100, 18),
 	Rect2(1840, 370, 100, 18),
+	Rect2(1240, 500, 100, 18),
+	Rect2(1120, 450, 100, 18),
+	Rect2(1000, 500, 100, 18),
 ]
 const MOUNTAIN_X := 2580.0
 var collector: CharacterBody2D
@@ -156,6 +165,13 @@ func _draw() -> void:
 			draw_line(Vector2(x + 10, 570.0 - h + 18), Vector2(x + 4, 570.0 - h + 47), Color(0.48, 0.36, 0.22, 0.85), 2.0)
 			draw_line(Vector2(x + 4, 570.0 - h + 47), Vector2(x + 15, 570.0 - h + 68), Color(0.48, 0.36, 0.22, 0.85), 2.0)
 
+	# A broken compass monument marks the crossroads where routes diverge.
+	draw_rect(Rect2(1035, 390, 18, 180), Color(0.68, 0.53, 0.30, 1.0))
+	draw_rect(Rect2(1000, 390, 88, 12), Color(0.78, 0.64, 0.37, 1.0))
+	draw_rect(Rect2(1016, 365, 56, 8), Color(0.55, 0.41, 0.24, 0.9))
+	draw_circle(Vector2(1044, 350), 17.0, Color(0.96, 0.80, 0.35, 0.95))
+	draw_circle(Vector2(1044, 350), 8.0, Color(0.56, 0.39, 0.18, 1.0))
+
 	# The broken arch frames the approach to the Collector.
 	draw_rect(Rect2(1980, 300, 24, 270), Color(0.61, 0.45, 0.25, 1.0))
 	draw_rect(Rect2(2240, 345, 24, 225), Color(0.61, 0.45, 0.25, 1.0))
@@ -198,9 +214,7 @@ func _draw() -> void:
 		draw_rect(plat, ground)
 		draw_rect(Rect2(plat.position, Vector2(plat.size.x, 4)), top)
 		draw_rect(plat, Palette.GOLD_OUTLINE, false, 2.0)
-	for plat in [Rect2(440, 490, 120, 20), Rect2(850, 440, 100, 20), Rect2(1050, 370, 100, 20)]:
-		draw_rect(plat, ground)
-		draw_rect(Rect2(plat.position, Vector2(plat.size.x, 4)), top)
+	# Walkable platforms are drawn from EXTRA_PLATFORMS, matching collision.
 
 	# Foreground flower clumps make the garden feel overgrown.
 	for i in range(42):
@@ -220,6 +234,8 @@ func _draw() -> void:
 			_draw_pickup_coin(item["node"].position)
 		elif kind == "seal":
 			_draw_pickup_seal(item["node"].position)
+		elif kind == "golden_afterimage":
+			_draw_afterimage(item["node"].position)
 
 	if mountain_visible:
 		_draw_mountain()
@@ -229,6 +245,10 @@ func _draw_pickup_coin(c: Vector2) -> void:
 	draw_circle(c, 13.0, Palette.GOLD_OUTLINE)
 	draw_circle(c, 10.0, Color(0.94, 0.72, 0.16))
 	draw_circle(c, 5.5, Color(1.0, 0.92, 0.55))
+	# The garden's wrongness is subtle: the coins look almost like faces.
+	draw_circle(c + Vector2(-3.0, -1.0), 1.4, Color(0.35, 0.23, 0.10, 0.9))
+	draw_circle(c + Vector2(3.0, -1.0), 1.4, Color(0.35, 0.23, 0.10, 0.9))
+	draw_line(c + Vector2(-2.0, 4.0), c + Vector2(2.0, 4.0), Color(0.35, 0.23, 0.10, 0.8), 1.2)
 
 func _draw_pickup_seal(c: Vector2) -> void:
 	draw_circle(c, 24.0, Color(1.0, 0.85, 0.3, 0.25))
@@ -236,6 +256,14 @@ func _draw_pickup_seal(c: Vector2) -> void:
 	draw_circle(c, 14.0, Color(0.85, 0.52, 0.16))
 	draw_circle(c, 8.0, Color(1.0, 0.88, 0.45))
 	draw_circle(c + Vector2(-4, -4), 2.5, Color(1, 1, 1, 0.9))
+
+func _draw_afterimage(c: Vector2) -> void:
+	# A cool, almost invisible glint distinguishes the optional relic from gold.
+	draw_circle(c, 31.0, Color(0.68, 0.88, 1.0, 0.12))
+	draw_arc(c, 22.0, 0.0, TAU, 36, Color(0.76, 0.92, 1.0, 0.75), 2.0)
+	draw_circle(c, 11.0, Color(0.62, 0.82, 1.0, 0.85))
+	draw_circle(c, 5.0, Color(0.94, 0.98, 1.0, 1.0))
+	draw_circle(c + Vector2(3.0, -4.0), 2.0, Color(1.0, 1.0, 1.0, 1.0))
 
 func _draw_mountain() -> void:
 	# The Collector's mountain of coins. He swallows it in phase two.
@@ -455,13 +483,13 @@ func _create_greed_level() -> void:
 		interactables.append({"node": lore, "message": lore_messages[i], "kind": "lore", "used": false})
 
 	# Shrines (offer gold to reduce weight)
-	var shrine_positions := [Vector2(550, 500), Vector2(1120, 545), Vector2(1460, 545)]
+	var shrine_positions := [Vector2(520, 470), Vector2(-1600, 430), Vector2(1640, 545)]
 	for i in range(shrine_positions.size()):
 		var shrine := _make_interactable("SHRINE\n[E] OFFER", shrine_positions[i], Color(0.95, 0.85, 0.5))
 		interactables.append({"node": shrine, "message": "A small golden bowl. \"Give what you carry.\"\n\nPress E to offer all carried gold.", "kind": "shrine", "used": false, "shrine_id": i})
 
 	# Coin pickups
-	var coin_positions := [Vector2(300, 560), Vector2(450, 490), Vector2(680, 535), Vector2(780, 560), Vector2(980, 430), Vector2(1190, 545), Vector2(1340, 485), Vector2(1535, 435), Vector2(1780, 545)]
+	var coin_positions := [Vector2(300, 560), Vector2(500, 470), Vector2(730, 545), Vector2(960, 545), Vector2(1140, 425), Vector2(1380, 545), Vector2(1540, 435), Vector2(1730, 545), Vector2(1860, 350)]
 	for i in range(coin_positions.size()):
 		var coin := _make_interactable("COIN", coin_positions[i], Color(1.0, 0.85, 0.3))
 		interactables.append({"node": coin, "message": "A gleaming gold coin. It feels heavier than it should.\n\n+10 Gold", "kind": "coin", "used": false, "value": 10})
@@ -472,6 +500,15 @@ func _create_greed_level() -> void:
 		"node": charm,
 		"message": "A feather-light charm rests among the flowers.\n\nLumi feels able to rise once more in mid-air.",
 		"kind": "featherweight",
+		"used": false
+	})
+
+	# Optional ability: hidden above the old treasury, reached with double jump.
+	var afterimage := _make_interactable("GILDED AFTERIMAGE\n[E] CLAIM", Vector2(-1780, 275), Color(0.78, 0.92, 1.0))
+	interactables.append({
+		"node": afterimage,
+		"message": "A second shadow follows Lumi's lantern, then slips out of step.\n\nGILDED AFTERIMAGE FOUND: dash a second time while airborne.",
+		"kind": "golden_afterimage",
 		"used": false
 	})
 
@@ -629,6 +666,13 @@ func _interact(item: Dictionary) -> void:
 			target.visible = false
 			unlock_featherweight()
 			_show_dialogue(item["message"], target)
+		"golden_afterimage":
+			item["used"] = true
+			target.visible = false
+			has_golden_afterimage = true
+			player.set("can_golden_dash", true)
+			_show_dialogue(item["message"], target)
+			_show_status("GILDED AFTERIMAGE FOUND. A SECOND AIR DASH IS YOURS.")
 		"boss":
 			if boss_defeated:
 				_show_dialogue("The mountain is gone. Only a small, quiet shine is left in the bowl.", target)
@@ -737,6 +781,7 @@ func _show_status(message: String) -> void:
 func save_state() -> Dictionary:
 	return {
 		"featherweight_found": featherweight_found,
+		"golden_afterimage_found": has_golden_afterimage,
 		"boss_defeated": boss_defeated,
 		"has_open_hand": has_open_hand,
 		"has_gold_key": has_gold_key,
@@ -749,8 +794,18 @@ func apply_save(d: Dictionary) -> void:
 	if bool(d.get("featherweight_found", false)):
 		featherweight_found = true
 		has_featherweight = true
+		if is_instance_valid(player):
+			player.set("can_double_jump", true)
 		for item in interactables:
 			if item["kind"] == "featherweight":
+				item["used"] = true
+				item["node"].visible = false
+	if bool(d.get("golden_afterimage_found", false)):
+		has_golden_afterimage = true
+		if is_instance_valid(player):
+			player.set("can_golden_dash", true)
+		for item in interactables:
+			if item["kind"] == "golden_afterimage":
 				item["used"] = true
 				item["node"].visible = false
 	for id in d.get("seals", []):
@@ -771,6 +826,7 @@ func apply_save(d: Dictionary) -> void:
 		if is_instance_valid(collector):
 			collector.queue_free()
 		queue_redraw()
+	queue_redraw()
 	_update_hud()
 
 func unlock_featherweight() -> void:
