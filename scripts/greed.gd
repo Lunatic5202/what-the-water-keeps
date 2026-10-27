@@ -237,6 +237,10 @@ func _draw() -> void:
 		draw_rect(plat, Palette.GOLD_OUTLINE, false, 2.0)
 	# Walkable platforms are drawn from EXTRA_PLATFORMS, matching collision.
 
+	# A deliberately subtle coin-glint points upward from the hidden treasury shelf.
+	draw_line(Vector2(-1800, 407), Vector2(-1780, 390), Color(1.0, 0.83, 0.38, 0.8), 2.0)
+	draw_circle(Vector2(-1780, 390), 3.0, Color(1.0, 0.9, 0.55, 0.85))
+
 	# Foreground flower clumps make the garden feel overgrown.
 	for i in range(42):
 		var fx := fposmod(float(i * 113 + 31), 3000.0) - 150.0
@@ -396,8 +400,9 @@ func _create_player() -> void:
 	# The vault is west of spawn; clamping at x=0 hid the entire branch off-screen.
 	camera.limit_left = int(VAULT_END_X - 100.0)
 	camera.limit_right = int(ARENA_END_X + 100.0)
-	camera.limit_top = 100
-	camera.limit_bottom = 750
+	# Let the camera travel vertically so the high ridge reads as a real climb.
+	camera.limit_top = -200
+	camera.limit_bottom = 900
 	player.add_child(camera)
 
 func _create_hud() -> void:
@@ -646,6 +651,11 @@ func _process(delta: float) -> void:
 	if bool(get_meta("story_busy", false)):
 		prompt_label.text = ""
 		return
+
+	# Keep the secret's label hidden until Lumi is close enough to notice the glint.
+	for item in interactables:
+		if item["kind"] == "secret_cache" and is_instance_valid(item["node"]):
+			item["node"].visible = not secret_cache_found and player.global_position.distance_to(item["node"].global_position) < 220.0
 
 	var nearest: Dictionary = {}
 	var nearest_distance := 95.0
