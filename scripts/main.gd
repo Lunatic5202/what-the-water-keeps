@@ -230,6 +230,26 @@ func _draw() -> void:
 	# Wake palette: meadow green, cream, sky (#BFE3B4, #FFF6DC, #CFE8F7)
 	draw_rect(Rect2(-3000, -1000, 8000, 1800), Color(0.81, 0.91, 0.97, 1))
 
+	# Soft cloud bands and distant hills add depth without competing with Lumi.
+	for i in range(5):
+		var cx := 250.0 + i * 920.0
+		var cy := 150.0 + float((i * 37) % 65)
+		draw_circle(Vector2(cx, cy), 40, Color(0.94, 0.97, 0.98, 0.55))
+		draw_circle(Vector2(cx + 42, cy - 10), 52, Color(0.94, 0.97, 0.98, 0.55))
+		draw_circle(Vector2(cx + 85, cy + 2), 34, Color(0.94, 0.97, 0.98, 0.55))
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-3000, 610), Vector2(-3000, 470), Vector2(-1800, 390),
+		Vector2(-950, 460), Vector2(-100, 350), Vector2(700, 450),
+		Vector2(1450, 365), Vector2(2250, 445), Vector2(3300, 370),
+		Vector2(4200, 450), Vector2(5200, 390), Vector2(5200, 610)
+	]), Color(0.66, 0.80, 0.69, 0.58))
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-3000, 610), Vector2(-3000, 530), Vector2(-2100, 470),
+		Vector2(-1250, 535), Vector2(-350, 445), Vector2(500, 530),
+		Vector2(1350, 455), Vector2(2200, 525), Vector2(3200, 455),
+		Vector2(4200, 520), Vector2(5200, 470), Vector2(5200, 610)
+	]), Color(0.51, 0.69, 0.54, 0.68))
+
 	# Sun
 	draw_circle(Vector2(1800, 180), 55, Color(1.0, 0.98, 0.92, 0.3))
 	draw_circle(Vector2(1800, 180), 38, Color(1.0, 0.96, 0.86, 1.0))
@@ -243,6 +263,19 @@ func _draw() -> void:
 		draw_rect(ledge, Palette.WAKE_GROUND)
 		draw_rect(Rect2(ledge.position, Vector2(ledge.size.x, 3)), gt)
 		draw_rect(ledge, Color(0.36, 0.48, 0.36, 1.0), false, 2.0)
+
+	# Meadow flowers and little stones: quiet environmental texture along the path.
+	for i in range(34):
+		var fx := 60.0 + fposmod(float(i * 127), 2050.0)
+		var fy := 604.0 - fposmod(float(i * 19), 10.0)
+		var flower := Color(0.98, 0.89, 0.64, 1.0) if i % 3 == 0 else Color(0.86, 0.91, 0.66, 1.0)
+		draw_line(Vector2(fx, fy + 3), Vector2(fx - 2, fy - 8), Color(0.26, 0.43, 0.30, 1.0), 2.0)
+		draw_circle(Vector2(fx - 3, fy - 9), 3.0, flower)
+		draw_circle(Vector2(fx + 2, fy - 11), 3.0, flower)
+		draw_circle(Vector2(fx, fy - 10), 2.0, Color(0.70, 0.61, 0.35, 1.0))
+	for stone_x in [340.0, 980.0, 1510.0, 2010.0]:
+		draw_circle(Vector2(stone_x, 602), 10.0, Color(0.48, 0.56, 0.43, 1.0))
+		draw_circle(Vector2(stone_x - 4, 600), 4.0, Color(0.65, 0.70, 0.54, 1.0))
 
 	# Boss arena - circular moss clearing framed by old trees
 	draw_circle(Vector2(2800, 610), 380, Palette.WAKE_CLEARING)
