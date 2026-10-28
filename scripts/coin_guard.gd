@@ -172,6 +172,11 @@ func _draw() -> void:
 		draw_rect(Rect2(attack_facing * 24.0 if attack_facing > 0 else -190.0, 18, 166.0, 10), warning)
 	if state == "stagger":
 		draw_arc(Vector2.ZERO, 39.0, 0.0, TAU, 24, Color(1.0, 0.96, 0.72, 0.95), 3.0)
-	for i in range(health):
-		if i % 6 == 0:
-			draw_circle(Vector2(-14.0 + (i / 6.0) * 4.0, -44), 1.4, Color(1.0, 0.9, 0.5, 0.9))
+	# A clear overhead bar makes the exposed health readable after the shield breaks.
+	draw_rect(Rect2(-42, -58, 84, 9), Color(0.28, 0.19, 0.09, 0.95))
+	var health_ratio := clampf(float(health) / float(max_health), 0.0, 1.0)
+	draw_rect(Rect2(-40, -56, 80.0 * health_ratio, 5), Color(0.78, 0.24, 0.16, 1.0))
+	draw_rect(Rect2(-42, -58, 84, 9), Color(0.96, 0.82, 0.48, 1.0), false, 1.5)
+	if shield > 0:
+		for i in range(shield):
+			draw_circle(Vector2(-21.0 + float(i) * 6.0, -67), 2.2, Color(1.0, 0.89, 0.45, 0.95))
