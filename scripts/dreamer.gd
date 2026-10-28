@@ -63,8 +63,10 @@ func start_fight() -> void:
 	attack_index = 0
 	_set_state("idle")
 	health_changed.emit(health, MAX_HEALTH)
+	get_tree().call_group("boss_health_bar", "show_boss", self, "THE DREAMER", health, MAX_HEALTH)
 
 func reset() -> void:
+	get_tree().call_group("boss_health_bar", "hide_boss", self)
 	health = MAX_HEALTH
 	phase = 0
 	attack_index = 0
@@ -217,6 +219,7 @@ func take_damage(amount: int) -> void:
 func _apply_damage(amount: int) -> void:
 	health = maxi(0, health - amount)
 	health_changed.emit(health, MAX_HEALTH)
+	get_tree().call_group("boss_health_bar", "update_boss_health", self, health, MAX_HEALTH)
 	if health <= 0:
 		_die()
 		return
@@ -251,6 +254,7 @@ func _die() -> void:
 	for child in get_children():
 		if child is CollisionShape2D:
 			child.set_deferred("disabled", true)
+	get_tree().call_group("boss_health_bar", "hide_boss", self)
 	defeated.emit()
 
 func _update_dead(delta: float) -> void:
@@ -304,6 +308,3 @@ func _draw() -> void:
 		for i in range(5):
 			draw_line(Vector2(-110 + i * 55, -110), Vector2(-120 + i * 60, 90), Color(0.5, 0.45, 0.8, 0.5), 5.0)
 		draw_polyline(PackedVector2Array([Vector2(-110, -110), Vector2(110, -110), Vector2(130, 90), Vector2(-130, 90), Vector2(-110, -110)]), ink, 3.0)
-	if phase > 0 and phase < 4:
-		draw_rect(Rect2(-60, -128, 120, 8), Color(0.2, 0.18, 0.25, 0.85))
-		draw_rect(Rect2(-60, -128, float(health) / float(MAX_HEALTH) * 120.0, 8), Color(0.78, 0.72, 1.0))

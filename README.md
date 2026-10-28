@@ -33,7 +33,9 @@ Implemented in code:
 - Wind Ribbon unlocks dash and sets the Wake checkpoint
 - A post-boss gap intended to require jump + dash before the first door
 - The Still Pond hub with seven doors, bench, altar, Memory Tree, Mirror Gate placeholder, Marl and Orrin
-- Greed region with coins, weight penalties, offering shrines, lore tablets and a Featherweight Charm pickup that unlocks double jump
+- Greed region with coins, weight penalties, offering shrines, lore tablets, and a Featherweight Charm that unlocks double jump
+- Greed encounters: patrolling Greedy Mites, hopping Penny Pips that stick coins to Lumi (dash to shake them off), and Gilded Blossoms that telegraph and spit slowing sap
+- Coin Guard mini-boss in the buried mint hall: an 8-hit shield with visible pips, a clearly telegraphed rushing slam, 48 health with an overhead bar, and a physical Vault Seal pickup on defeat. The seal is collected with E and is saved separately from the boss defeat, so leaving it behind does not grant it
 - The Collector boss (never run, values are guesses): Coin Rain and belly slam, then below 66% health he swallows his coin mountain and grows (faster if Lumi carries gold) while the arena's left wall creeps inward, then below 33% he lunges for Lumi's purse. A grab with gold steals it all and heals him; with empty hands it whiffs and leaves him open. Offering bowls hurt and shrink him. Defeat plays the bible's lines, sets the Open Hand and Gold Key flags and clears Greed, which returns Lumi to the hub with one more key
 - Wake → Hub → Greed → Hub handoff using the same Lumi instance
 - Hub arrival positioned beside the Greed door without the bench/NPC stealing the first interaction
@@ -106,6 +108,8 @@ Run: open `project.godot` in the Godot Project Manager and press F5.
 | `scripts/palm_shot.gd` | Moving palm waves (shockwave, coins, orbs, reflected spores) |
 | `scripts/coin_guard.gd` | Greed mini-boss in the Vault (48 HP, 8 shield, slam deals 2) |
 | `scripts/greedy_mite.gd` | Greed mite enemy |
+| `scripts/penny_pip.gd` | Hopping Greed enemy; sticks a coin to Lumi on contact, shaken off with dash |
+| `scripts/gilded_blossom.gd`, `scripts/gilded_sap.gd` | Stationary Greed plant and its telegraphed, slowing sap projectile |
 | `scripts/dozy_warden.gd` | Slumber Hollow mini-boss on the sky route (70 HP, slam, sleep-note yawn) |
 | `scripts/sloth.gd` | Slumber Hollow: level, Drowse, lanterns, benches, enemy spawns, Dreamer fight flow and rewards |
 | `scripts/dreamer.gd` | The Dreamer boss, plus `pillow.gd` and `dreamer_heart.gd` |
@@ -197,6 +201,8 @@ Greed has a lower road, an upper canopy floor and two optional branch routes. Th
 - A shrine sits on the road before the canopy climb, and another sits on the treasury floor before the Coin Guard. Both let Lumi offer carried gold before the next route section.
 - The Gold Ridge is four broad ledges with 40px rises and 70px flat-edge gaps. It leads to the seal at x=1925, y=380, then drops back to the Collector road.
 - The western Vault Route begins beside the road at x=250. Six broad ledges rise over the old garden wall in 50px steps, then descend into the treasury floor and Coin Guard arena. Both ends of the route are marked with a subtle direction cue.
+- Enemy encounters sit on the route itself: Mites patrol the road and vault approach, Pips hop from the lower path and canopy/vault ledges, and Blossoms hold high shelves above the Gold Ridge and vault climb. Pips telegraph before hopping; Blossoms aim a visible line before launching sap.
+- The Coin Guard is the Vault's mini-boss. Defeating it drops a visible Vault Seal beside the mint gate. Lumi must collect it; it is not silently added on defeat. The saved boss state preserves an uncollected drop.
 - The treasury's hidden upper nook has a glint near its first shelf. The next shelf sits 90px above it, so the optional 35-gold cache requires Double Jump.
 
 The route platforms use the same shapes for collision and drawing. Their landing tops are level; only the sides are beveled. The route shelves are one-way platforms, keeping drops and upward passage clear. Keep rises at 55px or less, leave 50px of headroom, and keep flat-edge gaps at 60px or more. Only the closest nearby interaction label is shown at a time, to keep the route visible. Weight can lower Lumi's jump; shrines are placed before the canopy climb, on the treasury approach, and below the Gold Ridge.

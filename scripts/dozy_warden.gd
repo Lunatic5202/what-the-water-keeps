@@ -35,6 +35,7 @@ var dissolving := false
 var dissolve_time := 0.0
 var spawn := Vector2.ZERO
 var player_ref: Node2D = null
+var boss_bar_active := false
 
 func _ready() -> void:
 	add_to_group("boss")
@@ -50,10 +51,13 @@ func take_damage(amount: int) -> void:
 		return
 	health -= amount
 	hurt_flash = 0.15
+	get_tree().call_group("boss_health_bar", "update_boss_health", self, health, MAX_HEALTH)
 	if health <= 0:
 		dissolving = true
 		dissolve_time = 0.0
 		velocity = Vector2.ZERO
+		boss_bar_active = false
+		get_tree().call_group("boss_health_bar", "hide_boss", self)
 		defeated.emit()
 
 func _physics_process(delta: float) -> void:
@@ -79,6 +83,7 @@ func _physics_process(delta: float) -> void:
 		queue_redraw()
 		return
 	player_ref = get_tree().get_first_node_in_group("player") as Node2D
+	_update_boss_bar()
 	state_time += delta
 	cooldown = maxf(0.0, cooldown - delta)
 	match state:
@@ -116,6 +121,15 @@ func _set_state(next: String) -> void:
 
 func _sees_player() -> bool:
 	return is_instance_valid(player_ref) and global_position.distance_to(player_ref.global_position) < SEE_RANGE
+
+func _update_boss_bar() -> void:
+	var engaged := _sees_player()
+	if engaged and not boss_bar_active:
+		boss_bar_active = true
+		get_tree().call_group("boss_health_bar", "show_boss", self, "DOZY WARDEN", health, MAX_HEALTH)
+	elif not engaged and boss_bar_active:
+		boss_bar_active = false
+		get_tree().call_group("boss_health_bar", "hide_boss", self)
 
 func _face_player() -> void:
 	if is_instance_valid(player_ref):
@@ -184,7 +198,3 @@ func _draw() -> void:
 		draw_circle(Vector2(0, 10), 8.0 + 4.0 * clampf(state_time / YAWN_TIME, 0.0, 1.0), Color(GLOW, fade))
 	else:
 		draw_line(Vector2(-7, 12), Vector2(7, 12), rim, 3.0)
-	var pips := ceili(float(health) / float(MAX_HEALTH) * 7.0)
-	for i in range(7):
-		var on := i < pips
-		draw_circle(Vector2(-27.0 + i * 9.0, -52.0), 3.2, Color(GLOW, fade) if on else Color(0.4, 0.35, 0.6, fade * 0.6))

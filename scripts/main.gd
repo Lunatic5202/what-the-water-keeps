@@ -4,6 +4,7 @@ const Story := preload("res://scripts/story.gd")
 const Palette := preload("res://scripts/palette.gd")
 const RunState := preload("res://scripts/run_state.gd")
 const SaveGame := preload("res://scripts/save_game.gd")
+const BOSS_HEALTH_BAR := preload("res://scripts/boss_health_bar.gd")
 
 var player: CharacterBody2D
 var jelly: CharacterBody2D
@@ -461,6 +462,7 @@ func _create_hud() -> void:
 	dialogue_style.shadow_size = 12
 	dialogue_style.shadow_offset = Vector2(0, 5)
 	dialogue_panel.add_theme_stylebox_override("panel", dialogue_style)
+	dialogue_panel.add_to_group("boss_dialogue_panel")
 	hud.add_child(dialogue_panel)
 
 	dialogue_portrait = TextureRect.new()
@@ -493,6 +495,11 @@ func _create_hud() -> void:
 	dialogue_label.add_theme_color_override("font_outline_color", Color(0.04, 0.03, 0.10, 0.7))
 	dialogue_label.add_theme_constant_override("outline_size", 1)
 	dialogue_panel.add_child(dialogue_label)
+
+	var boss_bar := Control.new()
+	boss_bar.set_script(BOSS_HEALTH_BAR)
+	boss_bar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hud.add_child(boss_bar)
 
 func _create_wake_tutorial() -> void:
 	var sign_positions := [Vector2(1160, 570), Vector2(1340, 570), Vector2(1710, 570), Vector2(1900, 570)]

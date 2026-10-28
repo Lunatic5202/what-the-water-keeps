@@ -7,6 +7,7 @@ extends Node2D
 
 const Palette := preload("res://scripts/palette.gd")
 const Settings := preload("res://scripts/game_settings.gd")
+const BOSS_HEALTH_BAR := preload("res://scripts/boss_health_bar.gd")
 const RunState := preload("res://scripts/run_state.gd")
 const BOB := preload("res://scripts/bob_platform.gd")
 const DREAMER := preload("res://scripts/dreamer.gd")
@@ -348,6 +349,7 @@ func _create_hud() -> void:
 	dialogue_style.shadow_size = 12
 	dialogue_style.shadow_offset = Vector2(0, 5)
 	dialogue_panel.add_theme_stylebox_override("panel", dialogue_style)
+	dialogue_panel.add_to_group("boss_dialogue_panel")
 	hud.add_child(dialogue_panel)
 
 	dialogue_portrait = TextureRect.new()
@@ -380,6 +382,11 @@ func _create_hud() -> void:
 	dialogue_label.add_theme_color_override("font_outline_color", Color(0.04, 0.03, 0.10, 0.7))
 	dialogue_label.add_theme_constant_override("outline_size", 1)
 	dialogue_panel.add_child(dialogue_label)
+
+	var boss_bar := Control.new()
+	boss_bar.set_script(BOSS_HEALTH_BAR)
+	boss_bar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hud.add_child(boss_bar)
 
 func _connect_signals() -> void:
 	player.health_changed.connect(_update_hud)

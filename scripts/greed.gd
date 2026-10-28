@@ -3,6 +3,7 @@ const Story := preload("res://scripts/story.gd")
 const Palette := preload("res://scripts/palette.gd")
 const Settings := preload("res://scripts/game_settings.gd")
 const RunState := preload("res://scripts/run_state.gd")
+const BOSS_HEALTH_BAR := preload("res://scripts/boss_health_bar.gd")
 
 signal region_cleared(region_name: String)
 signal return_to_hub
@@ -40,6 +41,8 @@ var secret_cache_found := false
 const COLLECTOR_SCRIPT := preload("res://scripts/collector.gd")
 const GREEDY_MITE := preload("res://scripts/greedy_mite.gd")
 const COIN_GUARD := preload("res://scripts/coin_guard.gd")
+const PENNY_PIP := preload("res://scripts/penny_pip.gd")
+const GILDED_BLOSSOM := preload("res://scripts/gilded_blossom.gd")
 const ARENA_LOCK_X := 2000.0   # left lock wall while the fight is on (marker is at 2130)
 const ARENA_END_X := 2750.0    # permanent end wall of Greed
 const COLLECTOR_X := 2500.0
@@ -108,6 +111,9 @@ var post_boss_open := false
 var vault_exit: Node2D = null
 var miniboss_defeated := false
 var coin_guard: CharacterBody2D = null
+var pip_coin_stacks := 0
+var sticky_sap_time := 0.0
+var last_dash_active := false
 
 # Spawn points
 var respawn_point := Vector2(280, 520)
@@ -529,6 +535,7 @@ func _create_hud() -> void:
 	dialogue_style.shadow_size = 12
 	dialogue_style.shadow_offset = Vector2(0, 5)
 	dialogue_panel.add_theme_stylebox_override("panel", dialogue_style)
+	dialogue_panel.add_to_group("boss_dialogue_panel")
 	hud.add_child(dialogue_panel)
 
 	dialogue_portrait = TextureRect.new()
@@ -561,6 +568,11 @@ func _create_hud() -> void:
 	dialogue_label.add_theme_color_override("font_outline_color", Color(0.04, 0.03, 0.10, 0.7))
 	dialogue_label.add_theme_constant_override("outline_size", 1)
 	dialogue_panel.add_child(dialogue_label)
+
+	var boss_bar := Control.new()
+	boss_bar.set_script(BOSS_HEALTH_BAR)
+	boss_bar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hud.add_child(boss_bar)
 
 func _create_greed_level() -> void:
 	# Lore tablets
@@ -680,20 +692,20 @@ func _connect_signals() -> void:
 func _process(delta: float) -> void:
 	if is_instance_valid(dialogue_label):
 		_update_dialogue_portrait(dialogue_label.text)
-	# Apply weight debuff to player
-	if weight_debuff > 0.0:
-		# Escalating costs. Above 30 weight: slower, lower jumps. From 50: +1 damage
-		# per hit. From 60: no dash or double jump.
-		var felt := minf(1.0, weight_debuff * RunState.debuff_scale())
-		player.set("move_speed_mod", 1.0 - felt * 0.5)
-		player.set("jump_power_mod", 1.0 - felt * 0.5)
-		player.set("vulnerable", 1 if felt >= 0.5 else 0)
-		player.set("weighed_down", felt >= 0.6)
-	else:
-		player.set("move_speed_mod", 1.0)
-		player.set("jump_power_mod", 1.0)
-		player.set("vulnerable", 0)
-		player.set("weighed_down", false)
+	# Pips stick small coins to Lumi until a dash shakes them loose. Sap wears off.
+	sticky_sap_time = maxf(0.0, sticky_sap_time - delta)
+	var dash_active := float(player.get("dash_timer")) > 0.0
+	if dash_active and not last_dash_active and pip_coin_stacks > 0:
+		pip_coin_stacks = 0
+		_show_status("PIP COINS SHAKEN OFF")
+	last_dash_active = dash_active
+	var felt := minf(1.0, weight_debuff * RunState.debuff_scale())
+	var pip_speed := 1.0 - 0.05 * float(pip_coin_stacks)
+	var sap_speed := 0.82 if sticky_sap_time > 0.0 else 1.0
+	player.set("move_speed_mod", (1.0 - felt * 0.5) * pip_speed * sap_speed)
+	player.set("jump_power_mod", (1.0 - felt * 0.5) * (1.0 - 0.03 * float(pip_coin_stacks)) * (0.88 if sticky_sap_time > 0.0 else 1.0))
+	player.set("vulnerable", 1 if felt >= 0.5 else 0)
+	player.set("weighed_down", felt >= 0.6)
 
 	# Killbox
 	if player.global_position.y > 900.0:
@@ -861,6 +873,18 @@ func _update_weight() -> void:
 	if carried_gold >= 60:
 		_show_status("BURDEN: You held on too tightly.")
 
+func apply_pip_coin() -> void:
+	if pip_coin_stacks >= 3:
+		return
+	pip_coin_stacks += 1
+	_update_hud()
+	_show_status("PIP COIN STUCK: DASH TO SHAKE IT OFF (%d/3)" % pip_coin_stacks)
+
+func apply_sticky_sap() -> void:
+	sticky_sap_time = 2.8
+	_update_hud()
+	_show_status("GILDED SAP: MOVEMENT SLOWED")
+
 func _update_dialogue_portrait(message: String) -> void:
 	if not is_instance_valid(dialogue_portrait):
 		return
@@ -907,6 +931,10 @@ func _update_hud(_value: int = 0) -> void:
 		parts.append("WEIGHT: %.0f%%" % (weight_debuff * 100))
 	if has_featherweight:
 		parts.append("DOUBLE JUMP: UNLOCKED")
+	if pip_coin_stacks > 0:
+		parts.append("PIP COINS: %d/3 (DASH TO SHAKE OFF)" % pip_coin_stacks)
+	if sticky_sap_time > 0.0:
+		parts.append("GILDED SAP: %.1fs" % sticky_sap_time)
 	stats_label.text = "    ".join(parts)
 
 func _show_status(message: String) -> void:
@@ -958,9 +986,9 @@ func apply_save(d: Dictionary) -> void:
 		_hide_seal_marker(str(id))
 	if bool(d.get("coin_guard_defeated", false)):
 		miniboss_defeated = true
-		_grant_seal("vault")
 		if is_instance_valid(coin_guard):
 			coin_guard.queue_free()
+		_ensure_vault_seal_drop()
 	if bool(d.get("boss_defeated", false)):
 		boss_defeated = true
 		has_gold_key = bool(d.get("has_gold_key", true))
@@ -1151,10 +1179,9 @@ func _on_collector_defeated() -> void:
 	region_cleared.emit("greed")
 
 func _create_expanded_content() -> void:
-	# Small mobs spread across expanded areas
+	# Mites patrol the lower road and the sheltered vault approach.
 	var mite_positions := [
-		Vector2(790, 550), Vector2(1110, 550), Vector2(1495, 550), Vector2(1760, 550),
-		Vector2(100, 445), Vector2(-400, 345), Vector2(-650, 395),
+		Vector2(1100, 550), Vector2(1740, 550), Vector2(-150, 404), Vector2(-900, 404),
 	]
 	for pos in mite_positions:
 		var mite := CharacterBody2D.new()
@@ -1168,6 +1195,35 @@ func _create_expanded_content() -> void:
 		add_child(mite)
 		if mite.has_signal("dropped_coin"):
 			mite.connect("dropped_coin", Callable(self, "_on_mite_dropped"))
+
+	# Penny Pips telegraph a hop, then stick a coin to Lumi on contact.
+	var pip_positions := [Vector2(500, 554), Vector2(810, 474), Vector2(-650, 404)]
+	for pos in pip_positions:
+		var pip := CharacterBody2D.new()
+		pip.set_script(PENNY_PIP)
+		pip.position = pos
+		var pip_collision := CollisionShape2D.new()
+		var pip_shape := CapsuleShape2D.new()
+		pip_shape.radius = 13.0
+		pip_shape.height = 32.0
+		pip_collision.shape = pip_shape
+		pip.add_child(pip_collision)
+		add_child(pip)
+		pip.connect("dropped_coin", Callable(self, "_on_mite_dropped"))
+
+	# Gilded Blossoms hold a high perch and telegraph arcing sticky sap shots.
+	var blossom_positions := [Vector2(1510, 468), Vector2(-400, 348)]
+	for pos in blossom_positions:
+		var blossom := StaticBody2D.new()
+		blossom.set_script(GILDED_BLOSSOM)
+		blossom.position = pos
+		var blossom_collision := CollisionShape2D.new()
+		var blossom_shape := CircleShape2D.new()
+		blossom_shape.radius = 20.0
+		blossom_collision.shape = blossom_shape
+		blossom.add_child(blossom_collision)
+		add_child(blossom)
+		blossom.connect("dropped_coin", Callable(self, "_on_mite_dropped"))
 
 	# Mini-boss: Coin Guard deeper in left wing
 	if not miniboss_defeated:
@@ -1202,8 +1258,24 @@ func _on_guard_dropped(amount: int) -> void:
 
 func _on_coin_guard_defeated() -> void:
 	miniboss_defeated = true
-	_grant_seal("vault")
-	_show_status("COIN GUARD DEFEATED. VAULT MANUAL UNSEALED. SEAL %d/%d" % [seals.size(), SEALS_NEEDED])
+	_ensure_vault_seal_drop()
+	_show_status("COIN GUARD DEFEATED. THE VAULT SEAL DROPPED.")
+
+func _ensure_vault_seal_drop() -> void:
+	if seals.has("vault"):
+		return
+	for item in interactables:
+		if item.get("kind", "") == "seal" and item.get("seal_id", "") == "vault" and not item.get("used", false):
+			return
+	var seal_drop := _make_interactable("VAULT SEAL\n[E] TAKE", Vector2(-1400, 440), Color(1.0, 0.9, 0.5))
+	interactables.append({
+		"node": seal_drop,
+		"message": "The Coin Guard's shield splits open. A heavy vault seal drops onto the stone.",
+		"kind": "seal",
+		"seal_id": "vault",
+		"used": false
+	})
+	queue_redraw()
 
 func _grant_seal(id: String) -> void:
 	if not seals.has(id):

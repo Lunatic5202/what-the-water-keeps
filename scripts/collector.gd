@@ -70,8 +70,10 @@ func start_fight() -> void:
 	attack_index = 0
 	_set_state("idle")
 	health_changed.emit(health, MAX_HEALTH)
+	get_tree().call_group("boss_health_bar", "show_boss", self, "THE COLLECTOR", health, MAX_HEALTH)
 
 func reset() -> void:
+	get_tree().call_group("boss_health_bar", "hide_boss", self)
 	health = MAX_HEALTH
 	phase = 0
 	pending_phase = 0
@@ -358,6 +360,7 @@ func take_offering(gold: int) -> void:
 func _lose_health(amount: int) -> void:
 	health = maxi(0, health - amount)
 	health_changed.emit(health, MAX_HEALTH)
+	get_tree().call_group("boss_health_bar", "update_boss_health", self, health, MAX_HEALTH)
 	if health <= 0:
 		_defeat()
 	elif phase == 1 and health <= MAX_HEALTH * 0.66:
@@ -373,6 +376,7 @@ func _defeat() -> void:
 	for child in get_children():
 		if child is CollisionShape2D:
 			child.set_deferred("disabled", true)
+	get_tree().call_group("boss_health_bar", "hide_boss", self)
 	defeated.emit()
 
 func _update_dead(delta: float) -> void:
@@ -466,8 +470,6 @@ func _draw() -> void:
 		draw_arc(Vector2(0, ground_local - 4), 40.0 + ring, PI, TAU, 24,
 			Color(1.0, 0.88, 0.4, shock_time / 0.35), 5.0)
 	_draw_telegraph(ground_local)
-	if phase >= 1 and phase <= 3:
-		_draw_health_bar()
 
 func _draw_telegraph(ground_local: float) -> void:
 	if state != "tell":
@@ -490,12 +492,3 @@ func _draw_telegraph(ground_local: float) -> void:
 			draw_line(Vector2(facing * 90, -4), Vector2(facing * 230, -4), warn, 5.0)
 			draw_line(Vector2(facing * 230, -4), Vector2(facing * 205, -22), warn, 5.0)
 			draw_line(Vector2(facing * 230, -4), Vector2(facing * 205, 14), warn, 5.0)
-
-func _draw_health_bar() -> void:
-	# Keep the bar a fixed size on screen no matter how big he grows.
-	draw_set_transform(Vector2(0, -150), 0.0, Vector2.ONE / body_size)
-	draw_rect(Rect2(-60, 0, 120, 8), Color(0.2, 0.18, 0.25, 0.85))
-	var fill := float(health) / float(MAX_HEALTH) * 120.0
-	var bar_color := Color(0.95, 0.8, 0.35) if phase < 3 else Color(0.9, 0.55, 0.3)
-	draw_rect(Rect2(-60, 0, fill, 8), bar_color)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
