@@ -111,7 +111,7 @@ func _on_beat() -> bool:
 func _start_swing(kind: String) -> void:
 	var facing := int(player.call("attack_facing"))
 	hit_ids.clear()
-	var damage := AIR_DAMAGE if kind == "air" else (HEAVY_DAMAGE if kind == "heavy" else COMBO_DAMAGE[combo_step - 1])
+	var damage: int = AIR_DAMAGE if kind == "air" else (HEAVY_DAMAGE if kind == "heavy" else COMBO_DAMAGE[combo_step - 1])
 	var on_beat := _on_beat()
 	if on_beat:
 		damage = int(ceil(float(damage) * 1.3))
