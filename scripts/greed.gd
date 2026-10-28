@@ -43,11 +43,11 @@ const GREEDY_MITE := preload("res://scripts/greedy_mite.gd")
 const COIN_GUARD := preload("res://scripts/coin_guard.gd")
 const PENNY_PIP := preload("res://scripts/penny_pip.gd")
 const GILDED_BLOSSOM := preload("res://scripts/gilded_blossom.gd")
-const ARENA_LOCK_X := 2000.0   # left lock wall while the fight is on (marker is at 2130)
-const ARENA_END_X := 2750.0    # permanent end wall of Greed
+const ARENA_LOCK_X := 1800.0   # left lock wall while the fight is on (marker is at 2130)
+const ARENA_END_X := 3000.0    # permanent end wall of Greed
 const COLLECTOR_X := 2500.0
-const VAULT_END_X := -1930.0   # far left wall, past the vault
-const VAULT_GROUND := Rect2(-1900, 470, 900, 60)   # the old treasury floor
+const VAULT_END_X := -2080.0   # far left wall, past the vault
+const VAULT_GROUND := Rect2(-2050, 470, 1250, 60)   # broad old treasury arena floor
 const VAULT_EXIT_POS := Vector2(-1730, 440)
 
 # Main route deliberately has three readable 60px breaks. They are easy to
@@ -57,7 +57,7 @@ const MAIN_GROUND := [
 	Rect2(0, 570, 620, 90),
 	Rect2(680, 570, 570, 90),
 	Rect2(1310, 570, 520, 90),
-	Rect2(1890, 570, 860, 90),
+	Rect2(1890, 570, 1110, 90),
 ]
 
 # Extra floors: Rect2(left, top, width, height). Their visible tops and collision
@@ -356,24 +356,24 @@ func _draw_featherweight_charm(c: Vector2) -> void:
 func _draw_boss_arenas() -> void:
 	# Coin Guard's mint: old inlaid rings lead through the gate into the arena.
 	var mint := Color(0.62, 0.48, 0.30, 0.75)
-	for x in [-1690.0, -1110.0]:
+	for x in [-1930.0, -870.0]:
 		draw_rect(Rect2(x - 12.0, 330.0, 24.0, 140.0), Color(0.45, 0.33, 0.22, 1.0))
 		draw_rect(Rect2(x - 12.0, 330.0, 24.0, 140.0), mint, false, 3.0)
 		draw_line(Vector2(x - 5.0, 342.0), Vector2(x - 5.0, 458.0), Color(0.81, 0.68, 0.43, 0.8), 2.0)
-	for radius in [96.0, 145.0]:
+	for radius in [150.0, 260.0]:
 		draw_arc(Vector2(-1400.0, 468.0), radius, PI, TAU, 32, mint, 3.0)
-	for x in [-1740.0, -1660.0, -1140.0, -1060.0]:
+	for x in [-1980.0, -1900.0, -900.0, -820.0]:
 		draw_circle(Vector2(x, 458.0), 4.0, Color(0.92, 0.72, 0.34, 0.9))
 
 	# The Collector's room is framed by low coin cairns and a broad floor medallion.
 	var arena_ink := Color(0.49, 0.35, 0.18, 0.72)
-	for x in [2070.0, 2705.0]:
+	for x in [1930.0, 2960.0]:
 		draw_rect(Rect2(x - 15.0, 448.0, 30.0, 122.0), Color(0.59, 0.43, 0.24, 1.0))
 		draw_rect(Rect2(x - 15.0, 448.0, 30.0, 122.0), arena_ink, false, 3.0)
 		draw_line(Vector2(x - 7.0, 462.0), Vector2(x - 7.0, 550.0), Color(0.82, 0.65, 0.35, 0.9), 3.0)
-	draw_arc(Vector2(2390.0, 566.0), 300.0, PI, TAU, 48, arena_ink, 3.0)
-	draw_arc(Vector2(2390.0, 566.0), 270.0, PI, TAU, 48, Color(0.81, 0.62, 0.31, 0.55), 2.0)
-	for x in [2200.0, 2390.0, 2580.0]:
+	draw_arc(Vector2(2400.0, 566.0), 500.0, PI, TAU, 64, arena_ink, 3.0)
+	draw_arc(Vector2(2400.0, 566.0), 465.0, PI, TAU, 64, Color(0.81, 0.62, 0.31, 0.55), 2.0)
+	for x in [2020.0, 2210.0, 2400.0, 2590.0, 2780.0]:
 		draw_circle(Vector2(x, 558.0), 5.0, Color(0.93, 0.73, 0.35, 0.9))
 
 # Pickups need a body: a coin, and a seal. Dark outline so they read on the pale ground.

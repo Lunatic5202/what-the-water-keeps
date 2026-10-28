@@ -177,7 +177,9 @@ Rooms are chosen by Lumi's x. The camera is locked to the room's camera range an
 | Hammock climb | six 110px platforms, x = 2390 to 3350, tops from y=490 up to y=240 |
 | High ledge | x = 3410 to 3960, top y=240 |
 | Pre-boss bench | x = 3830 (under the ledge) |
-| Boss marker, lock wall, end wall | x = 4440, 4330, 5190 |
+| Dozy Warden arena ledge | x = 4200 to 4840, top y=120 |
+| Boss marker, lock wall, end wall | x = 4440, 4180, 5400 |
+| The Dreamer's fight bounds | x = 4200 to 5350 |
 | Phase 3 climb walls | x = 4420 and 5110, heart at (5030, 210) |
 
 Platforms are listed in `PLATFORMS` in `sloth.gd`. Steps up are 55px or less, gaps are 60px or more.
@@ -187,10 +189,13 @@ Platforms are listed in `PLATFORMS` in `sloth.gd`. Steps up are 55px or less, ga
 | Thing | Position |
 |-------|----------|
 | Start marker for the fight | x = 2130 (E to approach) |
-| Left lock wall during the fight | x = 2000, creeps inward as he grows (up to 150px) |
+| Coin Guard arena floor | x = -2050 to -800 (1250px wide) |
+| Left lock wall during the fight | x = 1800, creeps inward as he grows (up to 150px) |
 | Offering bowls | x = 2230 and x = 2660 |
 | The Collector / his coin mountain | x = 2500 / x = 2580 |
-| End wall | x = 2750 |
+| Collector arena floor and end wall | x = 1890 to 3000 (1110px wide) / x = 3000 |
+
+The Collector and Dreamer now have broader combat bounds, and the Coin Guard's mint floor and Dozy Warden's upper ledge provide more room to maneuver. Their visible arena markings follow those wider spaces; the changes use existing region terrain and do not add obstacles inside the fights.
 
 ### Greed route layout
 
