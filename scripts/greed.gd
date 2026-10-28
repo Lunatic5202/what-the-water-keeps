@@ -153,36 +153,10 @@ func _draw() -> void:
 		Vector2(3000, 510), Vector2(3000, 610), Vector2(-3000, 610)
 	]), Color(0.86, 0.72, 0.40, 1.0))
 
-	# Broken garden columns: a hint of an older place being swallowed by flowers.
-	var ruin_columns := [-1750.0, -900.0, 1650.0, 2350.0]
-	for i in range(ruin_columns.size()):
-		var x: float = ruin_columns[i]
-		var h := 115.0 + float((i * 47) % 90)
-		draw_rect(Rect2(x, 570.0 - h, 22, h), Color(0.68, 0.53, 0.30, 1.0))
-		draw_rect(Rect2(x - 5, 570.0 - h, 32, 8), Color(0.78, 0.64, 0.37, 1.0))
-		draw_rect(Rect2(x + 3, 570.0 - h * 0.55, 17, 5), Color(0.55, 0.41, 0.24, 0.9))
-		if i % 2 == 0:
-			draw_line(Vector2(x + 10, 570.0 - h + 18), Vector2(x + 4, 570.0 - h + 47), Color(0.48, 0.36, 0.22, 0.85), 2.0)
-			draw_line(Vector2(x + 4, 570.0 - h + 47), Vector2(x + 15, 570.0 - h + 68), Color(0.48, 0.36, 0.22, 0.85), 2.0)
-
-	# Three piers support the single canopy floor and leave a clear walk beneath it.
-	for x in [520.0, 820.0, 1120.0]:
-		draw_rect(Rect2(x - 12.0, 350.0, 24.0, 220.0), Color(0.68, 0.53, 0.30, 1.0))
-		draw_rect(Rect2(x - 20.0, 350.0, 40.0, 8.0), Color(0.78, 0.64, 0.37, 1.0))
-		draw_rect(Rect2(x - 18.0, 562.0, 36.0, 8.0), Color(0.55, 0.41, 0.24, 0.9))
-
-	# One compass marker sits below the canopy at the main-road crossing.
-	draw_rect(Rect2(1035, 430, 18, 140), Color(0.68, 0.53, 0.30, 1.0))
-	draw_rect(Rect2(1000, 430, 88, 12), Color(0.78, 0.64, 0.37, 1.0))
-	draw_circle(Vector2(1044, 416), 17.0, Color(0.96, 0.80, 0.35, 0.95))
-	draw_circle(Vector2(1044, 416), 8.0, Color(0.56, 0.39, 0.18, 1.0))
-
-	# The broken arch frames the approach to the Collector.
-	draw_rect(Rect2(1980, 300, 24, 270), Color(0.61, 0.45, 0.25, 1.0))
-	draw_rect(Rect2(2240, 345, 24, 225), Color(0.61, 0.45, 0.25, 1.0))
-	draw_rect(Rect2(1980, 290, 180, 22), Color(0.73, 0.56, 0.30, 1.0))
-	draw_rect(Rect2(2140, 290, 100, 22), Color(0.73, 0.56, 0.30, 1.0))
-	draw_line(Vector2(2160, 290), Vector2(2178, 312), Color(0.48, 0.35, 0.20, 1.0), 3.0)
+	# Three authored landmarks give the canopy, vault and ridge distinct identities.
+	_draw_root_bridge()
+	_draw_vault_hall()
+	_draw_gold_ridge()
 
 	for i in range(24):
 		var x := fposmod(float(i * 173 + 42), 5600.0) - 2800.0
@@ -191,14 +165,6 @@ func _draw() -> void:
 		draw_circle(Vector2(x, y), size, Color(0.94, 0.72, 0.24, 0.48))
 		if i % 3 == 0:
 			draw_circle(Vector2(x + 4, y - 3), size * 0.55, Color(1.0, 0.9, 0.54, 0.72))
-
-	# Distant golden trees
-	for i in range(3):
-		var x := -200 + i * 1200
-		draw_rect(Rect2(x - 8, 350, 16, 260), Color(0.65, 0.52, 0.3, 1.0))
-		draw_circle(Vector2(x, 340), 45, Color(0.75, 0.65, 0.35, 1.0))
-		draw_circle(Vector2(x - 25, 360), 30, Color(0.8, 0.7, 0.4, 1.0))
-		draw_circle(Vector2(x + 25, 360), 30, Color(0.8, 0.7, 0.4, 1.0))
 
 	# Ground and platforms (same rectangles as the colliders in _create_ground)
 	var ground := Palette.GREED_GROUND
@@ -260,6 +226,76 @@ func _draw() -> void:
 
 	if mountain_visible:
 		_draw_mountain()
+
+# Landmark drawings sit behind the walkable silhouettes. They describe the
+# spaces the route passes through without adding clutter or hidden collision.
+func _draw_root_bridge() -> void:
+	var bark := Color(0.59, 0.43, 0.24, 1.0)
+	var lit_bark := Color(0.75, 0.59, 0.34, 1.0)
+	var shadow := Color(0.43, 0.32, 0.20, 0.9)
+	# One giant root spans the upper crossing; buttresses land outside the road.
+	draw_arc(Vector2(820, 570), 270.0, PI, TAU, 48, bark, 24.0)
+	draw_arc(Vector2(820, 570), 270.0, PI, TAU, 48, lit_bark, 4.0)
+	draw_line(Vector2(555, 510), Vector2(505, 570), bark, 32.0)
+	draw_line(Vector2(1085, 510), Vector2(1140, 570), bark, 32.0)
+	draw_line(Vector2(566, 514), Vector2(515, 566), lit_bark, 4.0)
+	draw_line(Vector2(1074, 514), Vector2(1130, 566), lit_bark, 4.0)
+	# A compact leaf crown makes the canopy the region's signature landmark.
+	draw_circle(Vector2(820, 258), 48.0, Color(0.73, 0.65, 0.34, 1.0))
+	draw_circle(Vector2(776, 271), 30.0, Color(0.81, 0.72, 0.40, 1.0))
+	draw_circle(Vector2(864, 271), 30.0, Color(0.81, 0.72, 0.40, 1.0))
+	draw_circle(Vector2(820, 228), 28.0, Color(0.89, 0.78, 0.43, 1.0))
+	draw_line(Vector2(820, 285), Vector2(820, 325), shadow, 5.0)
+	draw_line(Vector2(820, 315), Vector2(792, 336), shadow, 3.0)
+	draw_line(Vector2(820, 315), Vector2(846, 336), shadow, 3.0)
+
+func _draw_vault_hall() -> void:
+	var stone := Color(0.57, 0.43, 0.29, 1.0)
+	var stone_light := Color(0.76, 0.62, 0.41, 1.0)
+	var dark := Color(0.38, 0.30, 0.22, 1.0)
+	# A buried cut through the ridge follows the vault route's high ledges.
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-1050, 570), Vector2(-1000, 420), Vector2(-800, 420),
+		Vector2(-750, 420), Vector2(-550, 420), Vector2(-500, 370),
+		Vector2(-300, 370), Vector2(-250, 420), Vector2(-50, 420),
+		Vector2(0, 470), Vector2(200, 470), Vector2(250, 520),
+		Vector2(450, 520), Vector2(450, 620), Vector2(-1050, 620)
+	]), Color(0.67, 0.52, 0.34, 1.0))
+	draw_line(Vector2(-980, 450), Vector2(-815, 450), stone_light, 3.0)
+	draw_line(Vector2(-470, 398), Vector2(-322, 398), stone_light, 3.0)
+	draw_line(Vector2(-220, 449), Vector2(-60, 449), stone_light, 3.0)
+	# The Coin Guard arena is an old mint gate, with a single oversized coin seal.
+	draw_rect(Rect2(-1588, 286, 36, 184), stone)
+	draw_rect(Rect2(-1212, 286, 36, 184), stone)
+	draw_rect(Rect2(-1604, 278, 68, 18), stone_light)
+	draw_rect(Rect2(-1236, 278, 68, 18), stone_light)
+	draw_arc(Vector2(-1400, 350), 188.0, PI, TAU, 32, dark, 28.0)
+	draw_arc(Vector2(-1400, 350), 188.0, PI, TAU, 32, stone_light, 4.0)
+	draw_circle(Vector2(-1400, 260), 30.0, dark)
+	draw_circle(Vector2(-1400, 260), 22.0, Color(0.87, 0.67, 0.27, 1.0))
+	draw_circle(Vector2(-1400, 260), 11.0, Color(0.96, 0.82, 0.45, 1.0))
+	draw_line(Vector2(-1410, 260), Vector2(-1390, 260), dark, 3.0)
+
+func _draw_gold_ridge() -> void:
+	var cliff := Color(0.72, 0.56, 0.32, 1.0)
+	var strata := Color(0.84, 0.69, 0.42, 1.0)
+	var arch := Color(0.58, 0.42, 0.24, 1.0)
+	# A broad cut-stone shoulder backs the four level-topped ridge shelves.
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(1240, 570), Vector2(1240, 530), Vector2(1390, 530),
+		Vector2(1436, 490), Vector2(1591, 490), Vector2(1637, 450),
+		Vector2(1792, 450), Vector2(1840, 410), Vector2(2010, 410),
+		Vector2(2010, 620), Vector2(1240, 620)
+	]), cliff)
+	draw_line(Vector2(1270, 548), Vector2(1380, 548), strata, 3.0)
+	draw_line(Vector2(1460, 508), Vector2(1578, 508), strata, 3.0)
+	draw_line(Vector2(1660, 468), Vector2(1778, 468), strata, 3.0)
+	# The ridge seal sits in a broken overlook arch, visible from the approach.
+	draw_rect(Rect2(1842, 365, 18, 82), arch)
+	draw_rect(Rect2(1990, 365, 18, 58), arch)
+	draw_arc(Vector2(1925, 382), 76.0, PI, TAU, 24, arch, 11.0)
+	draw_line(Vector2(1840, 365), Vector2(1868, 365), strata, 4.0)
+	draw_line(Vector2(1980, 365), Vector2(2009, 365), strata, 4.0)
 
 # Pickups need a body: a coin, and a seal. Dark outline so they read on the pale ground.
 func _draw_pickup_coin(c: Vector2) -> void:
