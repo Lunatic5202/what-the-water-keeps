@@ -173,6 +173,7 @@ func take_damage(amount: int) -> void:
 	if phase != 1 or hurt_cooldown > 0.0:
 		return
 	health = maxi(0, health - amount)
+	get_tree().call_group("boss_health_bar", "update_boss_health", self, health, max_health)
 	hurt_cooldown = 0.25
 	stagger_timer = 0.12
 	is_rolling = false
@@ -187,6 +188,7 @@ func start_fight() -> void:
 	phase = 1
 	attack_state = "idle"
 	attack_timer = 1.2
+	get_tree().call_group("boss_health_bar", "show_boss", self, "OLD MOSS", health, max_health)
 
 func _defeat() -> void:
 	phase = 2
@@ -194,6 +196,7 @@ func _defeat() -> void:
 	attack_state = "idle"
 	is_rolling = false
 	defeat_timer = 0.0
+	get_tree().call_group("boss_health_bar", "hide_boss", self)
 	defeated.emit()
 
 func _draw() -> void:
@@ -251,11 +254,3 @@ func _draw() -> void:
 		else:
 			for i in range(5):
 				draw_circle(Vector2(direction * (24 + i * 14), -34 - i * 3), 3, tell_color)
-
-	# Health bar with a phase-two tint.
-	var bar_width := 90.0
-	var bar_y := -54.0
-	draw_rect(Rect2(-bar_width / 2, bar_y, bar_width, 7), Color(0.2, 0.2, 0.25, 0.85))
-	var health_width := float(health) / float(max_health) * bar_width
-	draw_rect(Rect2(-bar_width / 2, bar_y, health_width, 7),
-		Color(0.68, 0.83, 0.58, 1.0) if not phase_two else Color(0.84, 0.76, 0.5, 1.0))

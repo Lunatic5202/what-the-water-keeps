@@ -20,6 +20,7 @@ var player_ref: Node2D
 var slam_cooldown := 0.0
 var attack_facing := 1
 var slam_hit_done := false
+var boss_bar_active := false
 
 func _ready() -> void:
 	add_to_group("boss")
@@ -39,6 +40,7 @@ func take_damage(amount: int) -> void:
 			state_time = 0.0
 		return
 	health -= amount
+	get_tree().call_group("boss_health_bar", "update_boss_health", self, health, max_health)
 	if health <= 0:
 		_die()
 	else:
@@ -57,6 +59,8 @@ func _show_shield_hit() -> void:
 func _die() -> void:
 	dead = true
 	dissolving = true
+	boss_bar_active = false
+	get_tree().call_group("boss_health_bar", "hide_boss", self)
 	dropped_coins.emit(25)
 	defeated.emit()
 
@@ -80,12 +84,13 @@ func _physics_process(delta: float) -> void:
 		velocity.y = 0.0
 
 	player_ref = get_tree().get_first_node_in_group("player") as Node2D
+	_update_boss_bar()
 	state_time += delta
 	slam_cooldown = maxf(0.0, slam_cooldown - delta)
 
 	if state == "idle":
 		velocity.x = 0.0
-		if state_time > 1.0 and is_instance_valid(player_ref) and slam_cooldown <= 0.0:
+		if state_time > 1.0 and is_instance_valid(player_ref) and global_position.distance_to(player_ref.global_position) < 340.0 and slam_cooldown <= 0.0:
 			_start_slam()
 	elif state == "slam_windup":
 		velocity.x = 0.0
@@ -121,6 +126,15 @@ func _start_slam() -> void:
 	state_time = 0.0
 	attack_facing = 1 if is_instance_valid(player_ref) and player_ref.global_position.x >= global_position.x else -1
 	slam_hit_done = false
+
+func _update_boss_bar() -> void:
+	var engaged := is_instance_valid(player_ref) and global_position.distance_to(player_ref.global_position) < 620.0
+	if engaged and not boss_bar_active:
+		boss_bar_active = true
+		get_tree().call_group("boss_health_bar", "show_boss", self, "COIN GUARD", health, max_health)
+	elif not engaged and boss_bar_active:
+		boss_bar_active = false
+		get_tree().call_group("boss_health_bar", "hide_boss", self)
 
 func _do_slam() -> void:
 	state = "slam"
@@ -172,11 +186,3 @@ func _draw() -> void:
 		draw_rect(Rect2(attack_facing * 24.0 if attack_facing > 0 else -190.0, 18, 166.0, 10), warning)
 	if state == "stagger":
 		draw_arc(Vector2.ZERO, 39.0, 0.0, TAU, 24, Color(1.0, 0.96, 0.72, 0.95), 3.0)
-	# A clear overhead bar makes the exposed health readable after the shield breaks.
-	draw_rect(Rect2(-42, -58, 84, 9), Color(0.28, 0.19, 0.09, 0.95))
-	var health_ratio := clampf(float(health) / float(max_health), 0.0, 1.0)
-	draw_rect(Rect2(-40, -56, 80.0 * health_ratio, 5), Color(0.78, 0.24, 0.16, 1.0))
-	draw_rect(Rect2(-42, -58, 84, 9), Color(0.96, 0.82, 0.48, 1.0), false, 1.5)
-	if shield > 0:
-		for i in range(shield):
-			draw_circle(Vector2(-21.0 + float(i) * 6.0, -67), 2.2, Color(1.0, 0.89, 0.45, 0.95))
