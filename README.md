@@ -35,7 +35,7 @@ Implemented in code:
 - The Still Pond hub with seven doors, bench, altar, Memory Tree, Mirror Gate placeholder, Marl and Orrin
 - Greed region with coins, weight penalties, offering shrines, lore tablets, and a Featherweight Charm that unlocks double jump
 - Greed encounters: patrolling Greedy Mites, hopping Penny Pips that stick coins to Lumi (dash to shake them off), and Gilded Blossoms that telegraph and spit slowing sap
-- Coin Guard mini-boss in the buried mint hall: an 8-hit shield with visible pips, a clearly telegraphed rushing slam, 48 health with an overhead bar, and a physical Vault Seal pickup on defeat. The seal is collected with E and is saved separately from the boss defeat, so leaving it behind does not grant it
+- Coin Guard mini-boss in the buried mint hall: an 8-hit shield with visible pips, a close-range telegraphed rushing slam, 48 health with a screen-fixed HUD bar, and a physical Vault Seal pickup on defeat. The seal is collected with E and is saved separately from the boss defeat, so leaving it behind does not grant it
 - The Collector boss (never run, values are guesses): Coin Rain and belly slam, then below 66% health he swallows his coin mountain and grows (faster if Lumi carries gold) while the arena's left wall creeps inward, then below 33% he lunges for Lumi's purse. A grab with gold steals it all and heals him; with empty hands it whiffs and leaves him open. Offering bowls hurt and shrink him. Defeat plays the bible's lines, sets the Open Hand and Gold Key flags and clears Greed, which returns Lumi to the hub with one more key
 - Wake → Hub → Greed → Hub handoff using the same Lumi instance
 - Hub arrival positioned beside the Greed door without the bench/NPC stealing the first interaction
@@ -205,7 +205,7 @@ Greed has a lower road, an upper canopy floor and two optional branch routes. Th
 - The Coin Guard is the Vault's mini-boss. Defeating it drops a visible Vault Seal beside the mint gate. Lumi must collect it; it is not silently added on defeat. The saved boss state preserves an uncollected drop.
 - The treasury's hidden upper nook has a glint near its first shelf. The next shelf sits 90px above it, so the optional 35-gold cache requires Double Jump.
 
-The route platforms use the same shapes for collision and drawing. Their landing tops are level; only the sides are beveled. The route shelves are one-way platforms, keeping drops and upward passage clear. Keep rises at 55px or less, leave 50px of headroom, and keep flat-edge gaps at 60px or more. Only the closest nearby interaction label is shown at a time, to keep the route visible. Weight can lower Lumi's jump; shrines are placed before the canopy climb, on the treasury approach, and below the Gold Ridge.
+The route platforms use the same shapes for collision and drawing. Their landing tops are level; only the sides are beveled. The route shelves are one-way platforms, keeping drops and upward passage clear. Keep rises at 55px or less, leave 50px of headroom, and keep flat-edge gaps at 60px or more. Only the closest nearby interaction label is shown at a time, to keep the route visible. Weight can lower Lumi's jump; shrines are placed before the canopy climb, on the treasury approach, and below the Gold Ridge. Shrine bowls and the Featherweight Charm have distinct world sprites; mint and Collector arenas use floor inlays and simple stone framing rather than extra collision clutter.
 
 ## How the code works
 

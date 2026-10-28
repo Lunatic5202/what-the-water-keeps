@@ -479,6 +479,7 @@ func _draw() -> void:
 	for rect: Rect2 in PLATFORMS + EXTRA_PLATFORMS:
 		draw_rect(rect, Palette.SLOTH_GROUND)
 		draw_rect(Rect2(rect.position, Vector2(rect.size.x, 5)), Palette.SLOTH_GROUND_TOP)
+	_draw_boss_arenas()
 	# Lanterns.
 	for item in lantern_items:
 		_draw_lantern(item)
@@ -491,6 +492,26 @@ func _draw() -> void:
 	if not sloth_miniboss_defeated:
 		draw_circle(Vector2(4530, 90), 58.0, Color(0.77, 0.72, 1.0, 0.13))
 		draw_arc(Vector2(4530, 90), 45.0, 0.0, TAU, 32, Color(0.86, 0.81, 1.0, 0.95), 3.0)
+
+func _draw_boss_arenas() -> void:
+	# The upper sky-route ledge gets a quiet moonstone frame around the Warden.
+	for x in [4360.0, 4700.0]:
+		draw_rect(Rect2(x - 9.0, 126.0, 18.0, 106.0), Color(0.31, 0.29, 0.50, 1.0))
+		draw_rect(Rect2(x - 9.0, 126.0, 18.0, 106.0), Color(0.67, 0.65, 0.85, 0.9), false, 2.0)
+		draw_line(Vector2(x, 145.0), Vector2(x, 218.0), Color(0.79, 0.76, 0.95, 0.8), 2.0)
+	# The Dreamer's lower arena is marked with a stitched, moonlit floor medallion.
+	var ink := Color(0.30, 0.28, 0.49, 0.78)
+	var thread := Color(0.67, 0.66, 0.88, 0.78)
+	draw_arc(Vector2(4750.0, 596.0), 310.0, PI, TAU, 48, ink, 4.0)
+	draw_arc(Vector2(4750.0, 596.0), 278.0, PI, TAU, 48, thread, 2.0)
+	for x in [4440.0, 4750.0, 5060.0]:
+		draw_circle(Vector2(x, 590.0), 5.0, Color(0.79, 0.78, 0.98, 0.85))
+	# Narrow side pillars frame the encounter without closing the broad arena floor.
+	for x in [4380.0, 5120.0]:
+		draw_rect(Rect2(x - 13.0, 420.0, 26.0, 176.0), Color(0.38, 0.36, 0.59, 1.0))
+		draw_rect(Rect2(x - 13.0, 420.0, 26.0, 176.0), ink, false, 3.0)
+		draw_line(Vector2(x, 435.0), Vector2(x, 576.0), thread, 2.0)
+		draw_arc(Vector2(x, 430.0), 19.0, PI, TAU, 16, thread, 2.0)
 
 # The Snail Grips walls: pale stitched cloth that rises from the ground when
 # phase 3 starts. Bright on purpose so they read through the dim overlay.
