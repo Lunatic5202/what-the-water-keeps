@@ -3,6 +3,7 @@ const Story := preload("res://scripts/story.gd")
 const Palette := preload("res://scripts/palette.gd")
 const Settings := preload("res://scripts/game_settings.gd")
 const RunState := preload("res://scripts/run_state.gd")
+const BOSS_HEALTH_BAR := preload("res://scripts/boss_health_bar.gd")
 
 signal region_cleared(region_name: String)
 signal return_to_hub
@@ -12,8 +13,11 @@ var player: CharacterBody2D
 var stats_label: Label
 var hud_layer: CanvasLayer
 var prompt_label: Label
-var dialogue_panel: ColorRect
+var dialogue_panel: Panel
 var dialogue_label: Label
+var dialogue_location_label: Label
+var dialogue_portrait: TextureRect
+var dialogue_portrait_text := ""
 var dialogue_target: Node2D
 var interactables: Array[Dictionary] = []
 var dialogue_open := false
@@ -31,38 +35,60 @@ var lore_found := 0
 var total_lore := 3
 var boss_defeated := false
 var featherweight_found := false
+var secret_cache_found := false
 
 # The Collector fight
 const COLLECTOR_SCRIPT := preload("res://scripts/collector.gd")
 const GREEDY_MITE := preload("res://scripts/greedy_mite.gd")
 const COIN_GUARD := preload("res://scripts/coin_guard.gd")
+const PENNY_PIP := preload("res://scripts/penny_pip.gd")
+const GILDED_BLOSSOM := preload("res://scripts/gilded_blossom.gd")
 const ARENA_LOCK_X := 2000.0   # left lock wall while the fight is on (marker is at 2130)
 const ARENA_END_X := 2750.0    # permanent end wall of Greed
 const COLLECTOR_X := 2500.0
 const VAULT_END_X := -1930.0   # far left wall, past the vault
-const VAULT_GROUND := Rect2(-1900, 470, 570, 60)   # the old treasury floor
+const VAULT_GROUND := Rect2(-1900, 470, 900, 60)   # the old treasury floor
 const VAULT_EXIT_POS := Vector2(-1730, 440)
 
-# Extra platforms: Rect2(left, top, width, height). The same list draws and
-# collides. Steps are 50px up, gaps 70px, so a plain jump clears each one (no
-# double jump needed). The first step of each climb is a solid block down to the
-# ground so Lumi can still walk beneath the rest.
+# Main route deliberately has three readable 60px breaks. They are easy to
+# jump, but make the garden feel like terrain rather than one uninterrupted floor.
+# Keep these rectangles in sync for both drawing and collision.
+const MAIN_GROUND := [
+	Rect2(0, 570, 620, 90),
+	Rect2(680, 570, 570, 90),
+	Rect2(1310, 570, 520, 90),
+	Rect2(1890, 570, 860, 90),
+]
+
+# Extra floors: Rect2(left, top, width, height). Their visible tops and collision
+# tops come from the same flat-sided silhouette.
 const EXTRA_PLATFORMS := [
-	# Vault Route: up and left over the pit, then down to the treasury floor.
-	Rect2(250, 520, 110, 50),
-	Rect2(70, 470, 110, 18),
-	Rect2(-110, 420, 110, 18),
-	Rect2(-290, 370, 110, 18),
-	Rect2(-470, 320, 110, 18),
-	Rect2(-650, 270, 110, 18),
-	Rect2(-830, 320, 110, 18),
-	Rect2(-1010, 370, 110, 18),
-	Rect2(-1190, 420, 110, 18),
-	# Gold Ridge: a high road above the way to the arena, ends before the lock wall.
-	Rect2(1330, 520, 100, 50),
-	Rect2(1500, 470, 100, 18),
-	Rect2(1670, 420, 100, 18),
-	Rect2(1840, 370, 100, 18),
+	# Canopy stairs: five level treads rise 40px each from the road. Their flat
+	# tops are 106px wide with 74px between landing edges. The broad upper floor
+	# starts 64px beyond the final tread and ends over the Gold Ridge approach.
+	Rect2(930, 530, 130, 40),
+	Rect2(750, 490, 130, 40),
+	Rect2(570, 450, 130, 40),
+	Rect2(390, 410, 130, 40),
+	Rect2(210, 370, 130, 40),
+	Rect2(380, 330, 980, 40),
+	# Vault Route: six broad ledges make one arch over the broken wall. Each 50px
+	# rise has a 74px flat-edge gap, with the turn back down into the treasury.
+	Rect2(250, 520, 200, 50),
+	Rect2(0, 470, 200, 18),
+	Rect2(-250, 420, 200, 18),
+	Rect2(-500, 370, 200, 18),
+	Rect2(-750, 420, 200, 18),
+	Rect2(-1000, 420, 200, 18),
+	# The high treasury nook needs a normal jump onto its first shelf, then
+	# Double Jump to reach the cache 90px above it.
+	Rect2(-1830, 420, 120, 18),
+	Rect2(-1830, 330, 120, 18),
+	# Gold Ridge: four level-topped shelves rise in 40px steps to the seal.
+	Rect2(1240, 530, 150, 40),
+	Rect2(1436, 490, 155, 24),
+	Rect2(1637, 450, 155, 24),
+	Rect2(1840, 410, 170, 24),
 ]
 const MOUNTAIN_X := 2580.0
 var collector: CharacterBody2D
@@ -77,12 +103,24 @@ var banner_time := 0.0
 var scene_id := 0
 var has_open_hand := false
 var has_gold_key := false
+const SEALS_NEEDED := 2
+var seals: Array = []   # "vault" (Coin Guard) and "ridge" (end of the Gold Ridge)
 
 # Expanded content
 var post_boss_open := false
 var vault_exit: Node2D = null
 var miniboss_defeated := false
 var coin_guard: CharacterBody2D = null
+var pip_coin_stacks := 0
+var sticky_sap_time := 0.0
+var last_dash_active := false
+
+# Automatic coin collection (Mario-style pickup, Souls-like presentation)
+const COIN_COLLECT_RADIUS := 42.0  # Lumi's capsule is ~26px wide; this reads as "walked near it"
+const COIN_COLLECT_TIME := 0.35    # length of the brighten-and-dissolve animation
+var total_coins_collected := 0     # lifetime count shown in the top-right HUD
+var coin_hud_label: Label
+var coin_hud_pulse := 0.0
 
 # Spawn points
 var respawn_point := Vector2(280, 520)
@@ -103,8 +141,6 @@ func _ready() -> void:
 	_update_hud()
 	Story.play(self, dialogue_panel, dialogue_label, Story.GREED_ENTER)
 
-var bg_drawn := false
-
 func _create_background() -> void:
 	# Background is drawn in _draw()
 	pass
@@ -113,41 +149,245 @@ func _draw() -> void:
 	# Golden garden sky
 	draw_rect(Rect2(-3000, -2000, 8000, 4000), Palette.GREED_SKY)
 
-	if not bg_drawn:
-		# Golden flowers (decorative) - only seed once
-		randomize()
-		bg_drawn = true
+	# Distant ridgelines make the golden garden feel like a landscape, not a flat room.
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-3000, 470), Vector2(-2600, 360), Vector2(-2200, 430),
+		Vector2(-1750, 300), Vector2(-1320, 430), Vector2(-900, 330),
+		Vector2(-450, 430), Vector2(0, 320), Vector2(420, 420),
+		Vector2(850, 310), Vector2(1280, 420), Vector2(1680, 300),
+		Vector2(2100, 420), Vector2(2550, 330), Vector2(3000, 450),
+		Vector2(3000, 610), Vector2(-3000, 610)
+	]), Color(0.91, 0.82, 0.55, 1.0))
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-3000, 520), Vector2(-2500, 450), Vector2(-2050, 500),
+		Vector2(-1600, 405), Vector2(-1150, 510), Vector2(-650, 440),
+		Vector2(-150, 510), Vector2(350, 430), Vector2(800, 510),
+		Vector2(1300, 425), Vector2(1800, 510), Vector2(2250, 430),
+		Vector2(3000, 510), Vector2(3000, 610), Vector2(-3000, 610)
+	]), Color(0.86, 0.72, 0.40, 1.0))
 
-	for i in range(40):
-		var x := fposmod(float(i * 137 + 42), 3000.0) - 500.0
-		var y := fposmod(float(i * 89 + 17), 350.0) + 200.0
-		var size := 4.0 + fposmod(float(i * 13), 6.0)
-		draw_circle(Vector2(x, y), size, Color(0.94, 0.78, 0.31, 0.6))
-		draw_circle(Vector2(x, y), size * 0.5, Color(1.0, 0.9, 0.4, 0.8))
+	# Three authored landmarks give the canopy, vault and ridge distinct identities.
+	_draw_root_bridge()
+	_draw_vault_hall()
+	_draw_gold_ridge()
 
-	# Distant golden trees
-	for i in range(6):
-		var x := -200 + i * 400
-		draw_rect(Rect2(x - 8, 350, 16, 260), Color(0.65, 0.52, 0.3, 1.0))
-		draw_circle(Vector2(x, 340), 45, Color(0.75, 0.65, 0.35, 1.0))
-		draw_circle(Vector2(x - 25, 360), 30, Color(0.8, 0.7, 0.4, 1.0))
-		draw_circle(Vector2(x + 25, 360), 30, Color(0.8, 0.7, 0.4, 1.0))
+	for i in range(24):
+		var x := fposmod(float(i * 173 + 42), 5600.0) - 2800.0
+		var y := fposmod(float(i * 97 + 17), 440.0) + 80.0
+		var size := 2.0 + fposmod(float(i * 13), 4.0)
+		draw_circle(Vector2(x, y), size, Color(0.94, 0.72, 0.24, 0.48))
+		if i % 3 == 0:
+			draw_circle(Vector2(x + 4, y - 3), size * 0.55, Color(1.0, 0.9, 0.54, 0.72))
 
 	# Ground and platforms (same rectangles as the colliders in _create_ground)
 	var ground := Palette.GREED_GROUND
 	var top := Palette.GREED_GROUND_TOP
-	draw_rect(Rect2(0, 570, 2750, 90), ground)
-	draw_rect(Rect2(0, 570, 2750, 5), top)
-	for plat: Rect2 in EXTRA_PLATFORMS + [VAULT_GROUND]:
-		draw_rect(plat, ground)
-		draw_rect(Rect2(plat.position, Vector2(plat.size.x, 4)), top)
-		draw_rect(plat, Palette.GOLD_OUTLINE, false, 2.0)
-	for plat in [Rect2(440, 490, 120, 20), Rect2(850, 440, 100, 20), Rect2(1050, 370, 100, 20)]:
-		draw_rect(plat, ground)
-		draw_rect(Rect2(plat.position, Vector2(plat.size.x, 4)), top)
+	for section: Rect2 in MAIN_GROUND:
+		draw_rect(section, ground)
+		draw_rect(Rect2(section.position, Vector2(section.size.x, 5)), top)
+		for blade in range(int(section.size.x / 85.0)):
+			var bx := section.position.x + 35.0 + blade * 85.0
+			draw_line(Vector2(bx, section.position.y + 3), Vector2(bx - 3, section.position.y - 7), Color(0.77, 0.68, 0.34, 1.0), 2.0)
+			draw_line(Vector2(bx, section.position.y + 3), Vector2(bx + 5, section.position.y - 5), Color(0.77, 0.68, 0.34, 1.0), 2.0)
+	for plat: Rect2 in EXTRA_PLATFORMS:
+		var rock := _platform_world_points(plat)
+		draw_colored_polygon(rock, ground)
+		var outline := rock.duplicate()
+		outline.append(rock[0])
+		draw_polyline(outline, Palette.GOLD_OUTLINE, 2.0)
+		# One continuous level highlight makes the landing surface easy to read.
+		draw_line(rock[1], rock[2], top, 3.0)
+	# The treasury floor remains a broad, solid stone shelf.
+	draw_rect(VAULT_GROUND, ground)
+	draw_rect(Rect2(VAULT_GROUND.position, Vector2(VAULT_GROUND.size.x, 5)), top)
+
+	# A small glint hints at the treasury pocket without exposing its cache marker.
+	if not secret_cache_found:
+		draw_line(Vector2(-1800, 407), Vector2(-1780, 390), Color(1.0, 0.83, 0.38, 0.8), 2.0)
+		draw_circle(Vector2(-1780, 390), 3.0, Color(1.0, 0.9, 0.55, 0.85))
+
+	if not miniboss_defeated:
+		# Route marks appear at the branch, the last turn and the arena.
+		draw_string(ThemeDB.fallback_font, Vector2(355, 510), "← VAULT", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(0.36, 0.22, 0.08, 1.0))
+		draw_string(ThemeDB.fallback_font, Vector2(-1225, 398), "COIN GUARD  ←", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.36, 0.22, 0.08, 1.0))
+		draw_circle(Vector2(-1400, 440), 48.0, Color(1.0, 0.76, 0.20, 0.12))
+		draw_arc(Vector2(-1400, 440), 40.0, 0.0, TAU, 32, Color(1.0, 0.77, 0.22, 0.9), 3.0)
+		draw_string(ThemeDB.fallback_font, Vector2(-1505, 385), "COIN GUARD", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.32, 0.20, 0.08, 1.0))
+
+	# Sparse foreground flowers keep the route edges readable.
+	for i in range(14):
+		var fx := fposmod(float(i * 113 + 31), 3000.0) - 150.0
+		var fy := 568.0 - fposmod(float(i * 29), 16.0)
+		var petal := Color(0.94, 0.75, 0.25, 0.95) if i % 3 != 0 else Color(0.95, 0.86, 0.52, 0.95)
+		draw_line(Vector2(fx, fy + 3), Vector2(fx - 2, fy - 9), Color(0.34, 0.48, 0.24, 1.0), 2.0)
+		draw_circle(Vector2(fx - 3, fy - 10), 3.0, petal)
+		draw_circle(Vector2(fx + 2, fy - 12), 3.0, petal)
+		draw_circle(Vector2(fx, fy - 11), 2.0, Color(0.48, 0.31, 0.13, 1.0))
+
+	for item in interactables:
+		if item.get("used", false) or not is_instance_valid(item["node"]) or not item["node"].visible:
+			continue
+		var kind: String = item["kind"]
+		if kind == "coin" or kind == "coin_extra":
+			_draw_pickup_coin(item["node"].position, item)
+		elif kind == "seal":
+			_draw_pickup_seal(item["node"].position)
+		elif kind == "open_hand_manual":
+			_draw_open_hand_manual(item["node"].position)
+		elif kind == "secret_cache":
+			_draw_secret_cache(item["node"].position)
 
 	if mountain_visible:
 		_draw_mountain()
+
+# Landmark drawings sit behind the walkable silhouettes. They describe the
+# spaces the route passes through without adding clutter or hidden collision.
+func _draw_root_bridge() -> void:
+	var bark := Color(0.59, 0.43, 0.24, 1.0)
+	var lit_bark := Color(0.75, 0.59, 0.34, 1.0)
+	var shadow := Color(0.43, 0.32, 0.20, 0.9)
+	# One giant root spans the upper crossing; buttresses land outside the road.
+	draw_arc(Vector2(820, 570), 270.0, PI, TAU, 48, bark, 24.0)
+	draw_arc(Vector2(820, 570), 270.0, PI, TAU, 48, lit_bark, 4.0)
+	draw_line(Vector2(555, 510), Vector2(505, 570), bark, 32.0)
+	draw_line(Vector2(1085, 510), Vector2(1140, 570), bark, 32.0)
+	draw_line(Vector2(566, 514), Vector2(515, 566), lit_bark, 4.0)
+	draw_line(Vector2(1074, 514), Vector2(1130, 566), lit_bark, 4.0)
+	# A compact leaf crown makes the canopy the region's signature landmark.
+	draw_circle(Vector2(820, 258), 48.0, Color(0.73, 0.65, 0.34, 1.0))
+	draw_circle(Vector2(776, 271), 30.0, Color(0.81, 0.72, 0.40, 1.0))
+	draw_circle(Vector2(864, 271), 30.0, Color(0.81, 0.72, 0.40, 1.0))
+	draw_circle(Vector2(820, 228), 28.0, Color(0.89, 0.78, 0.43, 1.0))
+	draw_line(Vector2(820, 285), Vector2(820, 325), shadow, 5.0)
+	draw_line(Vector2(820, 315), Vector2(792, 336), shadow, 3.0)
+	draw_line(Vector2(820, 315), Vector2(846, 336), shadow, 3.0)
+
+func _draw_vault_hall() -> void:
+	var stone := Color(0.57, 0.43, 0.29, 1.0)
+	var stone_light := Color(0.76, 0.62, 0.41, 1.0)
+	var dark := Color(0.38, 0.30, 0.22, 1.0)
+	# A buried cut through the ridge follows the vault route's high ledges.
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-1050, 570), Vector2(-1000, 420), Vector2(-800, 420),
+		Vector2(-750, 420), Vector2(-550, 420), Vector2(-500, 370),
+		Vector2(-300, 370), Vector2(-250, 420), Vector2(-50, 420),
+		Vector2(0, 470), Vector2(200, 470), Vector2(250, 520),
+		Vector2(450, 520), Vector2(450, 620), Vector2(-1050, 620)
+	]), Color(0.67, 0.52, 0.34, 1.0))
+	draw_line(Vector2(-980, 450), Vector2(-815, 450), stone_light, 3.0)
+	draw_line(Vector2(-470, 398), Vector2(-322, 398), stone_light, 3.0)
+	draw_line(Vector2(-220, 449), Vector2(-60, 449), stone_light, 3.0)
+	# The Coin Guard arena is an old mint gate, with a single oversized coin seal.
+	draw_rect(Rect2(-1588, 286, 36, 184), stone)
+	draw_rect(Rect2(-1212, 286, 36, 184), stone)
+	draw_rect(Rect2(-1604, 278, 68, 18), stone_light)
+	draw_rect(Rect2(-1236, 278, 68, 18), stone_light)
+	draw_arc(Vector2(-1400, 350), 188.0, PI, TAU, 32, dark, 28.0)
+	draw_arc(Vector2(-1400, 350), 188.0, PI, TAU, 32, stone_light, 4.0)
+	draw_circle(Vector2(-1400, 260), 30.0, dark)
+	draw_circle(Vector2(-1400, 260), 22.0, Color(0.87, 0.67, 0.27, 1.0))
+	draw_circle(Vector2(-1400, 260), 11.0, Color(0.96, 0.82, 0.45, 1.0))
+	draw_line(Vector2(-1410, 260), Vector2(-1390, 260), dark, 3.0)
+
+func _draw_gold_ridge() -> void:
+	var cliff := Color(0.72, 0.56, 0.32, 1.0)
+	var strata := Color(0.84, 0.69, 0.42, 1.0)
+	var arch := Color(0.58, 0.42, 0.24, 1.0)
+	# A broad cut-stone shoulder backs the four level-topped ridge shelves.
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(1240, 570), Vector2(1240, 530), Vector2(1390, 530),
+		Vector2(1436, 490), Vector2(1591, 490), Vector2(1637, 450),
+		Vector2(1792, 450), Vector2(1840, 410), Vector2(2010, 410),
+		Vector2(2010, 620), Vector2(1240, 620)
+	]), cliff)
+	draw_line(Vector2(1270, 548), Vector2(1380, 548), strata, 3.0)
+	draw_line(Vector2(1460, 508), Vector2(1578, 508), strata, 3.0)
+	draw_line(Vector2(1660, 468), Vector2(1778, 468), strata, 3.0)
+	# The ridge seal sits in a broken overlook arch, visible from the approach.
+	draw_rect(Rect2(1842, 365, 18, 82), arch)
+	draw_rect(Rect2(1990, 365, 18, 58), arch)
+	draw_arc(Vector2(1925, 382), 76.0, PI, TAU, 24, arch, 11.0)
+	draw_line(Vector2(1840, 365), Vector2(1868, 365), strata, 4.0)
+	draw_line(Vector2(1980, 365), Vector2(2009, 365), strata, 4.0)
+
+# Pickups need a body: a coin, and a seal. Dark outline so they read on the pale ground.
+# Coins are drawn as quiet, half-forgotten things: a soft ambient glow, a slow
+# float, and an occasional wisp, rather than a bright arcade sprite. Souls-like,
+# not Mario-like, even though collection itself (see _process_coins) now is.
+func _draw_pickup_coin(c: Vector2, item: Dictionary) -> void:
+	var t := Time.get_ticks_msec() / 1000.0
+	var phase: float = item.get("float_seed", 0.0)
+	var collecting: bool = item.get("collecting", false)
+	var collect_t: float = item.get("collect_t", 0.0)
+	var bob := sin(t * 2.0 + phase) * 4.0
+	var pos := c + Vector2(0.0, bob)
+	var shimmer := 0.5 + 0.5 * sin(t * 3.0 + phase * 2.0)
+
+	if collecting:
+		var p := clampf(collect_t / COIN_COLLECT_TIME, 0.0, 1.0)
+		var fade := 1.0 - p
+		var k := lerpf(1.0, 0.08, ease(p, 2.0))
+		# A brief brightening, then the coin draws inward and dissolves outward.
+		draw_circle(pos, 28.0 * fade + 8.0, Color(1.0, 0.95, 0.72, fade * 0.45))
+		draw_circle(pos, 13.0 * k, Palette.GOLD_OUTLINE)
+		draw_circle(pos, 10.0 * k, Color(0.96, 0.80, 0.34, 1.0 - p * 0.3))
+		draw_circle(pos, 5.5 * k, Color(1.0, 0.96, 0.68, 1.0))
+		for i in range(8):
+			var angle := TAU * i / 8.0 + phase
+			var dist := p * 28.0
+			draw_circle(pos + Vector2(cos(angle), sin(angle)) * dist, 2.0 * fade, Color(1.0, 0.92, 0.58, fade))
+		return
+
+	# Mysterious ambient glow: alternates a muted gold and a pale spectral cyan.
+	var cyan_tinge := int(phase * 100.0) % 5 == 0
+	var glow_color := Color(0.55, 0.85, 0.95, 0.09 + 0.06 * shimmer) if cyan_tinge else Color(1.0, 0.85, 0.42, 0.09 + 0.06 * shimmer)
+	draw_circle(pos, 19.0 + shimmer * 3.0, glow_color)
+	draw_circle(pos, 13.0, Palette.GOLD_OUTLINE)
+	draw_circle(pos, 10.0, Color(0.72, 0.56, 0.22, 0.85 + 0.15 * shimmer))
+	draw_circle(pos, 5.5, Color(0.92, 0.82, 0.56, 0.75 + 0.2 * shimmer))
+	# A faint, shifting rune-mark instead of the old bright cartoon face. A
+	# dim trace of the old wrongness (bible 5.2: coins slowly grow faces) stays,
+	# but kept subtle enough to feel ancient rather than cute.
+	draw_arc(pos, 7.0, phase, phase + 2.3, 8, Color(0.95, 0.9, 0.7, 0.35 + 0.25 * shimmer), 1.0)
+	draw_circle(pos + Vector2(-3.0, -1.0), 1.0, Color(0.25, 0.15, 0.08, 0.3 + 0.15 * shimmer))
+	draw_circle(pos + Vector2(3.0, -1.0), 1.0, Color(0.25, 0.15, 0.08, 0.3 + 0.15 * shimmer))
+	# An occasional faint wisp drifts up and fades, every few seconds per coin.
+	var wisp_cycle := fmod(t * 0.6 + phase, 3.2)
+	if wisp_cycle < 0.6:
+		var wisp_t := wisp_cycle / 0.6
+		var wisp_pos := pos + Vector2(sin(phase * 5.0) * 9.0, -14.0 - wisp_t * 20.0)
+		draw_circle(wisp_pos, 2.2 * (1.0 - wisp_t), Color(0.82, 0.9, 1.0, (1.0 - wisp_t) * 0.5))
+
+func _draw_pickup_seal(c: Vector2) -> void:
+	draw_circle(c, 24.0, Color(1.0, 0.85, 0.3, 0.25))
+	draw_circle(c, 17.0, Palette.GOLD_OUTLINE)
+	draw_circle(c, 14.0, Color(0.85, 0.52, 0.16))
+	draw_circle(c, 8.0, Color(1.0, 0.88, 0.45))
+	draw_circle(c + Vector2(-4, -4), 2.5, Color(1, 1, 1, 0.9))
+
+func _draw_open_hand_manual(c: Vector2) -> void:
+	# A small old book with a palm mark: a visual cue for the vault's style reward.
+	draw_circle(c, 28.0, Color(1.0, 0.82, 0.42, 0.16))
+	draw_rect(Rect2(c + Vector2(-17, -12), Vector2(34, 24)), Color(0.48, 0.29, 0.13, 1.0))
+	draw_rect(Rect2(c + Vector2(-17, -12), Vector2(34, 24)), Palette.GOLD_OUTLINE, false, 2.0)
+	draw_line(c + Vector2(0, -9), c + Vector2(0, 9), Color(1.0, 0.85, 0.52, 0.95), 2.0)
+	draw_line(c + Vector2(-6, 4), c + Vector2(-6, -4), Color(1.0, 0.85, 0.52, 0.95), 2.0)
+	draw_line(c + Vector2(0, 4), c + Vector2(0, -7), Color(1.0, 0.85, 0.52, 0.95), 2.0)
+	draw_line(c + Vector2(6, 4), c + Vector2(6, -4), Color(1.0, 0.85, 0.52, 0.95), 2.0)
+
+func _draw_secret_cache(c: Vector2) -> void:
+	# Only drawn when Lumi is close enough to reveal the hidden treasury pocket.
+	draw_circle(c, 24.0, Color(1.0, 0.78, 0.24, 0.14))
+	var pouch := PackedVector2Array([
+		c + Vector2(-12, -7), c + Vector2(-8, -14), c + Vector2(8, -14),
+		c + Vector2(12, -7), c + Vector2(10, 8), c + Vector2(0, 15),
+		c + Vector2(-10, 8), c + Vector2(-12, -7)
+	])
+	draw_colored_polygon(pouch, Color(0.38, 0.24, 0.12, 1.0))
+	draw_polyline(pouch, Palette.GOLD_OUTLINE, 2.0)
+	draw_line(c + Vector2(-7, -7), c + Vector2(7, -7), Color(1.0, 0.83, 0.38, 1.0), 2.0)
+	draw_circle(c + Vector2(-4, 2), 3.0, Color(1.0, 0.85, 0.35, 1.0))
+	draw_circle(c + Vector2(4, 5), 2.5, Color(1.0, 0.92, 0.58, 1.0))
 
 func _draw_mountain() -> void:
 	# The Collector's mountain of coins. He swallows it in phase two.
@@ -180,21 +420,19 @@ func _draw_mountain() -> void:
 
 
 func _create_ground() -> void:
-	# Ground sections - leaving gaps for platforms
-	_create_ground_section(Vector2(300, 610), Vector2(600, 80), "GreedGround1")
-	_create_ground_section(Vector2(700, 610), Vector2(600, 80), "GreedGround2")
-	_create_ground_section(Vector2(1500, 610), Vector2(1000, 80), "GreedGround3")
-	_create_ground_section(Vector2(2375, 610), Vector2(750, 80), "GreedArena")
+	# Main route: broken ground creates three small traversal decisions.
+	for i in range(MAIN_GROUND.size()):
+		var section: Rect2 = MAIN_GROUND[i]
+		_create_ground_section(section.get_center(), section.size, "GreedGround%d" % (i + 1))
 
-	# Platforms
-	_create_platform(Vector2(500, 500), Vector2(120, 20))
-	_create_platform(Vector2(900, 450), Vector2(100, 20))
-	_create_platform(Vector2(1100, 380), Vector2(100, 20))
+	# Every visible platform is created from EXTRA_PLATFORMS below. Do not add
+	# one-off colliders here: that caused invisible platforms after layout edits.
 
 	# Expanded wings: the Gold Ridge over the road to the arena, and the long
 	# Vault Route out over the pit to the old treasury. See EXTRA_PLATFORMS.
-	for rect: Rect2 in EXTRA_PLATFORMS:
-		_create_platform(rect.get_center(), rect.size)
+	for i in range(EXTRA_PLATFORMS.size()):
+		var rect: Rect2 = EXTRA_PLATFORMS[i]
+		_create_platform(rect.get_center(), rect.size, true)
 	_create_ground_section(VAULT_GROUND.get_center(), VAULT_GROUND.size, "VaultApproach")
 
 	# Boundary walls
@@ -215,15 +453,33 @@ func _create_ground_section(at: Vector2, size: Vector2, section_name: String) ->
 	ground.add_child(collision)
 	add_child(ground)
 
-func _create_platform(at: Vector2, size: Vector2) -> void:
+func _create_platform(at: Vector2, size: Vector2, one_way := false) -> void:
 	var platform := StaticBody2D.new()
 	platform.position = at
-	var collision := CollisionShape2D.new()
-	var shape := RectangleShape2D.new()
-	shape.size = size
-	collision.shape = shape
+	platform.name = "GreedRockShelf"
+	var collision := CollisionPolygon2D.new()
+	collision.polygon = _platform_local_points(Rect2(Vector2.ZERO, size))
+	collision.one_way_collision = one_way
 	platform.add_child(collision)
 	add_child(platform)
+
+# A single silhouette function feeds both drawing and collision. Broad tops and
+# bevelled sides read as broken stone outcrops rather than floating rectangles.
+func _platform_local_points(rect: Rect2) -> PackedVector2Array:
+	var half := rect.size * 0.5
+	var bevel_x := minf(12.0, half.x * 0.2)
+	return PackedVector2Array([
+		Vector2(-half.x, half.y),
+		Vector2(-half.x + bevel_x, -half.y),
+		Vector2(half.x - bevel_x, -half.y),
+		Vector2(half.x, half.y),
+	])
+
+func _platform_world_points(rect: Rect2) -> PackedVector2Array:
+	var points := _platform_local_points(rect)
+	for i in range(points.size()):
+		points[i] += rect.get_center()
+	return points
 
 func _create_boundary(at: Vector2) -> void:
 	var wall := StaticBody2D.new()
@@ -254,13 +510,15 @@ func _create_player() -> void:
 	add_child(player)
 
 	var camera := Camera2D.new()
-	camera.position = Vector2(640, 400)
+	camera.position = Vector2(0, -100)
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = 5.0
-	camera.limit_left = 0
-	camera.limit_right = 2850
-	camera.limit_top = 100
-	camera.limit_bottom = 750
+	# The vault is west of spawn; clamping at x=0 hid the entire branch off-screen.
+	camera.limit_left = int(VAULT_END_X - 100.0)
+	camera.limit_right = int(ARENA_END_X + 100.0)
+	# Let the camera travel vertically so the high ridge reads as a real climb.
+	camera.limit_top = -200
+	camera.limit_bottom = 900
 	player.add_child(camera)
 
 func _create_hud() -> void:
@@ -284,6 +542,22 @@ func _create_hud() -> void:
 	stats_label.add_theme_color_override("font_outline_color", Color(0.12, 0.10, 0.24))
 	stats_label.add_theme_constant_override("outline_size", 5)
 	hud.add_child(stats_label)
+
+	# Top-right Souls-like coin counter: a coin glyph and the running total of
+	# coins Lumi has actually picked up (separate from the carried-gold weight
+	# stat above, which can fall again when gold is spent or offered).
+	coin_hud_label = Label.new()
+	coin_hud_label.position = Vector2(1280 - 196, 18)
+	coin_hud_label.size = Vector2(176, 40)
+	coin_hud_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	coin_hud_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	coin_hud_label.add_theme_font_size_override("font_size", 22)
+	coin_hud_label.add_theme_color_override("font_color", Color(0.92, 0.82, 0.55))
+	coin_hud_label.add_theme_color_override("font_outline_color", Color(0.12, 0.10, 0.24))
+	coin_hud_label.add_theme_constant_override("outline_size", 5)
+	coin_hud_label.pivot_offset = coin_hud_label.size * 0.5
+	hud.add_child(coin_hud_label)
+	_update_coin_hud(false)
 
 	var meter := Control.new()
 	meter.set_script(load("res://scripts/lantern_meter.gd"))
@@ -309,26 +583,61 @@ func _create_hud() -> void:
 	prompt_label.add_theme_constant_override("outline_size", 6)
 	hud.add_child(prompt_label)
 
-	dialogue_panel = ColorRect.new()
-	dialogue_panel.position = Vector2(180, 482)
-	dialogue_panel.size = Vector2(920, 124)
-	dialogue_panel.color = Color(0.06, 0.07, 0.15, 0.97)
+	dialogue_panel = Panel.new()
+	dialogue_panel.position = Vector2(100, 468)
+	dialogue_panel.size = Vector2(1080, 182)
 	dialogue_panel.visible = false
+	var dialogue_style := StyleBoxFlat.new()
+	dialogue_style.bg_color = Color(0.07, 0.08, 0.14, 0.88)
+	dialogue_style.border_color = Color(1.0, 0.78, 0.30, 1.0)
+	dialogue_style.set_border_width_all(2)
+	dialogue_style.set_corner_radius_all(16)
+	dialogue_style.shadow_color = Color(0.04, 0.03, 0.10, 0.45)
+	dialogue_style.shadow_size = 12
+	dialogue_style.shadow_offset = Vector2(0, 5)
+	dialogue_panel.add_theme_stylebox_override("panel", dialogue_style)
+	dialogue_panel.add_to_group("boss_dialogue_panel")
 	hud.add_child(dialogue_panel)
 
+	dialogue_portrait = TextureRect.new()
+	dialogue_portrait.position = Vector2(18, 13)
+	dialogue_portrait.size = Vector2(156, 156)
+	dialogue_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	dialogue_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	dialogue_portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dialogue_panel.add_child(dialogue_portrait)
+
+	dialogue_location_label = Label.new()
+	dialogue_location_label.position = Vector2(190, 12)
+	dialogue_location_label.size = Vector2(860, 26)
+	dialogue_location_label.text = "THE GILDED GARDEN"
+	dialogue_location_label.add_theme_font_size_override("font_size", 17)
+	dialogue_location_label.add_theme_color_override("font_color", Color(1.0, 0.78, 0.30, 1.0))
+	dialogue_location_label.add_theme_color_override("font_outline_color", Color(0.04, 0.03, 0.10, 0.8))
+	dialogue_location_label.add_theme_constant_override("outline_size", 2)
+	dialogue_panel.add_child(dialogue_location_label)
+
 	dialogue_label = Label.new()
-	dialogue_label.position = Vector2(22, 16)
-	dialogue_label.size = Vector2(876, 92)
+	dialogue_label.position = Vector2(190, 43)
+	dialogue_label.size = Vector2(860, 124)
 	dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	dialogue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	dialogue_label.clip_text = true
+	dialogue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	dialogue_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	dialogue_label.add_theme_font_size_override("font_size", 24)
+	dialogue_label.add_theme_font_size_override("font_size", 21)
 	dialogue_label.add_theme_color_override("font_color", Color(0.97, 0.97, 1.0))
+	dialogue_label.add_theme_color_override("font_outline_color", Color(0.04, 0.03, 0.10, 0.7))
+	dialogue_label.add_theme_constant_override("outline_size", 1)
 	dialogue_panel.add_child(dialogue_label)
+
+	var boss_bar := Control.new()
+	boss_bar.set_script(BOSS_HEALTH_BAR)
+	boss_bar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hud.add_child(boss_bar)
 
 func _create_greed_level() -> void:
 	# Lore tablets
-	var lore_positions := [Vector2(380, 570), Vector2(850, 570), Vector2(1600, 570)]
+	var lore_positions := [Vector2(380, 570), Vector2(-1835, 440), Vector2(1600, 570)]
 	var lore_messages := [
 		"I only wanted enough. Then enough was a little more.",
 		"The flowers grew from the coins we dropped. Nobody remembered who dropped them.",
@@ -339,23 +648,50 @@ func _create_greed_level() -> void:
 		interactables.append({"node": lore, "message": lore_messages[i], "kind": "lore", "used": false})
 
 	# Shrines (offer gold to reduce weight)
-	var shrine_positions := [Vector2(550, 500), Vector2(1050, 440), Vector2(1450, 570)]
+	var shrine_positions := [Vector2(800, 560), Vector2(-1120, 440), Vector2(1640, 545)]
 	for i in range(shrine_positions.size()):
 		var shrine := _make_interactable("SHRINE\n[E] OFFER", shrine_positions[i], Color(0.95, 0.85, 0.5))
 		interactables.append({"node": shrine, "message": "A small golden bowl. \"Give what you carry.\"\n\nPress E to offer all carried gold.", "kind": "shrine", "used": false, "shrine_id": i})
 
-	# Coin pickups
-	var coin_positions := [Vector2(300, 560), Vector2(450, 490), Vector2(650, 560), Vector2(750, 490), Vector2(950, 560), Vector2(1150, 370), Vector2(1350, 560), Vector2(1550, 490), Vector2(1750, 560)]
+	# Coin pickups: collected automatically on approach (see _process_coins),
+	# so each one carries its own float phase for the ambient hover/shimmer.
+	var coin_positions := [
+		Vector2(300, 560), Vector2(500, 545), Vector2(730, 545),
+		Vector2(1100, 320), Vector2(1140, 545), Vector2(1380, 545),
+		Vector2(1600, 545), Vector2(1730, 545), Vector2(1760, 420),
+	]
 	for i in range(coin_positions.size()):
-		var coin := _make_interactable("COIN", coin_positions[i], Color(1.0, 0.85, 0.3))
-		interactables.append({"node": coin, "message": "A gleaming gold coin. It feels heavier than it should.\n\n+10 Gold", "kind": "coin", "used": false, "value": 10})
+		var coin := _make_interactable("", coin_positions[i], Color(1.0, 0.85, 0.3))
+		interactables.append({
+			"node": coin, "message": "A gleaming gold coin. It feels heavier than it should.\n\n+10 Gold",
+			"kind": "coin", "used": false, "value": 10,
+			"float_seed": randf() * TAU, "collecting": false, "collect_t": 0.0
+		})
+
+	# An optional pickup gives the canopy route a small exploration reward.
+	var canopy_coin := _make_interactable("", Vector2(820, 315), Color(1.0, 0.85, 0.3))
+	interactables.append({
+		"node": canopy_coin, "message": "A gleaming coin rests in the old canopy walk.\n\n+15 Gold",
+		"kind": "coin_extra", "used": false, "value": 15,
+		"float_seed": randf() * TAU, "collecting": false, "collect_t": 0.0
+	})
 
 	# The Featherweight Charm unlocks the player's double jump.
-	var charm := _make_interactable("FEATHERWEIGHT\n[E] TAKE", Vector2(1680, 500), Color(0.72, 0.9, 1.0))
+	var charm := _make_interactable("FEATHERWEIGHT\n[E] TAKE", Vector2(1545, 435), Color(0.72, 0.9, 1.0))
 	interactables.append({
 		"node": charm,
 		"message": "A feather-light charm rests among the flowers.\n\nLumi feels able to rise once more in mid-air.",
 		"kind": "featherweight",
+		"used": false
+	})
+
+	# The vault's combat manual is the reward for defeating its guardian.
+	# It can be seen before the fight, but cannot be learned until the Coin Guard falls.
+	var manual := _make_interactable("OPEN HAND MANUAL\n[E] LEARN", Vector2(-1615, 425), Color(1.0, 0.83, 0.55))
+	interactables.append({
+		"node": manual,
+		"message": "The old manual teaches Lumi to turn a held coin into an offering, then let it go.\n\nOPEN HAND UNLOCKED: palm combos, Rising Palm, Falling Petals, Wide Offering, Coin Toss, Open Palm guard, and Seven Hands.",
+		"kind": "open_hand_manual",
 		"used": false
 	})
 
@@ -372,6 +708,18 @@ func _create_greed_level() -> void:
 		var bowl := _make_interactable("BOWL\n[E] OFFER", Vector2(bowl_x, 570), Color(0.95, 0.85, 0.5))
 		interactables.append({"node": bowl, "message": "An offering bowl.", "kind": "bowl", "used": false})
 	_create_collector()
+
+	var ridge_seal := _make_interactable("SEAL\n[E] TAKE", Vector2(1925, 380), Color(1.0, 0.9, 0.5))
+	interactables.append({"node": ridge_seal, "message": "A heavy gold seal, warm from the sun.", "kind": "seal", "seal_id": "ridge", "used": false})
+
+	# Optional secret: a high treasury nook beyond the tablet. No stat buff.
+	var secret_cache := _make_interactable("???", Vector2(-1780, 300), Color(0.95, 0.82, 0.5))
+	interactables.append({
+		"node": secret_cache,
+		"message": "A forgotten purse spills 35 gold into Lumi's hands.",
+		"kind": "secret_cache",
+		"used": false
+	})
 
 	# Exit to hub
 	var exit := _make_interactable("EXIT TO HUB\n[E] RETURN", Vector2(100, 520), Color(0.7, 0.8, 0.9))
@@ -391,6 +739,7 @@ func _make_interactable(marker_text: String, at: Vector2, tint: Color) -> Node2D
 	label.add_theme_color_override("font_color", tint)
 	label.add_theme_color_override("font_outline_color", Color(0.12, 0.10, 0.24))
 	label.add_theme_constant_override("outline_size", 5)
+	label.visible = false
 	marker.add_child(label)
 	add_child(marker)
 	return marker
@@ -411,20 +760,24 @@ func _connect_signals() -> void:
 	player.status_changed.connect(_show_status)
 
 func _process(delta: float) -> void:
-	# Apply weight debuff to player
-	if weight_debuff > 0.0:
-		# Escalating costs. Above 30 weight: slower, lower jumps. From 50: +1 damage
-		# per hit. From 60: no dash or double jump.
-		var felt := minf(1.0, weight_debuff * RunState.debuff_scale())
-		player.set("move_speed_mod", 1.0 - felt * 0.5)
-		player.set("jump_power_mod", 1.0 - felt * 0.5)
-		player.set("vulnerable", 1 if felt >= 0.5 else 0)
-		player.set("weighed_down", felt >= 0.6)
-	else:
-		player.set("move_speed_mod", 1.0)
-		player.set("jump_power_mod", 1.0)
-		player.set("vulnerable", 0)
-		player.set("weighed_down", false)
+	if is_instance_valid(dialogue_label):
+		_update_dialogue_portrait(dialogue_label.text)
+	# Pips stick small coins to Lumi until a dash shakes them loose. Sap wears off.
+	sticky_sap_time = maxf(0.0, sticky_sap_time - delta)
+	var dash_active := float(player.get("dash_timer")) > 0.0
+	if dash_active and not last_dash_active and pip_coin_stacks > 0:
+		pip_coin_stacks = 0
+		_show_status("PIP COINS SHAKEN OFF")
+	last_dash_active = dash_active
+	_process_coins(delta)
+	_process_coin_hud_pulse(delta)
+	var felt := minf(1.0, weight_debuff * RunState.debuff_scale())
+	var pip_speed := 1.0 - 0.05 * float(pip_coin_stacks)
+	var sap_speed := 0.82 if sticky_sap_time > 0.0 else 1.0
+	player.set("move_speed_mod", (1.0 - felt * 0.5) * pip_speed * sap_speed)
+	player.set("jump_power_mod", (1.0 - felt * 0.5) * (1.0 - 0.03 * float(pip_coin_stacks)) * (0.88 if sticky_sap_time > 0.0 else 1.0))
+	player.set("vulnerable", 1 if felt >= 0.5 else 0)
+	player.set("weighed_down", felt >= 0.6)
 
 	# Killbox
 	if player.global_position.y > 900.0:
@@ -457,22 +810,106 @@ func _process(delta: float) -> void:
 		prompt_label.text = ""
 		return
 
+	# Keep the secret's label hidden until Lumi is close enough to notice the glint.
+	for item in interactables:
+		if item["kind"] == "secret_cache" and is_instance_valid(item["node"]):
+			item["node"].visible = not secret_cache_found and player.global_position.distance_to(item["node"].global_position) < 220.0
+
 	var nearest: Dictionary = {}
 	var nearest_distance := 95.0
+	var nearest_label_target: Node2D = null
+	var nearest_label_distance := 180.0
 	for item in interactables:
 		var target: Node2D = item["node"]
-		if not is_instance_valid(target) or item.get("used", false):
+		if not is_instance_valid(target) or item.get("used", false) or not target.visible:
+			continue
+		# Coins are collected automatically on approach (see _process_coins):
+		# they never show an E-interact prompt or a floating label.
+		var kind: String = item.get("kind", "")
+		if kind == "coin" or kind == "coin_extra":
 			continue
 		var distance := player.global_position.distance_to(target.global_position)
+		if distance < nearest_label_distance:
+			nearest_label_distance = distance
+			nearest_label_target = target
 		if distance < nearest_distance:
 			nearest_distance = distance
 			nearest = item
+	for item in interactables:
+		var target: Node2D = item["node"]
+		if not is_instance_valid(target):
+			continue
+		var label := target.get_node_or_null("Label") as Label
+		if is_instance_valid(label):
+			label.visible = target == nearest_label_target
 
 	prompt_label.text = "E  •  interact" if not nearest.is_empty() else ""
 	if not nearest.is_empty() and Input.is_action_just_pressed("interact"):
 		_interact(nearest)
 
+# Automatic, proximity-based coin pickup (Mario-style collection, Souls-like
+# presentation). Runs every frame regardless of dialogue/story state, same as
+# the Killbox and weight checks above, so coins keep collecting even while a
+# banner or dialogue line is on screen.
+func _process_coins(delta: float) -> void:
+	if not is_instance_valid(player):
+		return
+	for item in interactables:
+		var kind: String = item.get("kind", "")
+		if kind != "coin" and kind != "coin_extra":
+			continue
+		if item.get("used", false):
+			continue
+		var target: Node2D = item.get("node")
+		if not is_instance_valid(target) or not target.visible:
+			continue
+		if item.get("collecting", false):
+			item["collect_t"] = float(item.get("collect_t", 0.0)) + delta
+			if float(item["collect_t"]) >= COIN_COLLECT_TIME:
+				_finish_coin_collection(item)
+			else:
+				queue_redraw()
+			continue
+		if player.global_position.distance_to(target.global_position) <= COIN_COLLECT_RADIUS:
+			_begin_coin_collection(item)
+
+func _begin_coin_collection(item: Dictionary) -> void:
+	item["collecting"] = true
+	item["collect_t"] = 0.0
+	var value: int = item.get("value", 10)
+	add_gold(value)  # already emits collectible_found("coin") and updates weight/HUD
+	total_coins_collected += 1
+	_update_coin_hud(true)
+	queue_redraw()
+
+func _finish_coin_collection(item: Dictionary) -> void:
+	item["used"] = true
+	var target: Node2D = item.get("node")
+	if is_instance_valid(target):
+		target.visible = false
+	if item.has("marker") and is_instance_valid(item["marker"]):
+		item["marker"].visible = false
+	queue_redraw()
+
+func _update_coin_hud(pulse: bool) -> void:
+	if not is_instance_valid(coin_hud_label):
+		return
+	coin_hud_label.text = "🪙 × %d" % total_coins_collected
+	if pulse:
+		coin_hud_pulse = 0.22
+
+func _process_coin_hud_pulse(delta: float) -> void:
+	if not is_instance_valid(coin_hud_label):
+		return
+	if coin_hud_pulse > 0.0:
+		coin_hud_pulse = maxf(0.0, coin_hud_pulse - delta)
+		var s := 1.0 + 0.3 * (coin_hud_pulse / 0.22)
+		coin_hud_label.scale = Vector2(s, s)
+	elif coin_hud_label.scale != Vector2.ONE:
+		coin_hud_label.scale = Vector2.ONE
+
 func _interact(item: Dictionary) -> void:
+	queue_redraw()
 	var kind: String = item["kind"]
 	var target: Node2D = item["node"]
 
@@ -494,40 +931,49 @@ func _interact(item: Dictionary) -> void:
 				Story.play(self, dialogue_panel, dialogue_label, Story.GREED_SHRINE + [[msg, 3.6]])
 			else:
 				_show_dialogue(msg, target)
-		"coin":
-			item["used"] = true
-			target.visible = false
-			var value: int = item.get("value", 10)
-			carried_gold += value
-			_update_weight()
-			collectible_found.emit("coin")
-			_show_dialogue(item["message"], target)
 		"featherweight":
 			item["used"] = true
 			target.visible = false
 			unlock_featherweight()
 			_show_dialogue(item["message"], target)
+		"open_hand_manual":
+			if not miniboss_defeated:
+				_show_dialogue("The manual is sealed beneath a heavy coin clasp. The Coin Guard still carries the key.", target)
+				return
+			item["used"] = true
+			target.visible = false
+			has_open_hand = true
+			if is_instance_valid(player):
+				player.call("unlock_style", "open_hand")
+			collectible_found.emit("open_hand")
+			_show_dialogue(item["message"], target)
+			_show_status("OPEN HAND LEARNED. TAB SWAPS STYLES.")
 		"boss":
 			if boss_defeated:
 				_show_dialogue("The mountain is gone. Only a small, quiet shine is left in the bowl.", target)
+			elif seals.size() < SEALS_NEEDED:
+				_show_dialogue("The mountain's gate is shut tight.\n\nSEALS %d/%d. Two seals lie far from the main road." % [seals.size(), SEALS_NEEDED], target)
 			else:
 				_start_collector_fight()
 		"bowl":
 			_offer_at_bowl(target)
 		"exit":
 			return_to_hub.emit()
+		"seal":
+			item["used"] = true
+			target.visible = false
+			_grant_seal(item["seal_id"])
+			_show_status("SEAL %d/%d" % [seals.size(), SEALS_NEEDED])
+			_show_dialogue(item["message"], target)
 		"vault_exit":
 			# Lands Lumi on the hub's upper platform instead of the start.
 			get_tree().call_group("game_main", "_return_to_hub", true)
-		"coin_extra":
-			if item.get("used", false):
-				return
+		"secret_cache":
 			item["used"] = true
-			if item.has("marker") and is_instance_valid(item["marker"]):
-				item["marker"].visible = false
-			var val: int = item.get("value", 15)
-			add_gold(val)
-			_show_dialogue("Lumi picks up %d gold." % val)
+			target.visible = false
+			secret_cache_found = true
+			add_gold(35)
+			_show_dialogue(item["message"], target)
 		_:
 			_show_dialogue(item["message"], target)
 
@@ -548,11 +994,48 @@ func _update_weight() -> void:
 	if carried_gold >= 60:
 		_show_status("BURDEN: You held on too tightly.")
 
+func apply_pip_coin() -> void:
+	if pip_coin_stacks >= 3:
+		return
+	pip_coin_stacks += 1
+	_update_hud()
+	_show_status("PIP COIN STUCK: DASH TO SHAKE IT OFF (%d/3)" % pip_coin_stacks)
+
+func apply_sticky_sap() -> void:
+	sticky_sap_time = 2.8
+	_update_hud()
+	_show_status("GILDED SAP: MOVEMENT SLOWED")
+
+func _update_dialogue_portrait(message: String) -> void:
+	if not is_instance_valid(dialogue_portrait):
+		return
+	var lower := message.to_lower()
+	var expression := "neutral"
+	if lower.contains("exhaust") or lower.contains("tired") or lower.contains("sleep") or lower.contains("drowse") or lower.contains("can't move"):
+		expression = "exhausted"
+	elif lower.contains("surprise") or lower.contains("what?") or lower.contains("oh!") or lower.contains("hello!") or lower.contains("suddenly"):
+		expression = "surprised"
+	elif lower.contains("promise") or lower.contains("brave") or lower.contains("keep going") or lower.contains("determined") or lower.contains("fight"):
+		expression = "determined"
+	elif lower.contains("sorry") or lower.contains("miss") or lower.contains("lost") or lower.contains("lonely") or lower.contains("sad") or lower.contains("hurt") or lower.contains("forgive"):
+		expression = "sad"
+	if expression == dialogue_portrait_text and dialogue_portrait.texture != null:
+		return
+	dialogue_portrait_text = expression
+	dialogue_portrait.texture = load("res://assets/portraits/lumi/lumi_%s.png" % expression)
+
 func _show_dialogue(message: String, target: Node2D = null) -> void:
 	dialogue_label.text = message
 	dialogue_panel.visible = true
 	dialogue_open = true
 	dialogue_target = target
+	var shown_text := message
+	await get_tree().create_timer(Story.reading_time(shown_text)).timeout
+	# Do not let an older timer hide a newer line or a story beat.
+	if dialogue_open and dialogue_label.text == shown_text and not bool(get_meta("story_busy", false)):
+		dialogue_panel.visible = false
+		dialogue_open = false
+		dialogue_target = null
 
 func _update_hud(_value: int = 0) -> void:
 	if not is_instance_valid(player) or not is_instance_valid(stats_label):
@@ -569,6 +1052,10 @@ func _update_hud(_value: int = 0) -> void:
 		parts.append("WEIGHT: %.0f%%" % (weight_debuff * 100))
 	if has_featherweight:
 		parts.append("DOUBLE JUMP: UNLOCKED")
+	if pip_coin_stacks > 0:
+		parts.append("PIP COINS: %d/3 (DASH TO SHAKE OFF)" % pip_coin_stacks)
+	if sticky_sap_time > 0.0:
+		parts.append("GILDED SAP: %.1fs" % sticky_sap_time)
 	stats_label.text = "    ".join(parts)
 
 func _show_status(message: String) -> void:
@@ -585,7 +1072,10 @@ func save_state() -> Dictionary:
 		"boss_defeated": boss_defeated,
 		"has_open_hand": has_open_hand,
 		"has_gold_key": has_gold_key,
-		"coin_guard_defeated": miniboss_defeated
+		"secret_cache_found": secret_cache_found,
+		"coin_guard_defeated": miniboss_defeated,
+		"seals": seals.duplicate(),
+		"total_coins_collected": total_coins_collected
 	}
 
 # Puts Greed back the way a save left it: the charm taken, the Collector gone.
@@ -593,17 +1083,36 @@ func apply_save(d: Dictionary) -> void:
 	if bool(d.get("featherweight_found", false)):
 		featherweight_found = true
 		has_featherweight = true
+		if is_instance_valid(player):
+			player.set("can_double_jump", true)
 		for item in interactables:
 			if item["kind"] == "featherweight":
 				item["used"] = true
 				item["node"].visible = false
+	if bool(d.get("secret_cache_found", false)):
+		secret_cache_found = true
+		for item in interactables:
+			if item["kind"] == "secret_cache":
+				item["used"] = true
+				item["node"].visible = false
+	if bool(d.get("has_open_hand", false)):
+		has_open_hand = true
+		if is_instance_valid(player) and not player.get("unlocked_styles").has("open_hand"):
+			player.get("unlocked_styles").append("open_hand")
+		for item in interactables:
+			if item["kind"] == "open_hand_manual":
+				item["used"] = true
+				item["node"].visible = false
+	for id in d.get("seals", []):
+		_grant_seal(str(id))
+		_hide_seal_marker(str(id))
 	if bool(d.get("coin_guard_defeated", false)):
 		miniboss_defeated = true
 		if is_instance_valid(coin_guard):
 			coin_guard.queue_free()
+		_ensure_vault_seal_drop()
 	if bool(d.get("boss_defeated", false)):
 		boss_defeated = true
-		has_open_hand = bool(d.get("has_open_hand", true))
 		has_gold_key = bool(d.get("has_gold_key", true))
 		boss_item["used"] = true
 		boss_item["node"].visible = false
@@ -611,6 +1120,9 @@ func apply_save(d: Dictionary) -> void:
 		if is_instance_valid(collector):
 			collector.queue_free()
 		queue_redraw()
+	total_coins_collected = int(d.get("total_coins_collected", total_coins_collected))
+	_update_coin_hud(false)
+	queue_redraw()
 	_update_hud()
 
 func unlock_featherweight() -> void:
@@ -667,7 +1179,7 @@ func _banner(text: String, seconds: float) -> void:
 	dialogue_open = false
 	dialogue_label.text = text
 	dialogue_panel.visible = true
-	banner_time = seconds
+	banner_time = maxf(seconds, Story.reading_time(text))
 
 func _start_collector_fight() -> void:
 	if fight_active or boss_defeated or not is_instance_valid(collector):
@@ -693,8 +1205,9 @@ func _collector_intro() -> void:
 		["THE COLLECTOR: Sad? I'm not sad. I'm full. I have so much.", 3.0]
 	]
 	for line in lines:
-		_banner(line[0], line[1])
-		await get_tree().create_timer(line[1]).timeout
+		var seconds := maxf(float(line[1]), Story.reading_time(str(line[0])))
+		_banner(str(line[0]), seconds)
+		await get_tree().create_timer(seconds).timeout
 		if my_id != scene_id:
 			return
 	if is_instance_valid(collector):
@@ -776,25 +1289,24 @@ func _on_collector_defeated() -> void:
 		["NIM: ...You can let go. It's okay.", 2.6],
 		["(He puts the coin in the offering bowl. He fades.)", 3.0],
 		["THE COLLECTOR: It's so light.", 2.6],
-		["THE OPEN HAND (OFFERING STYLE) AND THE GOLD KEY ARE YOURS.", 3.4]
+		["THE GOLD KEY IS YOURS. THE OLD TREASURY HAS ITS OWN REWARD.", 3.4]
 	]
 	for line in lines:
-		_banner(line[0], line[1])
-		await get_tree().create_timer(line[1]).timeout
+		var seconds := maxf(float(line[1]), Story.reading_time(str(line[0])))
+		_banner(str(line[0]), seconds)
+		await get_tree().create_timer(seconds).timeout
 		if my_id != scene_id:
 			return
-	has_open_hand = true
-	if is_instance_valid(player):
-		player.call("unlock_style", "open_hand")
 	has_gold_key = true
-	collectible_found.emit("open_hand")
 	collectible_found.emit("gold_key")
 	_open_vault_route()
 	region_cleared.emit("greed")
 
 func _create_expanded_content() -> void:
-	# Small mobs spread across expanded areas
-	var mite_positions := [Vector2(700, 550), Vector2(1050, 550), Vector2(1450, 550), Vector2(1750, 550), Vector2(1550, 445), Vector2(1890, 345), Vector2(305, 495), Vector2(-125, 395), Vector2(-485, 295), Vector2(-845, 295), Vector2(-1025, 345), Vector2(-1650, 445)]
+	# Mites patrol the lower road and the sheltered vault approach.
+	var mite_positions := [
+		Vector2(1100, 550), Vector2(1740, 550), Vector2(-150, 404), Vector2(-900, 404),
+	]
 	for pos in mite_positions:
 		var mite := CharacterBody2D.new()
 		mite.set_script(GREEDY_MITE)
@@ -808,11 +1320,40 @@ func _create_expanded_content() -> void:
 		if mite.has_signal("dropped_coin"):
 			mite.connect("dropped_coin", Callable(self, "_on_mite_dropped"))
 
+	# Penny Pips telegraph a hop, then stick a coin to Lumi on contact.
+	var pip_positions := [Vector2(500, 554), Vector2(810, 474), Vector2(-650, 404)]
+	for pos in pip_positions:
+		var pip := CharacterBody2D.new()
+		pip.set_script(PENNY_PIP)
+		pip.position = pos
+		var pip_collision := CollisionShape2D.new()
+		var pip_shape := CapsuleShape2D.new()
+		pip_shape.radius = 13.0
+		pip_shape.height = 32.0
+		pip_collision.shape = pip_shape
+		pip.add_child(pip_collision)
+		add_child(pip)
+		pip.connect("dropped_coin", Callable(self, "_on_mite_dropped"))
+
+	# Gilded Blossoms hold a high perch and telegraph arcing sticky sap shots.
+	var blossom_positions := [Vector2(1510, 468), Vector2(-400, 348)]
+	for pos in blossom_positions:
+		var blossom := StaticBody2D.new()
+		blossom.set_script(GILDED_BLOSSOM)
+		blossom.position = pos
+		var blossom_collision := CollisionShape2D.new()
+		var blossom_shape := CircleShape2D.new()
+		blossom_shape.radius = 20.0
+		blossom_collision.shape = blossom_shape
+		blossom.add_child(blossom_collision)
+		add_child(blossom)
+		blossom.connect("dropped_coin", Callable(self, "_on_mite_dropped"))
+
 	# Mini-boss: Coin Guard deeper in left wing
 	if not miniboss_defeated:
 		coin_guard = CharacterBody2D.new()
 		coin_guard.set_script(COIN_GUARD)
-		coin_guard.position = Vector2(-1500, 440)
+		coin_guard.position = Vector2(-1400, 440)
 		var c2 := CollisionShape2D.new()
 		var s2 := CapsuleShape2D.new()
 		s2.radius = 26.0
@@ -825,11 +1366,17 @@ func _create_expanded_content() -> void:
 		if coin_guard.has_signal("defeated"):
 			coin_guard.connect("defeated", Callable(self, "_on_coin_guard_defeated"))
 
-	# Extra coins in expanded wings
-	var extra_coins := [Vector2(1550, 440), Vector2(1890, 340), Vector2(125, 440), Vector2(-305, 340), Vector2(-665, 240), Vector2(-1025, 340), Vector2(-1205, 390), Vector2(-1800, 440), Vector2(1380, 490)]
+	# Extra coins in expanded wings: also collected automatically on approach.
+	var extra_coins := [
+		Vector2(1360, 470), Vector2(-150, 390), Vector2(-820, 390),
+	]
 	for pos in extra_coins:
-		var marker := _make_interactable("GOLD\n[E] TAKE", pos, Color(1.0, 0.9, 0.5))
-		interactables.append({"node": marker, "message": "Lumi picks up gold.", "kind": "coin_extra", "used": false, "value": 15, "marker": marker})
+		var marker := _make_interactable("", pos, Color(1.0, 0.9, 0.5))
+		interactables.append({
+			"node": marker, "message": "Lumi picks up gold.", "kind": "coin_extra", "used": false,
+			"value": 15, "marker": marker,
+			"float_seed": randf() * TAU, "collecting": false, "collect_t": 0.0
+		})
 
 func _on_mite_dropped(amount: int) -> void:
 	add_gold(amount)
@@ -839,7 +1386,35 @@ func _on_guard_dropped(amount: int) -> void:
 
 func _on_coin_guard_defeated() -> void:
 	miniboss_defeated = true
-	_show_status("COIN GUARD DEFEATED.")
+	_ensure_vault_seal_drop()
+	_show_status("COIN GUARD DEFEATED. THE VAULT SEAL DROPPED.")
+
+func _ensure_vault_seal_drop() -> void:
+	if seals.has("vault"):
+		return
+	for item in interactables:
+		if item.get("kind", "") == "seal" and item.get("seal_id", "") == "vault" and not item.get("used", false):
+			return
+	var seal_drop := _make_interactable("VAULT SEAL\n[E] TAKE", Vector2(-1400, 440), Color(1.0, 0.9, 0.5))
+	interactables.append({
+		"node": seal_drop,
+		"message": "The Coin Guard's shield splits open. A heavy vault seal drops onto the stone.",
+		"kind": "seal",
+		"seal_id": "vault",
+		"used": false
+	})
+	queue_redraw()
+
+func _grant_seal(id: String) -> void:
+	if not seals.has(id):
+		seals.append(id)
+
+func _hide_seal_marker(id: String) -> void:
+	for item in interactables:
+		if item["kind"] == "seal" and item.get("seal_id", "") == id:
+			item["used"] = true
+			item["node"].visible = false
+			queue_redraw()
 
 func _open_vault_route() -> void:
 	post_boss_open = true
