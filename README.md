@@ -35,7 +35,7 @@ Implemented in code:
 - The Still Pond hub with seven doors, bench, altar, Memory Tree, Mirror Gate placeholder, Marl and Orrin
 - Greed region with proximity-collected coins, weight penalties, offering shrines, lore tablets, and a Featherweight Charm that unlocks double jump
 - Greed encounters: patrolling Greedy Mites, hopping Penny Pips that stick coins to Lumi (dash to shake them off), and Gilded Blossoms that telegraph and spit slowing sap
-- Coin Guard mini-boss in the buried mint hall: an 8-hit shield with visible pips, a clearly telegraphed rushing slam, 48 health with an overhead bar, and a physical Vault Seal pickup on defeat. The seal is collected with E and is saved separately from the boss defeat, so leaving it behind does not grant it
+- Coin Guard mini-boss in the buried mint hall: an 8-hit shield with visible pips, a close-range telegraphed rushing slam, 48 health with a screen-fixed HUD bar, and a physical Vault Seal pickup on defeat. The seal is collected with E and is saved separately from the boss defeat, so leaving it behind does not grant it
 - The Collector boss (never run, values are guesses): Coin Rain and belly slam, then below 66% health he swallows his coin mountain and grows (faster if Lumi carries gold) while the arena's left wall creeps inward, then below 33% he lunges for Lumi's purse. A grab with gold steals it all and heals him; with empty hands it whiffs and leaves him open. Offering bowls hurt and shrink him. Defeat plays the bible's lines, sets the Open Hand and Gold Key flags and clears Greed, which returns Lumi to the hub with one more key
 - Wake → Hub → Greed → Hub handoff using the same Lumi instance
 - Hub arrival positioned beside the Greed door without the bench/NPC stealing the first interaction
@@ -177,7 +177,9 @@ Rooms are chosen by Lumi's x. The camera is locked to the room's camera range an
 | Hammock climb | six 110px platforms, x = 2390 to 3350, tops from y=490 up to y=240 |
 | High ledge | x = 3410 to 3960, top y=240 |
 | Pre-boss bench | x = 3830 (under the ledge) |
-| Boss marker, lock wall, end wall | x = 4440, 4330, 5190 |
+| Dozy Warden arena ledge | x = 4200 to 4840, top y=120 |
+| Boss marker, lock wall, end wall | x = 4440, 4180, 5400 |
+| The Dreamer's fight bounds | x = 4200 to 5350 |
 | Phase 3 climb walls | x = 4420 and 5110, heart at (5030, 210) |
 
 Platforms are listed in `PLATFORMS` in `sloth.gd`. Steps up are 55px or less, gaps are 60px or more.
@@ -187,10 +189,13 @@ Platforms are listed in `PLATFORMS` in `sloth.gd`. Steps up are 55px or less, ga
 | Thing | Position |
 |-------|----------|
 | Start marker for the fight | x = 2130 (E to approach) |
-| Left lock wall during the fight | x = 2000, creeps inward as he grows (up to 150px) |
+| Coin Guard arena floor | x = -2050 to -800 (1250px wide) |
+| Left lock wall during the fight | x = 1800, creeps inward as he grows (up to 150px) |
 | Offering bowls | x = 2230 and x = 2660 |
 | The Collector / his coin mountain | x = 2500 / x = 2580 |
-| End wall | x = 2750 |
+| Collector arena floor and end wall | x = 1890 to 3000 (1110px wide) / x = 3000 |
+
+The Collector and Dreamer now have broader combat bounds, and the Coin Guard's mint floor and Dozy Warden's upper ledge provide more room to maneuver. Their visible arena markings follow those wider spaces; the changes use existing region terrain and do not add obstacles inside the fights.
 
 ### Greed route layout
 
@@ -205,7 +210,7 @@ Greed has a lower road, an upper canopy floor and two optional branch routes. Th
 - The Coin Guard is the Vault's mini-boss. Defeating it drops a visible Vault Seal beside the mint gate. Lumi must collect it; it is not silently added on defeat. The saved boss state preserves an uncollected drop.
 - The treasury's hidden upper nook has a glint near its first shelf. The next shelf sits 90px above it, so the optional 35-gold cache requires Double Jump.
 
-The route platforms use the same shapes for collision and drawing. Their landing tops are level; only the sides are beveled. The route shelves are one-way platforms, keeping drops and upward passage clear. Keep rises at 55px or less, leave 50px of headroom, and keep flat-edge gaps at 60px or more. Only the closest nearby interaction label is shown at a time, to keep the route visible. Weight can lower Lumi's jump; shrines are placed before the canopy climb, on the treasury approach, and below the Gold Ridge.
+The route platforms use the same shapes for collision and drawing. Their landing tops are level; only the sides are beveled. The route shelves are one-way platforms, keeping drops and upward passage clear. Keep rises at 55px or less, leave 50px of headroom, and keep flat-edge gaps at 60px or more. Only the closest nearby interaction label is shown at a time, to keep the route visible. Weight can lower Lumi's jump; shrines are placed before the canopy climb, on the treasury approach, and below the Gold Ridge. Shrine bowls and the Featherweight Charm have distinct world sprites; mint and Collector arenas use floor inlays and simple stone framing rather than extra collision clutter.
 
 ## How the code works
 

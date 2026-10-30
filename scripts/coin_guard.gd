@@ -90,7 +90,7 @@ func _physics_process(delta: float) -> void:
 
 	if state == "idle":
 		velocity.x = 0.0
-		if state_time > 1.0 and is_instance_valid(player_ref) and global_position.distance_to(player_ref.global_position) < 340.0 and slam_cooldown <= 0.0:
+		if state_time > 1.0 and is_instance_valid(player_ref) and global_position.distance_to(player_ref.global_position) < 190.0 and slam_cooldown <= 0.0:
 			_start_slam()
 	elif state == "slam_windup":
 		velocity.x = 0.0
@@ -128,7 +128,7 @@ func _start_slam() -> void:
 	slam_hit_done = false
 
 func _update_boss_bar() -> void:
-	var engaged := is_instance_valid(player_ref) and global_position.distance_to(player_ref.global_position) < 620.0
+	var engaged := is_instance_valid(player_ref) and global_position.distance_to(player_ref.global_position) < 300.0
 	if engaged and not boss_bar_active:
 		boss_bar_active = true
 		get_tree().call_group("boss_health_bar", "show_boss", self, "COIN GUARD", health, max_health)

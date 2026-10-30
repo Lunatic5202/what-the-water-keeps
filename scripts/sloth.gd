@@ -22,8 +22,8 @@ signal return_to_hub
 
 const INK := Color(0.12, 0.10, 0.24)
 const START := Vector2(150, 560)
-const ARENA_LOCK_X := 4330.0
-const ARENA_END_X := 5190.0
+const ARENA_LOCK_X := 4180.0
+const ARENA_END_X := 5400.0
 const GROUND_TOP := 600.0
 
 # Solid platforms: Rect2(left, top, width, height). Same list draws and collides.
@@ -39,7 +39,7 @@ const PLATFORMS := [
 	Rect2(3070, 290, 110, 24),
 	Rect2(3240, 240, 110, 24),
 	Rect2(3410, 240, 550, 40),     # high ledge
-	Rect2(3700, 600, 1550, 120),   # pre-boss ground and arena
+	Rect2(3700, 600, 1800, 120),   # pre-boss ground and broad arena floor
 ]
 # Extra routes. Same rules as PLATFORMS, drawn and solid.
 # Loft: a stair of ledges up and left from the first landing, with lanterns.
@@ -48,7 +48,7 @@ const PLATFORMS := [
 const EXTRA_PLATFORMS := [
 	Rect2(1350, 480, 90, 18), Rect2(1180, 440, 90, 18), Rect2(1010, 400, 90, 18),
 	Rect2(840, 360, 90, 18), Rect2(670, 320, 90, 18), Rect2(250, 280, 340, 18),
-	Rect2(4020, 200, 110, 20), Rect2(4190, 160, 110, 20), Rect2(4360, 120, 340, 24),
+	Rect2(4020, 200, 110, 20), Rect2(4190, 160, 110, 20), Rect2(4200, 120, 640, 24),
 	Rect2(4760, 160, 110, 20), Rect2(4930, 200, 110, 20), Rect2(5100, 240, 70, 20),
 ]
 # Bobbing pillows over the first pit: [centre, phase]
@@ -223,8 +223,8 @@ func _create_dreamer() -> void:
 	shape.shape = circle
 	dreamer.add_child(shape)
 	add_child(dreamer)
-	dreamer.set("arena_left", 4350.0)
-	dreamer.set("arena_right", 5150.0)
+	dreamer.set("arena_left", 4200.0)
+	dreamer.set("arena_right", 5350.0)
 	dreamer.set("floor_y", GROUND_TOP)
 	dreamer.set("heart_pos", Vector2(5015, 230))
 	dreamer.defeated.connect(_on_dreamer_defeated)
@@ -480,6 +480,7 @@ func _draw() -> void:
 	for rect: Rect2 in PLATFORMS + EXTRA_PLATFORMS:
 		draw_rect(rect, Palette.SLOTH_GROUND)
 		draw_rect(Rect2(rect.position, Vector2(rect.size.x, 5)), Palette.SLOTH_GROUND_TOP)
+	_draw_boss_arenas()
 	# Lanterns.
 	for item in lantern_items:
 		_draw_lantern(item)
@@ -492,6 +493,26 @@ func _draw() -> void:
 	if not sloth_miniboss_defeated:
 		draw_circle(Vector2(4530, 90), 58.0, Color(0.77, 0.72, 1.0, 0.13))
 		draw_arc(Vector2(4530, 90), 45.0, 0.0, TAU, 32, Color(0.86, 0.81, 1.0, 0.95), 3.0)
+
+func _draw_boss_arenas() -> void:
+	# The upper sky-route ledge gets a quiet moonstone frame around the Warden.
+	for x in [4200.0, 4840.0]:
+		draw_rect(Rect2(x - 9.0, 126.0, 18.0, 106.0), Color(0.31, 0.29, 0.50, 1.0))
+		draw_rect(Rect2(x - 9.0, 126.0, 18.0, 106.0), Color(0.67, 0.65, 0.85, 0.9), false, 2.0)
+		draw_line(Vector2(x, 145.0), Vector2(x, 218.0), Color(0.79, 0.76, 0.95, 0.8), 2.0)
+	# The Dreamer's lower arena is marked with a stitched, moonlit floor medallion.
+	var ink := Color(0.30, 0.28, 0.49, 0.78)
+	var thread := Color(0.67, 0.66, 0.88, 0.78)
+	draw_arc(Vector2(4750.0, 596.0), 470.0, PI, TAU, 64, ink, 4.0)
+	draw_arc(Vector2(4750.0, 596.0), 425.0, PI, TAU, 64, thread, 2.0)
+	for x in [4300.0, 4525.0, 4750.0, 4975.0, 5200.0]:
+		draw_circle(Vector2(x, 590.0), 5.0, Color(0.79, 0.78, 0.98, 0.85))
+	# Narrow side pillars frame the encounter without closing the broad arena floor.
+	for x in [4230.0, 5350.0]:
+		draw_rect(Rect2(x - 13.0, 420.0, 26.0, 176.0), Color(0.38, 0.36, 0.59, 1.0))
+		draw_rect(Rect2(x - 13.0, 420.0, 26.0, 176.0), ink, false, 3.0)
+		draw_line(Vector2(x, 435.0), Vector2(x, 576.0), thread, 2.0)
+		draw_arc(Vector2(x, 430.0), 19.0, PI, TAU, 16, thread, 2.0)
 
 # The Snail Grips walls: pale stitched cloth that rises from the ground when
 # phase 3 starts. Bright on purpose so they read through the dim overlay.
@@ -888,8 +909,8 @@ func _create_sloth_expanded() -> void:
 		sloth_miniboss = CharacterBody2D.new()
 		sloth_miniboss.set_script(WARDEN)
 		sloth_miniboss.position = Vector2(4530, 90)
-		sloth_miniboss.set("left_x", 4390.0)
-		sloth_miniboss.set("right_x", 4670.0)
+		sloth_miniboss.set("left_x", 4250.0)
+		sloth_miniboss.set("right_x", 4800.0)
 		var shape := CollisionShape2D.new()
 		var circle := CircleShape2D.new()
 		circle.radius = 30.0

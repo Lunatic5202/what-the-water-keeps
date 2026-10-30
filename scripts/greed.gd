@@ -43,11 +43,11 @@ const GREEDY_MITE := preload("res://scripts/greedy_mite.gd")
 const COIN_GUARD := preload("res://scripts/coin_guard.gd")
 const PENNY_PIP := preload("res://scripts/penny_pip.gd")
 const GILDED_BLOSSOM := preload("res://scripts/gilded_blossom.gd")
-const ARENA_LOCK_X := 2000.0   # left lock wall while the fight is on (marker is at 2130)
-const ARENA_END_X := 2750.0    # permanent end wall of Greed
+const ARENA_LOCK_X := 1800.0   # left lock wall while the fight is on (marker is at 2130)
+const ARENA_END_X := 3000.0    # permanent end wall of Greed
 const COLLECTOR_X := 2500.0
-const VAULT_END_X := -1930.0   # far left wall, past the vault
-const VAULT_GROUND := Rect2(-1900, 470, 900, 60)   # the old treasury floor
+const VAULT_END_X := -2080.0   # far left wall, past the vault
+const VAULT_GROUND := Rect2(-2050, 470, 1250, 60)   # broad old treasury arena floor
 const VAULT_EXIT_POS := Vector2(-1730, 440)
 
 # Main route deliberately has three readable 60px breaks. They are easy to
@@ -57,7 +57,7 @@ const MAIN_GROUND := [
 	Rect2(0, 570, 620, 90),
 	Rect2(680, 570, 570, 90),
 	Rect2(1310, 570, 520, 90),
-	Rect2(1890, 570, 860, 90),
+	Rect2(1890, 570, 1110, 90),
 ]
 
 # Extra floors: Rect2(left, top, width, height). Their visible tops and collision
@@ -200,6 +200,7 @@ func _draw() -> void:
 	# The treasury floor remains a broad, solid stone shelf.
 	draw_rect(VAULT_GROUND, ground)
 	draw_rect(Rect2(VAULT_GROUND.position, Vector2(VAULT_GROUND.size.x, 5)), top)
+	_draw_boss_arenas()
 
 	# A small glint hints at the treasury pocket without exposing its cache marker.
 	if not secret_cache_found:
@@ -234,8 +235,12 @@ func _draw() -> void:
 			_draw_pickup_seal(item["node"].position)
 		elif kind == "open_hand_manual":
 			_draw_open_hand_manual(item["node"].position)
+		elif kind == "featherweight":
+			_draw_featherweight_charm(item["node"].position)
 		elif kind == "secret_cache":
 			_draw_secret_cache(item["node"].position)
+		elif kind == "bowl" or kind == "shrine":
+			_draw_offering_bowl(item["node"].position, kind == "shrine")
 
 	if mountain_visible:
 		_draw_mountain()
@@ -309,6 +314,74 @@ func _draw_gold_ridge() -> void:
 	draw_arc(Vector2(1925, 382), 76.0, PI, TAU, 24, arch, 11.0)
 	draw_line(Vector2(1840, 365), Vector2(1868, 365), strata, 4.0)
 	draw_line(Vector2(1980, 365), Vector2(2009, 365), strata, 4.0)
+
+func _draw_offering_bowl(c: Vector2, shrine: bool) -> void:
+	var stone := Color(0.43, 0.32, 0.20, 1.0)
+	var lit_stone := Color(0.72, 0.53, 0.28, 1.0)
+	var gold := Color(1.0, 0.82, 0.34, 1.0)
+	# A low carved plinth and open bowl make the offer interaction visible at a glance.
+	draw_rect(Rect2(c.x - 17.0, c.y + 4.0, 34.0, 7.0), stone)
+	draw_rect(Rect2(c.x - 12.0, c.y - 3.0, 24.0, 9.0), lit_stone)
+	draw_arc(c + Vector2(0.0, -4.0), 19.0, 0.0, PI, 18, stone, 5.0)
+	draw_line(c + Vector2(-19.0, -4.0), c + Vector2(19.0, -4.0), lit_stone, 3.0)
+	if shrine:
+		draw_circle(c + Vector2(0.0, -10.0), 4.5, gold)
+		draw_circle(c + Vector2(0.0, -10.0), 2.0, Color(1.0, 0.96, 0.68, 1.0))
+		draw_line(c + Vector2(-25.0, -7.0), c + Vector2(-25.0, -25.0), lit_stone, 3.0)
+		draw_line(c + Vector2(25.0, -7.0), c + Vector2(25.0, -25.0), lit_stone, 3.0)
+
+func _draw_featherweight_charm(c: Vector2) -> void:
+	var bob := sin(Time.get_ticks_msec() * 0.002) * 4.0
+	var center := c + Vector2(0.0, bob)
+	var glow := Color(0.72, 0.9, 1.0, 0.16)
+	var ice := Color(0.72, 0.9, 1.0, 0.95)
+	# A slim beam and paired lift marks make the traversal reward discoverable from the ridge.
+	draw_colored_polygon(PackedVector2Array([
+		center + Vector2(-5.0, -105.0), center + Vector2(5.0, -105.0),
+		center + Vector2(15.0, -35.0), center + Vector2(-15.0, -35.0)
+	]), Color(0.72, 0.9, 1.0, 0.12))
+	for lift_y in [-78.0, -58.0]:
+		draw_line(center + Vector2(-7.0, lift_y + 5.0), center + Vector2(0.0, lift_y - 2.0), Color(0.88, 0.96, 1.0, 0.9), 2.0)
+		draw_line(center + Vector2(0.0, lift_y - 2.0), center + Vector2(7.0, lift_y + 5.0), Color(0.88, 0.96, 1.0, 0.9), 2.0)
+	draw_circle(center, 37.0, glow)
+	draw_arc(center, 30.0, 0.0, TAU, 32, Color(0.62, 0.82, 0.96, 0.8), 2.0)
+	# Feather shaped like a small silver leaf, outlined so it reads over the gold ridge.
+	var feather := PackedVector2Array([
+		center + Vector2(-4.0, 18.0), center + Vector2(-17.0, 0.0),
+		center + Vector2(-10.0, -19.0), center + Vector2(1.0, -28.0),
+		center + Vector2(10.0, -8.0), center + Vector2(9.0, 10.0),
+		center + Vector2(-4.0, 18.0)
+	])
+	draw_colored_polygon(feather, ice)
+	draw_polyline(feather, Color(0.20, 0.28, 0.39, 1.0), 2.5)
+	draw_line(center + Vector2(-10.0, 12.0), center + Vector2(4.0, -18.0), Color(0.20, 0.28, 0.39, 1.0), 2.0)
+	for sparkle in [Vector2(-36.0, -14.0), Vector2(34.0, 2.0), Vector2(20.0, -34.0)]:
+		var p := center + sparkle
+		draw_line(p + Vector2(-4.0, 0.0), p + Vector2(4.0, 0.0), Color(0.88, 0.96, 1.0, 0.9), 2.0)
+		draw_line(p + Vector2(0.0, -4.0), p + Vector2(0.0, 4.0), Color(0.88, 0.96, 1.0, 0.9), 2.0)
+
+func _draw_boss_arenas() -> void:
+	# Coin Guard's mint: old inlaid rings lead through the gate into the arena.
+	var mint := Color(0.62, 0.48, 0.30, 0.75)
+	for x in [-1930.0, -870.0]:
+		draw_rect(Rect2(x - 12.0, 330.0, 24.0, 140.0), Color(0.45, 0.33, 0.22, 1.0))
+		draw_rect(Rect2(x - 12.0, 330.0, 24.0, 140.0), mint, false, 3.0)
+		draw_line(Vector2(x - 5.0, 342.0), Vector2(x - 5.0, 458.0), Color(0.81, 0.68, 0.43, 0.8), 2.0)
+	for radius in [150.0, 260.0]:
+		draw_arc(Vector2(-1400.0, 468.0), radius, PI, TAU, 32, mint, 3.0)
+	for x in [-1980.0, -1900.0, -900.0, -820.0]:
+		draw_circle(Vector2(x, 458.0), 4.0, Color(0.92, 0.72, 0.34, 0.9))
+
+	# The Collector's room is framed by low coin cairns and a broad floor medallion.
+	var arena_ink := Color(0.49, 0.35, 0.18, 0.72)
+	for x in [1930.0, 2960.0]:
+		draw_rect(Rect2(x - 15.0, 448.0, 30.0, 122.0), Color(0.59, 0.43, 0.24, 1.0))
+		draw_rect(Rect2(x - 15.0, 448.0, 30.0, 122.0), arena_ink, false, 3.0)
+		draw_line(Vector2(x - 7.0, 462.0), Vector2(x - 7.0, 550.0), Color(0.82, 0.65, 0.35, 0.9), 3.0)
+	draw_arc(Vector2(2400.0, 566.0), 500.0, PI, TAU, 64, arena_ink, 3.0)
+	draw_arc(Vector2(2400.0, 566.0), 465.0, PI, TAU, 64, Color(0.81, 0.62, 0.31, 0.55), 2.0)
+	for x in [2020.0, 2210.0, 2400.0, 2590.0, 2780.0]:
+		draw_circle(Vector2(x, 558.0), 5.0, Color(0.93, 0.73, 0.35, 0.9))
 
 # Pickups need a body: a coin, and a seal. Dark outline so they read on the pale ground.
 # Coins are drawn as quiet, half-forgotten things: a soft ambient glow, a slow
@@ -677,7 +750,7 @@ func _create_greed_level() -> void:
 	})
 
 	# The Featherweight Charm unlocks the player's double jump.
-	var charm := _make_interactable("FEATHERWEIGHT\n[E] TAKE", Vector2(1545, 435), Color(0.72, 0.9, 1.0))
+	var charm := _make_interactable("FEATHERWEIGHT\nDOUBLE JUMP [E]", Vector2(1545, 435), Color(0.72, 0.9, 1.0))
 	interactables.append({
 		"node": charm,
 		"message": "A feather-light charm rests among the flowers.\n\nLumi feels able to rise once more in mid-air.",
