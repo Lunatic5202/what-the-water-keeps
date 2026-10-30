@@ -356,7 +356,7 @@ func _draw_featherweight_charm(c: Vector2) -> void:
 	draw_polyline(feather, Color(0.20, 0.28, 0.39, 1.0), 2.5)
 	draw_line(center + Vector2(-10.0, 12.0), center + Vector2(4.0, -18.0), Color(0.20, 0.28, 0.39, 1.0), 2.0)
 	for sparkle in [Vector2(-36.0, -14.0), Vector2(34.0, 2.0), Vector2(20.0, -34.0)]:
-		var p := center + sparkle
+		var p: Vector2 = center + sparkle
 		draw_line(p + Vector2(-4.0, 0.0), p + Vector2(4.0, 0.0), Color(0.88, 0.96, 1.0, 0.9), 2.0)
 		draw_line(p + Vector2(0.0, -4.0), p + Vector2(0.0, 4.0), Color(0.88, 0.96, 1.0, 0.9), 2.0)
 
