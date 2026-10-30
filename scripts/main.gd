@@ -224,7 +224,7 @@ func _process(_delta: float) -> void:
 		_interact(nearest)
 
 func _draw() -> void:
-	# Wake palette: meadow green, cream, sky (#BFE3B4, #FFF6DC, #CFE8F7)
+	# Wake palette: a bright meadow with old, quiet places hidden in it.
 	draw_rect(Rect2(-3000, -1000, 8000, 1800), Color(0.81, 0.91, 0.97, 1))
 
 	# Soft cloud bands and distant hills add depth without competing with Lumi.
