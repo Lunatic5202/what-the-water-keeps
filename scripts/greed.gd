@@ -115,6 +115,13 @@ var pip_coin_stacks := 0
 var sticky_sap_time := 0.0
 var last_dash_active := false
 
+# Automatic coin collection (Mario-style pickup, Souls-like presentation)
+const COIN_COLLECT_RADIUS := 42.0  # Lumi's capsule is ~26px wide; this reads as "walked near it"
+const COIN_COLLECT_TIME := 0.35    # length of the brighten-and-dissolve animation
+var total_coins_collected := 0     # lifetime count shown in the top-right HUD
+var coin_hud_label: Label
+var coin_hud_pulse := 0.0
+
 # Spawn points
 var respawn_point := Vector2(280, 520)
 var checkpoint_unlocked := false
@@ -222,7 +229,7 @@ func _draw() -> void:
 			continue
 		var kind: String = item["kind"]
 		if kind == "coin" or kind == "coin_extra":
-			_draw_pickup_coin(item["node"].position)
+			_draw_pickup_coin(item["node"].position, item)
 		elif kind == "seal":
 			_draw_pickup_seal(item["node"].position)
 		elif kind == "open_hand_manual":
@@ -304,14 +311,52 @@ func _draw_gold_ridge() -> void:
 	draw_line(Vector2(1980, 365), Vector2(2009, 365), strata, 4.0)
 
 # Pickups need a body: a coin, and a seal. Dark outline so they read on the pale ground.
-func _draw_pickup_coin(c: Vector2) -> void:
-	draw_circle(c, 13.0, Palette.GOLD_OUTLINE)
-	draw_circle(c, 10.0, Color(0.94, 0.72, 0.16))
-	draw_circle(c, 5.5, Color(1.0, 0.92, 0.55))
-	# The garden's wrongness is subtle: the coins look almost like faces.
-	draw_circle(c + Vector2(-3.0, -1.0), 1.4, Color(0.35, 0.23, 0.10, 0.9))
-	draw_circle(c + Vector2(3.0, -1.0), 1.4, Color(0.35, 0.23, 0.10, 0.9))
-	draw_line(c + Vector2(-2.0, 4.0), c + Vector2(2.0, 4.0), Color(0.35, 0.23, 0.10, 0.8), 1.2)
+# Coins are drawn as quiet, half-forgotten things: a soft ambient glow, a slow
+# float, and an occasional wisp, rather than a bright arcade sprite. Souls-like,
+# not Mario-like, even though collection itself (see _process_coins) now is.
+func _draw_pickup_coin(c: Vector2, item: Dictionary) -> void:
+	var t := Time.get_ticks_msec() / 1000.0
+	var phase: float = item.get("float_seed", 0.0)
+	var collecting: bool = item.get("collecting", false)
+	var collect_t: float = item.get("collect_t", 0.0)
+	var bob := sin(t * 2.0 + phase) * 4.0
+	var pos := c + Vector2(0.0, bob)
+	var shimmer := 0.5 + 0.5 * sin(t * 3.0 + phase * 2.0)
+
+	if collecting:
+		var p := clampf(collect_t / COIN_COLLECT_TIME, 0.0, 1.0)
+		var fade := 1.0 - p
+		var k := lerpf(1.0, 0.08, ease(p, 2.0))
+		# A brief brightening, then the coin draws inward and dissolves outward.
+		draw_circle(pos, 28.0 * fade + 8.0, Color(1.0, 0.95, 0.72, fade * 0.45))
+		draw_circle(pos, 13.0 * k, Palette.GOLD_OUTLINE)
+		draw_circle(pos, 10.0 * k, Color(0.96, 0.80, 0.34, 1.0 - p * 0.3))
+		draw_circle(pos, 5.5 * k, Color(1.0, 0.96, 0.68, 1.0))
+		for i in range(8):
+			var angle := TAU * i / 8.0 + phase
+			var dist := p * 28.0
+			draw_circle(pos + Vector2(cos(angle), sin(angle)) * dist, 2.0 * fade, Color(1.0, 0.92, 0.58, fade))
+		return
+
+	# Mysterious ambient glow: alternates a muted gold and a pale spectral cyan.
+	var cyan_tinge := int(phase * 100.0) % 5 == 0
+	var glow_color := Color(0.55, 0.85, 0.95, 0.09 + 0.06 * shimmer) if cyan_tinge else Color(1.0, 0.85, 0.42, 0.09 + 0.06 * shimmer)
+	draw_circle(pos, 19.0 + shimmer * 3.0, glow_color)
+	draw_circle(pos, 13.0, Palette.GOLD_OUTLINE)
+	draw_circle(pos, 10.0, Color(0.72, 0.56, 0.22, 0.85 + 0.15 * shimmer))
+	draw_circle(pos, 5.5, Color(0.92, 0.82, 0.56, 0.75 + 0.2 * shimmer))
+	# A faint, shifting rune-mark instead of the old bright cartoon face. A
+	# dim trace of the old wrongness (bible 5.2: coins slowly grow faces) stays,
+	# but kept subtle enough to feel ancient rather than cute.
+	draw_arc(pos, 7.0, phase, phase + 2.3, 8, Color(0.95, 0.9, 0.7, 0.35 + 0.25 * shimmer), 1.0)
+	draw_circle(pos + Vector2(-3.0, -1.0), 1.0, Color(0.25, 0.15, 0.08, 0.3 + 0.15 * shimmer))
+	draw_circle(pos + Vector2(3.0, -1.0), 1.0, Color(0.25, 0.15, 0.08, 0.3 + 0.15 * shimmer))
+	# An occasional faint wisp drifts up and fades, every few seconds per coin.
+	var wisp_cycle := fmod(t * 0.6 + phase, 3.2)
+	if wisp_cycle < 0.6:
+		var wisp_t := wisp_cycle / 0.6
+		var wisp_pos := pos + Vector2(sin(phase * 5.0) * 9.0, -14.0 - wisp_t * 20.0)
+		draw_circle(wisp_pos, 2.2 * (1.0 - wisp_t), Color(0.82, 0.9, 1.0, (1.0 - wisp_t) * 0.5))
 
 func _draw_pickup_seal(c: Vector2) -> void:
 	draw_circle(c, 24.0, Color(1.0, 0.85, 0.3, 0.25))
@@ -498,6 +543,22 @@ func _create_hud() -> void:
 	stats_label.add_theme_constant_override("outline_size", 5)
 	hud.add_child(stats_label)
 
+	# Top-right Souls-like coin counter: a coin glyph and the running total of
+	# coins Lumi has actually picked up (separate from the carried-gold weight
+	# stat above, which can fall again when gold is spent or offered).
+	coin_hud_label = Label.new()
+	coin_hud_label.position = Vector2(1280 - 196, 18)
+	coin_hud_label.size = Vector2(176, 40)
+	coin_hud_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	coin_hud_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	coin_hud_label.add_theme_font_size_override("font_size", 22)
+	coin_hud_label.add_theme_color_override("font_color", Color(0.92, 0.82, 0.55))
+	coin_hud_label.add_theme_color_override("font_outline_color", Color(0.12, 0.10, 0.24))
+	coin_hud_label.add_theme_constant_override("outline_size", 5)
+	coin_hud_label.pivot_offset = coin_hud_label.size * 0.5
+	hud.add_child(coin_hud_label)
+	_update_coin_hud(false)
+
 	var meter := Control.new()
 	meter.set_script(load("res://scripts/lantern_meter.gd"))
 	meter.position = Vector2(24, 52)
@@ -592,19 +653,28 @@ func _create_greed_level() -> void:
 		var shrine := _make_interactable("SHRINE\n[E] OFFER", shrine_positions[i], Color(0.95, 0.85, 0.5))
 		interactables.append({"node": shrine, "message": "A small golden bowl. \"Give what you carry.\"\n\nPress E to offer all carried gold.", "kind": "shrine", "used": false, "shrine_id": i})
 
-	# Coin pickups
+	# Coin pickups: collected automatically on approach (see _process_coins),
+	# so each one carries its own float phase for the ambient hover/shimmer.
 	var coin_positions := [
 		Vector2(300, 560), Vector2(500, 545), Vector2(730, 545),
 		Vector2(1100, 320), Vector2(1140, 545), Vector2(1380, 545),
 		Vector2(1600, 545), Vector2(1730, 545), Vector2(1760, 420),
 	]
 	for i in range(coin_positions.size()):
-		var coin := _make_interactable("COIN", coin_positions[i], Color(1.0, 0.85, 0.3))
-		interactables.append({"node": coin, "message": "A gleaming gold coin. It feels heavier than it should.\n\n+10 Gold", "kind": "coin", "used": false, "value": 10})
+		var coin := _make_interactable("", coin_positions[i], Color(1.0, 0.85, 0.3))
+		interactables.append({
+			"node": coin, "message": "A gleaming gold coin. It feels heavier than it should.\n\n+10 Gold",
+			"kind": "coin", "used": false, "value": 10,
+			"float_seed": randf() * TAU, "collecting": false, "collect_t": 0.0
+		})
 
 	# An optional pickup gives the canopy route a small exploration reward.
-	var canopy_coin := _make_interactable("COIN", Vector2(820, 315), Color(1.0, 0.85, 0.3))
-	interactables.append({"node": canopy_coin, "message": "A gleaming coin rests in the old canopy walk.\n\n+15 Gold", "kind": "coin_extra", "used": false, "value": 15})
+	var canopy_coin := _make_interactable("", Vector2(820, 315), Color(1.0, 0.85, 0.3))
+	interactables.append({
+		"node": canopy_coin, "message": "A gleaming coin rests in the old canopy walk.\n\n+15 Gold",
+		"kind": "coin_extra", "used": false, "value": 15,
+		"float_seed": randf() * TAU, "collecting": false, "collect_t": 0.0
+	})
 
 	# The Featherweight Charm unlocks the player's double jump.
 	var charm := _make_interactable("FEATHERWEIGHT\n[E] TAKE", Vector2(1545, 435), Color(0.72, 0.9, 1.0))
@@ -699,6 +769,8 @@ func _process(delta: float) -> void:
 		pip_coin_stacks = 0
 		_show_status("PIP COINS SHAKEN OFF")
 	last_dash_active = dash_active
+	_process_coins(delta)
+	_process_coin_hud_pulse(delta)
 	var felt := minf(1.0, weight_debuff * RunState.debuff_scale())
 	var pip_speed := 1.0 - 0.05 * float(pip_coin_stacks)
 	var sap_speed := 0.82 if sticky_sap_time > 0.0 else 1.0
@@ -751,6 +823,11 @@ func _process(delta: float) -> void:
 		var target: Node2D = item["node"]
 		if not is_instance_valid(target) or item.get("used", false) or not target.visible:
 			continue
+		# Coins are collected automatically on approach (see _process_coins):
+		# they never show an E-interact prompt or a floating label.
+		var kind: String = item.get("kind", "")
+		if kind == "coin" or kind == "coin_extra":
+			continue
 		var distance := player.global_position.distance_to(target.global_position)
 		if distance < nearest_label_distance:
 			nearest_label_distance = distance
@@ -769,6 +846,67 @@ func _process(delta: float) -> void:
 	prompt_label.text = "E  •  interact" if not nearest.is_empty() else ""
 	if not nearest.is_empty() and Input.is_action_just_pressed("interact"):
 		_interact(nearest)
+
+# Automatic, proximity-based coin pickup (Mario-style collection, Souls-like
+# presentation). Runs every frame regardless of dialogue/story state, same as
+# the Killbox and weight checks above, so coins keep collecting even while a
+# banner or dialogue line is on screen.
+func _process_coins(delta: float) -> void:
+	if not is_instance_valid(player):
+		return
+	for item in interactables:
+		var kind: String = item.get("kind", "")
+		if kind != "coin" and kind != "coin_extra":
+			continue
+		if item.get("used", false):
+			continue
+		var target: Node2D = item.get("node")
+		if not is_instance_valid(target) or not target.visible:
+			continue
+		if item.get("collecting", false):
+			item["collect_t"] = float(item.get("collect_t", 0.0)) + delta
+			if float(item["collect_t"]) >= COIN_COLLECT_TIME:
+				_finish_coin_collection(item)
+			else:
+				queue_redraw()
+			continue
+		if player.global_position.distance_to(target.global_position) <= COIN_COLLECT_RADIUS:
+			_begin_coin_collection(item)
+
+func _begin_coin_collection(item: Dictionary) -> void:
+	item["collecting"] = true
+	item["collect_t"] = 0.0
+	var value: int = item.get("value", 10)
+	add_gold(value)  # already emits collectible_found("coin") and updates weight/HUD
+	total_coins_collected += 1
+	_update_coin_hud(true)
+	queue_redraw()
+
+func _finish_coin_collection(item: Dictionary) -> void:
+	item["used"] = true
+	var target: Node2D = item.get("node")
+	if is_instance_valid(target):
+		target.visible = false
+	if item.has("marker") and is_instance_valid(item["marker"]):
+		item["marker"].visible = false
+	queue_redraw()
+
+func _update_coin_hud(pulse: bool) -> void:
+	if not is_instance_valid(coin_hud_label):
+		return
+	coin_hud_label.text = "🪙 × %d" % total_coins_collected
+	if pulse:
+		coin_hud_pulse = 0.22
+
+func _process_coin_hud_pulse(delta: float) -> void:
+	if not is_instance_valid(coin_hud_label):
+		return
+	if coin_hud_pulse > 0.0:
+		coin_hud_pulse = maxf(0.0, coin_hud_pulse - delta)
+		var s := 1.0 + 0.3 * (coin_hud_pulse / 0.22)
+		coin_hud_label.scale = Vector2(s, s)
+	elif coin_hud_label.scale != Vector2.ONE:
+		coin_hud_label.scale = Vector2.ONE
 
 func _interact(item: Dictionary) -> void:
 	queue_redraw()
@@ -793,14 +931,6 @@ func _interact(item: Dictionary) -> void:
 				Story.play(self, dialogue_panel, dialogue_label, Story.GREED_SHRINE + [[msg, 3.6]])
 			else:
 				_show_dialogue(msg, target)
-		"coin":
-			item["used"] = true
-			target.visible = false
-			var value: int = item.get("value", 10)
-			carried_gold += value
-			_update_weight()
-			collectible_found.emit("coin")
-			_show_dialogue(item["message"], target)
 		"featherweight":
 			item["used"] = true
 			target.visible = false
@@ -838,15 +968,6 @@ func _interact(item: Dictionary) -> void:
 		"vault_exit":
 			# Lands Lumi on the hub's upper platform instead of the start.
 			get_tree().call_group("game_main", "_return_to_hub", true)
-		"coin_extra":
-			if item.get("used", false):
-				return
-			item["used"] = true
-			if item.has("marker") and is_instance_valid(item["marker"]):
-				item["marker"].visible = false
-			var val: int = item.get("value", 15)
-			add_gold(val)
-			_show_dialogue("Lumi picks up %d gold." % val)
 		"secret_cache":
 			item["used"] = true
 			target.visible = false
@@ -953,7 +1074,8 @@ func save_state() -> Dictionary:
 		"has_gold_key": has_gold_key,
 		"secret_cache_found": secret_cache_found,
 		"coin_guard_defeated": miniboss_defeated,
-		"seals": seals.duplicate()
+		"seals": seals.duplicate(),
+		"total_coins_collected": total_coins_collected
 	}
 
 # Puts Greed back the way a save left it: the charm taken, the Collector gone.
@@ -998,6 +1120,8 @@ func apply_save(d: Dictionary) -> void:
 		if is_instance_valid(collector):
 			collector.queue_free()
 		queue_redraw()
+	total_coins_collected = int(d.get("total_coins_collected", total_coins_collected))
+	_update_coin_hud(false)
 	queue_redraw()
 	_update_hud()
 
@@ -1242,13 +1366,17 @@ func _create_expanded_content() -> void:
 		if coin_guard.has_signal("defeated"):
 			coin_guard.connect("defeated", Callable(self, "_on_coin_guard_defeated"))
 
-	# Extra coins in expanded wings
+	# Extra coins in expanded wings: also collected automatically on approach.
 	var extra_coins := [
 		Vector2(1360, 470), Vector2(-150, 390), Vector2(-820, 390),
 	]
 	for pos in extra_coins:
-		var marker := _make_interactable("GOLD\n[E] TAKE", pos, Color(1.0, 0.9, 0.5))
-		interactables.append({"node": marker, "message": "Lumi picks up gold.", "kind": "coin_extra", "used": false, "value": 15, "marker": marker})
+		var marker := _make_interactable("", pos, Color(1.0, 0.9, 0.5))
+		interactables.append({
+			"node": marker, "message": "Lumi picks up gold.", "kind": "coin_extra", "used": false,
+			"value": 15, "marker": marker,
+			"float_seed": randf() * TAU, "collecting": false, "collect_t": 0.0
+		})
 
 func _on_mite_dropped(amount: int) -> void:
 	add_gold(amount)

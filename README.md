@@ -33,7 +33,7 @@ Implemented in code:
 - Wind Ribbon unlocks dash and sets the Wake checkpoint
 - A post-boss gap intended to require jump + dash before the first door
 - The Still Pond hub with seven doors, bench, altar, Memory Tree, Mirror Gate placeholder, Marl and Orrin
-- Greed region with coins, weight penalties, offering shrines, lore tablets, and a Featherweight Charm that unlocks double jump
+- Greed region with proximity-collected coins, weight penalties, offering shrines, lore tablets, and a Featherweight Charm that unlocks double jump
 - Greed encounters: patrolling Greedy Mites, hopping Penny Pips that stick coins to Lumi (dash to shake them off), and Gilded Blossoms that telegraph and spit slowing sap
 - Coin Guard mini-boss in the buried mint hall: an 8-hit shield with visible pips, a clearly telegraphed rushing slam, 48 health with an overhead bar, and a physical Vault Seal pickup on defeat. The seal is collected with E and is saved separately from the boss defeat, so leaving it behind does not grant it
 - The Collector boss (never run, values are guesses): Coin Rain and belly slam, then below 66% health he swallows his coin mountain and grows (faster if Lumi carries gold) while the arena's left wall creeps inward, then below 33% he lunges for Lumi's purse. A grab with gold steals it all and heals him; with empty hands it whiffs and leaves him open. Offering bowls hurt and shrink him. Defeat plays the bible's lines, sets the Open Hand and Gold Key flags and clears Greed, which returns Lumi to the hub with one more key
