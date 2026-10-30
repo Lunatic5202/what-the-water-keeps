@@ -710,7 +710,7 @@ func _update_dialogue_portrait(message: String) -> void:
 	if expression == dialogue_portrait_text and dialogue_portrait.texture != null:
 		return
 	dialogue_portrait_text = expression
-	dialogue_portrait.texture = load("res://assets/portraits/lumi/lumi_%s.png" % expression)
+	dialogue_portrait.texture = Story.portrait(expression)
 
 func _show_dialogue(message: String, target: Node2D = null) -> void:
 	dialogue_label.text = message

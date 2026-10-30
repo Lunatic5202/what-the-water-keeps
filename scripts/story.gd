@@ -56,6 +56,25 @@ static func hint(cleared: int) -> String:
 
 # Estimate reading time from the visible text. Existing authored durations are
 # minimums, not hard limits, so longer lines never vanish before they can be read.
+# Lumi's dialogue portrait. Uses the imported texture when Godot has one, and
+# falls back to reading the PNG straight from disk so a missing or stale import
+# never leaves the dialogue box with an empty portrait slot.
+static var _portrait_cache := {}
+static func portrait(expression: String) -> Texture2D:
+	if _portrait_cache.has(expression):
+		return _portrait_cache[expression]
+	var path := "res://assets/portraits/lumi/lumi_%s.png" % expression
+	var tex: Texture2D = null
+	if ResourceLoader.exists(path):
+		tex = load(path) as Texture2D
+	if tex == null:
+		var img := Image.load_from_file(ProjectSettings.globalize_path(path))
+		if img != null and not img.is_empty():
+			tex = ImageTexture.create_from_image(img)
+	if tex != null:
+		_portrait_cache[expression] = tex
+	return tex
+
 static func reading_time(text: String) -> float:
 	return maxf(2.8, 1.2 + float(text.length()) / 17.0)
 
