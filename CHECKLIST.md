@@ -81,7 +81,7 @@
 - [x] Gulp and low-health enemy swallow/Pip.
 - [x] Spit and three-Pip beam.
 - [x] Open Wide projectile absorption.
-- [x] Taste/Pips and Stuffed overflow.
+- [x] Taste/Pips and Stuffed overflow; the action lock persists across style swaps.
 - [x] Host snacks tagged as absorbable projectiles.
 - [x] Spit de-duplicates targets present in both enemy and boss groups (audit fix).
 - [ ] Implement Slurp Drop.
