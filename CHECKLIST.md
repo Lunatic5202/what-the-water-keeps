@@ -102,3 +102,5 @@
 
 - [ ] Playtest Greed's road-to-canopy ascent, upper crossing and drop onto Gold Ridge; also test Vault Route, Sloth's loft stair and sky route, both mini-bosses and both exits.
 - [ ] Playtest seal gates: collect both seals in each region in either order, then the boss fight starts.
+- [ ] Playtest Gluttony: Fullness and Stuffed, both seals, the Host's three phases, the Table Exit.
+- [ ] Build Devour Style for the Hollow Spoon.

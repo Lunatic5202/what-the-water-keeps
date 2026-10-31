@@ -35,6 +35,11 @@ const AFTER_SLOTH := [
 	["(The third door opens: GLUTTONY.)", 3.0]
 ]
 
+const AFTER_GLUTTONY := [
+	["NIM: He kept feeding everyone so no one would leave. That's a kind of love, isn't it?", 4.2],
+	["(The fourth door opens: ENVY.)", 3.0]
+]
+
 # Nim's post gives a gentle hint for wherever the player is in the game.
 # These are gameplay hints (the lessons each region teaches), not new lore.
 const NIM_HINTS := {
@@ -49,6 +54,8 @@ static func after(region: String) -> Array:
 			return AFTER_GREED
 		"sloth":
 			return AFTER_SLOTH
+		"gluttony":
+			return AFTER_GLUTTONY
 	return []
 
 static func hint(cleared: int) -> String:

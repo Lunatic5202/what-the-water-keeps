@@ -499,7 +499,11 @@ func _show_status(message: String) -> void:
 func can_enter(region: String) -> bool:
 	if region == "greed" or unlocked_regions.has(region):
 		return true
-	return region == "sloth" and unlocked_regions.has("greed")
+	if region == "sloth":
+		return unlocked_regions.has("greed")
+	if region == "gluttony":
+		return unlocked_regions.has("sloth")
+	return false
 
 # Called when a save is loaded: re-opens the doors without playing story.
 func restore_progress(cleared: Array) -> void:

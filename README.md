@@ -275,3 +275,14 @@ The route platforms use the same shapes for collision and drawing. Their landing
 - Pickups (coins, gold, seals) are now drawn: coin and seal sprites in `greed.gd` `_draw`, seal in `sloth.gd` `_draw`. Before, they were label-only.
 - Greedy Mites now turn around at ledges instead of walking off.
 - Rendered screenshots can be taken headless with `xvfb-run` and `--rendering-driver opengl3`.
+
+## The Endless Table (Gluttony), prototype
+
+- Region 3, `scripts/gluttony.gd`. It extends `sloth.gd` (HUD, dialogue box, seals, bench saving) with its own level, mechanic and boss. Unlocked in the hub once Slumber Hollow is cleared.
+- **Fullness:** eating a cake heals 1 heart and adds 25 Fullness. At 100 Lumi is Stuffed for 20s (no dash, swings 25% slower, healing halved, a little slower). Moving burns Fullness off. When Lumi has 3 hearts or fewer, eating is mindful: heals 2 and adds no Fullness. Bench rest clears Fullness and refills the cakes.
+- **Enemies:** Crumb Swarm (`crumb_swarm.gd`, scatters when hit), Jelly Gulper (`jelly_gulper.gd`, swallows and adds Fullness), Cutlery Sprite (`cutlery_sprite.gd`, winds up then pokes).
+- **Branches:** the Pantry Loft (high stair, a seal on the shelf) and the Syrup Cellar (a pit with the Cutlery Knight mini-boss, `cutlery_knight.gd`, which drops the second seal). Two seals open the Host's fog. "Cutlery Knight", "Pantry Loft", "Syrup Cellar" and "seal" are prototype names, not in the bible.
+- **The Host** (`host.gd`, 420 HP, bible says 900): Phase 1 lobs snacks that hurt and add Fullness; Phase 2 adds sagging pies (`pie_platform.gd`) and a table-slam shock wave to jump; Phase 3 he grows and sends jaw walls with a gap (`host_hazard.gd`), and he can only be hurt while gaping afterwards.
+- **Rewards:** Hungry Wind Scarf (`player.can_super_dash`: longer, faster dash, saved), Honey Key flag, and the Hollow Spoon flag. **Devour Style itself is not built.** The Table Exit sits at the end of the pantry shelf, and the player must walk out.
+- Player additions: `dash_blocked`, `attack_speed_mod`, `heal_amount_mod`.
+- Headless-tested: scripts load, hub unlock, eating (healthy and mindful), Stuffed effects, seal gate, mini-boss seal drop, bench save, full Host fight through all phases by direct damage, rewards, saves, exit, and platform hops. Rendered screenshots show every enemy, pickup and the seal. **Not played in the editor**; Host timings and damage numbers are guesses.

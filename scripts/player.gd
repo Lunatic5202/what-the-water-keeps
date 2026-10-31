@@ -55,7 +55,10 @@ var jump_power_mod := 1.0
 var has_dash := false  # Wind Ribbon
 var can_double_jump := false  # Featherweight Charm
 var can_wall_climb := false  # Snail Grips
-var can_super_dash := false  # Hungry Wind Scarf
+var can_super_dash := false  # Hungry Wind Scarf: a longer, faster dash
+var dash_blocked := false     # Stuffed: no dash (jumps still work)
+var attack_speed_mod := 1.0   # Stuffed slows swings (0.75)
+var heal_amount_mod := 1.0    # Stuffed halves healing (0.5)
 var can_glass_step := false  # Mirror Hairpin
 var can_grapple := false  # Thread Needle
 var can_ground_pound := false  # Ember Boots
@@ -125,7 +128,7 @@ func _physics_process(delta: float) -> void:
 
 	if dash_timer > 0.0:
 		dash_timer -= delta
-		velocity.x = facing * DASH_SPEED
+		velocity.x = facing * DASH_SPEED * (1.35 if can_super_dash else 1.0)
 	else:
 		var direction := Input.get_axis("move_left", "move_right")
 		if lunge_timer > 0.0:
@@ -144,8 +147,8 @@ func _physics_process(delta: float) -> void:
 				velocity.y = JUMP_VELOCITY * jump_power_mod * 0.85
 				has_double_jumped = true
 
-		if Input.is_action_just_pressed("dash") and has_dash and not weighed_down and dash_cooldown <= 0.0:
-			dash_timer = DASH_TIME
+		if Input.is_action_just_pressed("dash") and has_dash and not weighed_down and not dash_blocked and dash_cooldown <= 0.0:
+			dash_timer = DASH_TIME * (1.6 if can_super_dash else 1.0)
 			dash_cooldown = 0.55
 			velocity.y = 0.0
 
@@ -199,7 +202,7 @@ func aim_vector() -> Vector2:
 func _start_attack() -> void:
 	if attack_timer > 0.0:
 		return
-	attack_timer = 0.18
+	attack_timer = 0.18 / attack_speed_mod
 	attack_progress = 0.0
 	attack_has_hit = false
 	attack_dir = "side"
@@ -360,10 +363,11 @@ func _heal() -> void:
 		status_changed.emit("NO HEAL NEEDED RIGHT NOW.")
 		return
 	heals -= 1
-	health = mini(max_health, health + HEAL_AMOUNT)
+	var gained := maxi(1, roundi(HEAL_AMOUNT * heal_amount_mod))
+	health = mini(max_health, health + gained)
 	heals_changed.emit(heals)
 	health_changed.emit(health)
-	status_changed.emit("A MOMENT OF REST. +%d HEARTS." % HEAL_AMOUNT)
+	status_changed.emit("A MOMENT OF REST. +%d HEARTS." % gained)
 
 func _draw() -> void:
 	var cloak := Color(0.23, 0.30, 0.48, 1.0)

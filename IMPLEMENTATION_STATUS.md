@@ -67,3 +67,6 @@ The repository has been updated through source changes, but the game has **not**
 
 - Expanded Greed/Sloth routes, Greedy Mites, Coin Guard, Dozy Warden, Vault Exit and Dream Exit (headless-tested only, see README).
 - Seal gates on both bosses, drawn pickups, mite ledge check (headless/screenshot tested only).
+
+### The Endless Table (Gluttony)
+- Region, Fullness and Stuffed, three enemy types, Cutlery Knight mini-boss, seal gate, The Host (3 phases), Hungry Wind Scarf, bench saves and hub unlock (headless and screenshot tested only). Devour Style (Hollow Spoon) is not built.

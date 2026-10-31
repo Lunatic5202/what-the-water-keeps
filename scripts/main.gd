@@ -31,6 +31,7 @@ var status_id := 0
 var hub_scene: Node2D = null
 var greed_scene: Node2D = null
 var sloth_scene: Node2D = null
+var gluttony_scene: Node2D = null
 var pending_transition := ""
 var combat_feedback: Node2D = null
 var save_cache: Dictionary = {}  # the save being played (or last written), by section
@@ -105,7 +106,8 @@ func save_game(where: String, respawn: Vector2) -> void:
 		"unlocked_styles": Array(player.unlocked_styles),
 		"has_dash": player.has_dash,
 		"can_double_jump": player.can_double_jump,
-		"can_wall_climb": player.can_wall_climb
+		"can_wall_climb": player.can_wall_climb,
+		"can_super_dash": player.can_super_dash
 	}
 	if is_instance_valid(hub_scene):
 		data["hub"] = {"unlocked_regions": Array(hub_scene.get("unlocked_regions"))}
@@ -113,6 +115,8 @@ func save_game(where: String, respawn: Vector2) -> void:
 		data["greed"] = greed_scene.call("save_state")
 	if is_instance_valid(sloth_scene):
 		data["sloth"] = sloth_scene.call("save_state")
+	if is_instance_valid(gluttony_scene):
+		data["gluttony"] = gluttony_scene.call("save_state")
 	save_cache = data
 	SaveGame.write(data)
 
@@ -135,6 +139,7 @@ func continue_game() -> bool:
 	player.has_dash = bool(saved.get("has_dash", true))
 	player.can_double_jump = bool(saved.get("can_double_jump", false))
 	player.can_wall_climb = bool(saved.get("can_wall_climb", false))
+	player.can_super_dash = bool(saved.get("can_super_dash", false))
 	player.health = player.max_health
 	player.heals = int(saved.get("heals", RunState.max_heals()))
 	player.health_changed.emit(player.health)
@@ -142,7 +147,15 @@ func continue_game() -> bool:
 	_transition_to_hub()
 	var hub: Dictionary = data.get("hub", {})
 	hub_scene.call("restore_progress", hub.get("unlocked_regions", []))
-	if str(data.get("where", "hub")) == "sloth":
+	if str(data.get("where", "hub")) == "gluttony":
+		_transition_to_gluttony()
+		var gat: Array = data.get("respawn", [])
+		if gat.size() == 2:
+			var gspot := Vector2(float(gat[0]), float(gat[1]))
+			gluttony_scene.set("respawn_point", gspot)
+			player.position = gspot
+			player.set("respawn_point", gspot)
+	elif str(data.get("where", "hub")) == "sloth":
 		_transition_to_sloth()
 		var at: Array = data.get("respawn", [])
 		if at.size() == 2:
@@ -158,7 +171,7 @@ func _on_no_hit_failed() -> void:
 # Throws the running game away and shows the title again.
 func restart_to_title() -> void:
 	get_tree().paused = false
-	for scene in [hub_scene, greed_scene, sloth_scene]:
+	for scene in [hub_scene, greed_scene, sloth_scene, gluttony_scene]:
 		if is_instance_valid(scene):
 			scene.queue_free()
 	get_tree().root.set_meta("show_title", true)
@@ -615,6 +628,8 @@ func _on_hub_region_entered(region_name: String) -> void:
 		_transition_to_greed()
 	elif region_name == "sloth":
 		_transition_to_sloth()
+	elif region_name == "gluttony":
+		_transition_to_gluttony()
 
 func _transition_to_greed() -> void:
 	if not is_instance_valid(hub_scene) or not is_instance_valid(player):
@@ -660,10 +675,31 @@ func _transition_to_sloth() -> void:
 	_set_camera_limits(-100, 5300, -350, 820)
 	current_region = "sloth"
 
+func _transition_to_gluttony() -> void:
+	if not is_instance_valid(hub_scene) or not is_instance_valid(player):
+		return
+	hub_scene.call("set_region_active", false)
+	if not is_instance_valid(gluttony_scene):
+		gluttony_scene = Node2D.new()
+		gluttony_scene.set_script(load("res://scripts/gluttony.gd"))
+		gluttony_scene.set("player", player)
+		gluttony_scene.connect("return_to_hub", Callable(self, "_return_to_hub"))
+		gluttony_scene.connect("region_cleared", Callable(self, "_on_region_cleared"))
+		get_parent().add_child(gluttony_scene)
+		gluttony_scene.call("apply_save", save_cache.get("gluttony", {}))
+	else:
+		gluttony_scene.call("set_region_active", true)
+	hub_scene.remove_child(player)
+	gluttony_scene.add_child(player)
+	player.position = gluttony_scene.get("respawn_point")
+	player.set("respawn_point", gluttony_scene.get("respawn_point"))
+	_set_camera_limits(-100, 5000, -350, 920)
+	current_region = "gluttony"
+
 func _return_to_hub(from_vault: bool = false) -> void:
 	if not is_instance_valid(hub_scene):
 		return
-	for scene in [greed_scene, sloth_scene]:
+	for scene in [greed_scene, sloth_scene, gluttony_scene]:
 		if is_instance_valid(scene):
 			if player.get_parent() == scene:
 				scene.remove_child(player)

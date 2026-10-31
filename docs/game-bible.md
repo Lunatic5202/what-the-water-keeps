@@ -1776,3 +1776,8 @@ These are prototype adaptations, not decisions. Say if the bible should win.
 
 - Each boss approach needs two seals, one from each optional branch (prototype; "seal" is not canon yet).
 - Prototype reward-placement change: the Open Hand combat manual is inside the old Greed vault. Defeat the Coin Guard to unseal it, then interact with the manual to unlock Offering Style and its full moveset before the Collector fight. The Featherweight Charm remains the region's traversal reward.
+
+### Prototype notes, Gluttony
+
+- The Host has 420 HP in the prototype (bible: 900). Phase 3 uses jaw walls and a gaping window instead of weak-spot hits. Cutlery Knight, the Pantry Loft, the Syrup Cellar and the two-seal gate are prototype additions. The Hollow Spoon (Devour Style) is held as a flag only.
+- The hub line after the Host omits the Reflection beat by design.
