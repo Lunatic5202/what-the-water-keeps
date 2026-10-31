@@ -67,6 +67,7 @@ var can_glide := false  # Halo Cloak
 
 var has_double_jumped := false
 var asleep_timer := 0.0   # Drowse: Lumi nods off and cannot act
+var devour_stuffed_timer := 0.0  # Devour overflow: Lumi cannot act briefly
 var clinging := false
 var cling_dir := 1  # side of the wall Lumi is clinging to (1 = wall on the right)
 const CLIMB_SPEED := 170.0
@@ -123,11 +124,18 @@ func _physics_process(delta: float) -> void:
 		velocity.y = 0.0
 	hurt_cooldown = maxf(0.0, hurt_cooldown - delta)
 	combo_timer = maxf(0.0, combo_timer - delta)
+	devour_stuffed_timer = maxf(0.0, devour_stuffed_timer - delta)
 	lunge_timer = maxf(0.0, lunge_timer - delta)
 	dash_cooldown = maxf(0.0, dash_cooldown - delta)
 
 	if asleep_timer > 0.0:
 		asleep_timer -= delta
+		velocity.x = 0.0
+		move_and_slide()
+		queue_redraw()
+		return
+
+	if devour_stuffed_timer > 0.0:
 		velocity.x = 0.0
 		move_and_slide()
 		queue_redraw()
