@@ -74,7 +74,7 @@ The following source changes were made on `audit/integration-docs-2026-10`:
 1. **Devour Spit target de-duplication:** targets present in both `enemy` and `boss` groups are now damaged once per Spit.
 2. **Tempo Stopwatch:** removed the ineffective write to the undeclared `tempo_frozen` property; Stopwatch now uses the enemy `stun(seconds)` interface.
 3. **Sloth enemy registration:** enemies spawned by Sloth are now added to the shared `enemy` group, allowing group-based style skills to find them.
-4. **Greed enemy stuns:** Gilded Blossom and Penny Pip now implement the same timed `stun(seconds)` interface used by Stopwatch.\n5. **Stuffed attack-speed penalty:** Open Hand, Tempo, Devour and Lantern heavy attacks now respect `attack_speed_mod`; Stuffed no longer loses most of its swing-speed penalty when changing styles.\n6. **Wall-cling attack direction:** Lantern heavy, Tempo/Devour guard visuals and Devour's Gulp charge visual now use `attack_facing()` so they point away from climbable walls.
+4. **Greed enemy stuns:** Gilded Blossom and Penny Pip now implement the same timed `stun(seconds)` interface used by Stopwatch.\n5. **Stuffed attack-speed penalty:** Open Hand, Tempo, Devour and Lantern heavy attacks now respect `attack_speed_mod`; Stuffed no longer loses most of its swing-speed penalty when changing styles.\n6. **Wall-cling attack direction:** Lantern heavy, Tempo/Devour guard visuals and Devour's Gulp charge visual now use `attack_facing()` so they point away from climbable walls.\n7. **Devour overflow lock:** the 1.5-second Stuffed state now blocks player actions globally and continues counting down even if Lumi switches styles.
 
 These are static code changes. They have not yet been run in Godot, so runtime success is not claimed.
 
