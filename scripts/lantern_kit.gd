@@ -57,7 +57,7 @@ func _physics_process(delta: float) -> void:
 			guard_cooldown = GUARD_COOLDOWN
 	if not _busy():
 		if Input.is_action_just_pressed("heavy") and player.is_on_floor():
-			windup = HEAVY_WINDUP
+			windup = HEAVY_WINDUP / maxf(0.01, float(player.get("attack_speed_mod")))
 			player.emit_signal("status_changed", "HEAVY SWING...")
 		elif Input.is_action_just_pressed("skill"):
 			_flash()
@@ -99,7 +99,7 @@ func _heavy_hit() -> void:
 			feedback.call("apply_hit_freeze", 8)
 			feedback.call("screenshake", 0.9, 0.12)
 	effects.append({"pos": to_local(at), "t": 0.0, "dur": 0.25, "max": 62.0})
-	recover = HEAVY_RECOVER
+	recover = HEAVY_RECOVER / maxf(0.01, float(player.get("attack_speed_mod")))
 
 func _flash() -> void:
 	if not player.call("spend_glow", FLASH_COST):
