@@ -149,11 +149,8 @@ func _stopwatch() -> void:
 	for body in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(body) or body.is_in_group("boss"):
 			continue
-		if body.has_method("fall_asleep"):
-			body.call("fall_asleep", 1.5)
-			frozen += 1
-		elif body.has_method("take_damage"):
-			body.set("tempo_frozen", 1.5)
+		if body.has_method("stun"):
+			body.call("stun", 1.5)
 			frozen += 1
 	player.emit_signal("status_changed", "STOPWATCH: %d ENEMIES CAUGHT IN THE PAUSE." % frozen)
 
