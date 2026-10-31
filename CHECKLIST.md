@@ -87,7 +87,7 @@
 - [ ] Implement Slurp Drop.
 - [ ] Implement Chomp Dash.
 - [ ] Implement Overture.
-- [ ] Playtest Gulp, Open Wide, projectile absorption and Spit.
+- [ ] Playtest Gulp, Open Wide, projectile absorption and Spit.\n- [ ] Verify Stuffed slows attack timing in all four styles.
 
 ## Shared systems and UI
 
