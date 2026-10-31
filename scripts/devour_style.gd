@@ -187,9 +187,15 @@ func _spit() -> void:
 	var reach := 520.0 if pips >= 3 else 380.0
 	var width := 44.0 if pips >= 3 else 18.0
 	var box := Rect2(origin.x if facing > 0 else origin.x - reach, origin.y - width / 2.0, reach, width)
+	hit_ids.clear()
 	for body in get_tree().get_nodes_in_group("enemy") + get_tree().get_nodes_in_group("boss"):
-		if is_instance_valid(body) and body.has_method("take_damage") and box.has_point(body.global_position):
-			body.call("take_damage", damage)
+		if not is_instance_valid(body) or not body.has_method("take_damage"):
+			continue
+		var id := body.get_instance_id()
+		if hit_ids.has(id) or not box.has_point(body.global_position):
+			continue
+		hit_ids[id] = true
+		body.call("take_damage", damage)
 	shots.append({"from": origin, "to": origin + Vector2(reach * facing, 0.0), "t": 0.0, "dur": 0.3, "width": width})
 	player.emit_signal("status_changed", "SPIT: %d DAMAGE." % damage)
 	pips = 0
