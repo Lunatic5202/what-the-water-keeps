@@ -1,73 +1,104 @@
 # Implementation Status
 
-**Last Updated:** 2026-10-26
-**Prototype:** Wake → The Still Pond → The Gilded Garden
+**Last updated:** 2026-10-31  
+**Default branch at audit start:** `main`  
+**Audit branch:** `audit/integration-docs-2026-10`  
+**Engine target:** Godot 4.7+ (from `project.godot` feature tag)
 
-## Implemented in code
+This file separates source implementation from verification. A feature marked implemented is present in source; it is not automatically considered playtested.
 
-### The Wake
-- Movement, jump, dash, lantern swing, health and healing
-- Slumber Hollow (Sloth) with Drowse, three enemy types, platforming, benches and The Dreamer; Snail Grips wall climb (never run in Godot)
-- Lantern Swing extras: heavy, Lantern Flash (stun), guard, Warm Light (never run in Godot)
-- Open Hand fighting style (full kit), Glow, Tab style swap, five-petal Glow ring (never run in Godot)
-- Wake rooms with room-locked camera; hub killbox and reachable hub platforms (never run in Godot)
-- Climb walls are drawn (pale stitched cloth with rungs, rises over 1s), exist only during phase 3 and are removed on reset or defeat (headless-tested only, never seen on screen)
-- Difficulty (Gentle / Normal / Hard), escalating Drowse and Weight costs, bench-only saves with Continue and Return to Title, secret No-Hit Challenge (unlock hook `Settings.mark_beaten()` exists, ending not built). Headless-tested logic, not played
-- Phase 3 now shows a readable Snail Grips tutorial box (8s) after the Dreamer's line, not just a 1.6s status flash
-- Dreamer phase 3 fix: attacks while clinging point away from the wall, the lantern-heart alternates beside each wall with a bigger hit area (headless-tested hits with both styles)
-- Directional moves: W / S aim keys, Lantern up swing and downward pogo, Open Hand Rising Palm, 8-way Coin Toss (headless-tested for hits and aim, feel untested)
-- Story pass: hub arrival cutscene, Nim lines in Greed, post-Greed and post-Sloth hub dialogue, a silent growing pond figure (no Reflection text), Nim post hints (never run in Godot)
-- Title, pause, settings and controls menus; lantern HUD meter; Reduce Shake, Gentle Mode and Fullscreen options (never run in Godot)
-- Four E-to-read signs; dialogue closes when Lumi walks away
-- Little Jelly tutorial enemy
-- Old Moss tutorial boss with readable attack wind-ups, head lunge, rolling shell, spore fan and a faster phase-two aimed burst
-- Post-defeat Wind Ribbon reveal
-- Wind Ribbon unlocks dash and establishes the Wake checkpoint
-- Dash-training gap after the Ribbon, before the first door
-- Visible level boundaries, camera limits and pit recovery
+## Region status
 
-### The Still Pond
-- Multi-tier hub with seven region doors
-- Bench, Altar of Hands, Memory Tree, Nim's Lantern Post and Mirror Gate placeholder
-- Marl and Orrin dialogue
-- Player handoff from Wake and door signal for Greed
+### The Wake — implemented in source
+- Lumi movement, jump, dash, lantern combat, health and healing.
+- Four tutorial signs, Little Jelly and Old Moss encounter.
+- Wind Ribbon unlocks dash and sets the Wake checkpoint.
+- Four room camera layout, boundaries, killbox/pit recovery and post-Ribbon dash gap.
+- Title, pause, settings and controls menus; lantern health meter and Glow petals.
 
-### The Gilded Garden (Greed)
-- Coins, carried-gold weight penalty, shrines and three lore tablets
-- The Collector boss: three phases (Coin Rain and belly slam, Feast growth with a shrinking arena, Hunger purse grab), offering bowls that hurt and shrink him, and the bible's intro, mid-fight and defeat lines
-- Greed clear: defeating him sets the Open Hand and Gold Key flags, emits `region_cleared`, and the hub counts the key
-- Featherweight Charm pickup sets the player's double-jump ability
-- Return-to-hub signal that does not falsely count Greed as cleared
+### The Still Pond — implemented in source
+- Seven-door multi-tier hub, bench, Altar of Hands, Memory Tree, Nim's Lantern Post and Mirror Gate placeholder.
+- Marl and Orrin; silent Reflection visual.
+- Hub transitions and region unlocks through Greed, Sloth and Gluttony.
 
-### Shared systems
-- Checkpoint-aware player death respawn
-- Reuse of the same Lumi instance across Wake, hub and Greed
-- Hit-stop and camera shake through a dedicated feedback node that only releases pauses it owns
+### Greed — implemented in source
+- Weight, carried gold, shrines, offerings and lore.
+- Main route, canopy/Gold Ridge route and buried vault route.
+- Greedy Mites, Penny Pips and Gilded Blossoms.
+- Coin Guard mini-boss and physical Vault Seal.
+- Two-seal Collector gate; three-phase Collector fight and offering interaction.
+- Open Hand manual in vault, Featherweight Charm double jump, Gold Key and Vault Exit.
 
-## Still incomplete
-- Open Hand (Offering Style) as a real fighting style. It is only a flag today
-- Unlocking further regions from completed boss clears
-- Other six regions, fighting styles, Memory Petals, save/load, map/loadout/Memory Tree/keepsake screens, key remapping and endings
-- Final art, animation, music and sound
+### Sloth — implemented in source
+- Drowse, lanterns, benches, death/respawn and enemy respawns.
+- Snoozle Snails, Hammock Spiders and Napping Nimbus.
+- Pillow gap, loft route, sky route and climbable walls.
+- Dozy Warden mini-boss and second seal on loft route.
+- Two-seal Dreamer gate; three Dreamer phases including moving lantern-heart.
+- Hourglass Shard, Tempo unlock, Snail Grips wall climb, Dusk Key and Dream Exit.
 
-## Verification status
+### Gluttony — implemented in source
+- Fullness and Stuffed, food pickups and mindful eating.
+- Crumb Swarm, Jelly Gulper and Cutlery Sprite.
+- Pantry Loft and Syrup Cellar branches; Cutlery Knight mini-boss and two seals.
+- Two-seal Host gate and three boss phases.
+- Hollow Spoon / Devour unlock, Hungry Wind Scarf / Super Dash, Honey Key and Table Exit.
 
-The repository has been updated through source changes, but the game has **not** been launched in Godot as part of this work. Playtest:
-1. Wake → Hub transition with T
-2. Hub → Greed transition from the Greed door
-3. Greed → Hub return without falsely unlocking Greed
-4. Dash-gap reachability and checkpoint respawn after damage/falling
-5. Featherweight double jump and hit-stop recovery
-6. The Collector fight start to finish: intro, coin rain, slam, feast (mountain disappears, he grows), purse grab with and without gold, bowls, defeat, return to hub with the key counted
-7. Dying mid-fight resets him and removes the lock wall
+### Not implemented
+- Envy, Lust, Wrath and Pride regions.
+- Their bosses, mini-bosses, gadgets, styles and region-specific debuffs.
+- Mirror Gate encounter, true/bad endings, credits and side quests.
+- Full memory-petal progression and final UI screens.
 
-## Engine version
+## Combat styles
 
-`project.godot` advertises Godot 4.7 in `config/features`; use Godot 4.7 or newer unless the feature tag is deliberately changed and the project is verified on an older version.
+| Style | Source status | Outstanding work |
+|---|---|---|
+| Lantern Swing | Base combo and extra moves wired | Dash attack through small enemies; balance and playtest |
+| Open Hand / Offering | Full prototype kit wired; unlocked from Greed vault manual | Sticky-coin cleanup, returning Collector coins with guard, Altar loadout |
+| Tempo | Tick-Tock, Hour Strike, prototype Pendulum Drop, beat bonus, guard/counter and Stopwatch wired | Skip, second Pendulum hit, boss slow, Overture; timing and feel |
+| Devour | Scoop, Gulp, Spit, Open Wide and Taste/Pips wired | Slurp Drop, Chomp Dash, Overture; normal playtest |
 
-- Expanded Greed/Sloth routes, Greedy Mites, Coin Guard, Dozy Warden, Vault Exit and Dream Exit (headless-tested only, see README).
-- Seal gates on both bosses, drawn pickups, mite ledge check (headless/screenshot tested only).
+## Shared systems
+- Gentle / Normal / Hard difficulty and Gentle Mode.
+- Weight, Drowse and Fullness debuffs.
+- Bench-only JSON saves, Continue and Return to Title.
+- Checkpoint-aware death respawn.
+- Glow, five-petal HUD, title/pause/settings/controls menus.
+- Hit-stop and camera shake.
 
-### The Endless Table (Gluttony)
-- Region, Fullness and Stuffed, three enemy types, Cutlery Knight mini-boss, seal gate, The Host (3 phases), Hungry Wind Scarf, bench saves and hub unlock (headless and screenshot tested only). Devour Style (Hollow Spoon) is not built.
-- Devour Style (Scoop, Gulp, Spit, Open Wide, Taste Pips) and Tempo Style wired to the player and unlocked by The Host and the Dreamer. Slurp Drop, Chomp Dash and the Overture are not built (headless-tested only).
+## Audit fixes on this branch
+
+The following source changes were made on `audit/integration-docs-2026-10`:
+
+1. **Devour Spit target de-duplication:** targets present in both `enemy` and `boss` groups are now damaged once per Spit.
+2. **Tempo Stopwatch:** removed the ineffective write to the undeclared `tempo_frozen` property; Stopwatch now uses the enemy `stun(seconds)` interface.
+3. **Sloth enemy registration:** enemies spawned by Sloth are now added to the shared `enemy` group, allowing group-based style skills to find them.
+4. **Greed enemy stuns:** Gilded Blossom and Penny Pip now implement the same timed `stun(seconds)` interface used by Stopwatch.
+
+These are static code changes. They have not yet been run in Godot, so runtime success is not claimed.
+
+## Verification record
+
+| Area | Existing repository evidence | Interactive Godot playtest |
+|---|---|---|
+| Wake / hub / Greed | Earlier source notes report headless checks; latest status still calls for full-loop testing | Not documented |
+| Sloth routes / Dreamer / seals | Headless and screenshot checks reported | Not documented |
+| Gluttony / Host / seals / rewards | Headless and screenshot checks reported; Host phase test used direct damage | Not documented |
+| Devour / Tempo | Partial headless checks reported | Not documented |
+| Audit fixes above | Static source review only | Not run |
+
+### Required manual regression pass
+- [ ] Launch with Godot 4.7+ and check for parser/runtime errors.
+- [ ] Complete Wake → Hub → Greed → Hub → Sloth → Hub → Gluttony.
+- [ ] Collect each region's two seals in either order and verify the gate.
+- [ ] Defeat Coin Guard, Dozy Warden, Cutlery Knight and all three region bosses through normal combat.
+- [ ] Test every boss reset after death/retreat and ensure hazards/lock walls are cleaned up.
+- [ ] Test all four styles, including duplicate-target cases for Devour Spit and Stopwatch against all three regions' enemies.
+- [ ] Save at each region's benches, continue, and verify all rewards/styles/seals/clears persist.
+- [ ] Check dialogue closes on walking away from signs and region interactions.
+
+## Engine and project constraints
+- `project.godot` advertises Godot 4.7; use 4.7 or newer unless compatibility is deliberately verified.
+- GL Compatibility renderer; 1280 × 720.
+- Preserve the README's no-buffs, dialogue, tone, contrast and Reflection rules.
