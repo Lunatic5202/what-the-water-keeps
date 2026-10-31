@@ -261,6 +261,7 @@ func _spawn_enemies() -> void:
 				enemy.set("floor_y", spawn["floor"])
 		shape.shape = circle
 		enemy.add_child(shape)
+		enemy.add_to_group("enemy")
 		add_child(enemy)
 		enemies.append(enemy)
 
