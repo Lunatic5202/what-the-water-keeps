@@ -84,7 +84,7 @@ Tab cycles through unlocked styles. The prototype currently wires four styles:
 | Lantern Swing | Starting style | J combo, directional up/pogo, K heavy, L Lantern Flash, I guard, O Warm Light | Dash attack through small enemies is missing; tuning/playtest needed |
 | Open Hand (Offering) | Greed vault manual | Palm combo, Offer, Wide Offering, Falling Petals, Gentle Rush, Coin Toss, Open Palm guard, Everything Given | Sticky-coin cleanup, Collector coin return with guard and Altar loadout are incomplete |
 | Tempo | Hourglass Shard | Tick-Tock combo, Hour Strike, Pendulum Drop prototype, beat bonus, guard/counter, Stopwatch | Skip, second Pendulum hit, boss slow, Overture; timing/feel need playtesting |
-| Devour | Hollow Spoon | Scoop, Gulp, Spit, Open Wide projectile absorption, Taste/Pips | Slurp Drop, Chomp Dash and Overture |
+| Devour | Hollow Spoon | Scoop, Gulp, Spit, Open Wide projectile absorption, Taste/Pips (a fourth Pip briefly prevents all actions, even across style swaps) | Slurp Drop, Chomp Dash and Overture |
 
 Move values and prototype differences are recorded in `docs/game-bible.md` Part 6 and the style scripts. Do not treat guessed prototype values as final balance.
 
