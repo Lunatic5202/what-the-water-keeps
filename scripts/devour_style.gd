@@ -113,7 +113,7 @@ func _scoop() -> void:
 	var facing := int(player.call("attack_facing"))
 	hit_ids.clear()
 	swing_damage = COMBO_DAMAGE[combo_step - 1]
-	swing_timer = 0.16
+	swing_timer = 0.16 / maxf(0.01, float(player.get("attack_speed_mod")))
 	area_shape.radius = 30.0
 	area.position = Vector2(30.0 * facing, -6.0)
 	area.set_deferred("monitoring", true)
