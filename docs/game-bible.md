@@ -1734,7 +1734,7 @@ Each region cleared lights one lantern around the ring. The sky grows brighter, 
 
 # PART 6: PROTOTYPE IMPLEMENTATION NOTES
 
-This part is not new lore. It records which bible story beats are in the playable prototype, where they live in code, and where the prototype differs from the bible. All story text is in `scripts/story.gd` (plus the boss lines in `sloth.gd` and `greed.gd`). If the bible changes, update those files.
+This part is not new lore. It records which bible story beats are in the playable prototype, where they live in code, and where the prototype differs from the bible. Story text lives in `scripts/story.gd` plus region dialogue in `greed.gd`, `sloth.gd` and `gluttony.gd`. If the bible changes, update those files.
 
 ## 6.1 Story beats in the game
 
@@ -1747,20 +1747,20 @@ Rule: the Reflection is never spoken about in the prototype's text. No Nim line,
 | The Collector's defeat lines | Greed boss | `greed.gd` |
 | Nim's line after Greed, first door glows, Sloth opens, the music loses a note | Hub changes | `Story.AFTER_GREED`, plays when Lumi is back in the hub |
 | Sloth entry, tablets and Dreamer fight lines | Sloth region | `sloth.gd` |
-| Nim's lines after Sloth, Gluttony door opens | Hub changes | `Story.AFTER_SLOTH` |
+| Nim's lines after Sloth, Gluttony door opens | Hub changes | `Story.AFTER_SLOTH` |\n| The Host's welcome, mid-fight and defeat lines | Gluttony boss | `gluttony.gd` |
 | The pond figure changes | Hub changes over time | `reflection.gd`: a mirrored Lumi whose eyes follow Lumi, brighter and larger with each region cleared, smiling from three clears. Silent and unexplained |
 
-Beats for regions that are not built yet (Gluttony onward, the Mirror Gate, the endings, side quests) are not in the game.
+The Host's Gluttony dialogue is implemented. Beats for regions not built yet (Envy onward), the Mirror Gate, the endings and side quests are not in the game.
 
 ## 6.2 Differences from the bible
 
 These are prototype adaptations, not decisions. Say if the bible should win.
 
-- Boss health is scaled down for testing: The Collector 360, The Dreamer 420 (bible: Dreamer 800).
+- Boss health is scaled down for testing: The Collector 360, The Dreamer 420 (bible: 800), and The Host 420 (bible: 900). These are prototype values, not final balance.
 - Sloth's input delay (0.1s) is approximated by making Lumi 15% slower at 50 Drowse.
 - Sloth only opens after Greed is cleared (the bible does not gate door order).
-- Fighting styles are swapped with Tab. K heavy, L skill, I guard, O overture are new key bindings.
-- The Hourglass Shard and Dusk Key are flags only. Tempo Style is not built.
+- Fighting styles are swapped with Tab. K heavy, L skill, I guard and O overture-slot are prototype key bindings; Overture moves are not implemented for every style.
+- The Hourglass Shard unlocks a trimmed Tempo Style. Current prototype moves: Tick-Tock, Hour Strike, a single-hit Pendulum Drop, beat bonus, guard/counter and Stopwatch. Missing bible moves/features: Skip, Pendulum Drop's second hit, Stopwatch's boss slow and Overture: Last Hour. Hour Strike's current charge/release timing still needs comparison with the bible.
 - Debuffs are harsher than the bible's first description: Drowse and Weight add +1 damage per hit at their upper tiers, Drowse blocks healing at 80 and Weight blocks dash and double jump. The bible's Drowse still approximated by slowing, not the 0.1s input delay.
 - Difficulty (Gentle / Normal / Hard), bench-only saves with Continue, and a secret No-Hit Challenge (one hit ends the run, unlocked by beating the game) are user-requested prototype features, not in the bible.
 - W and S are new aim keys. W + J swings up, S + J in the air pogos, W + J with the Open Hand is Rising Palm, and Coin Toss throws in 8 directions (straight shots; the bible only says it throws coins). User-requested, not from the bible.
@@ -1779,5 +1779,5 @@ These are prototype adaptations, not decisions. Say if the bible should win.
 
 ### Prototype notes, Gluttony
 
-- The Host has 420 HP in the prototype (bible: 900). Phase 3 uses jaw walls and a gaping window instead of weak-spot hits. Cutlery Knight, the Pantry Loft, the Syrup Cellar and the two-seal gate are prototype additions. Devour Style is playable in a trimmed form (no Slurp Drop, Chomp Dash or Overture).
+- The Host has 420 HP in the prototype (bible: 900). Phase 3 uses jaw walls and a gaping window instead of weak-spot hits. Cutlery Knight, the Pantry Loft, the Syrup Cellar and the two-seal gate are prototype additions. Devour Style is playable in a trimmed form: Scoop, Gulp, Spit, Open Wide and Taste/Pips; Slurp Drop, Chomp Dash and Overture are missing.
 - The hub line after the Host omits the Reflection beat by design.
