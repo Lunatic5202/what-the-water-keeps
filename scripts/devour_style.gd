@@ -57,6 +57,7 @@ func _physics_process(delta: float) -> void:
 	combo_timer = maxf(0.0, combo_timer - delta)
 	recover_timer = maxf(0.0, recover_timer - delta)
 	guard_cooldown = maxf(0.0, guard_cooldown - delta)
+	stuffed_timer = maxf(0.0, stuffed_timer - delta)
 	for i in range(shots.size() - 1, -1, -1):
 		shots[i]["t"] += delta
 		if shots[i]["t"] >= shots[i]["dur"]:
@@ -67,8 +68,7 @@ func _physics_process(delta: float) -> void:
 		guard_timer = 0.0
 		queue_redraw()
 		return
-	if stuffed_timer > 0.0:
-		stuffed_timer -= delta
+	if stuffed_timer > 0.0 or float(player.get("devour_stuffed_timer")) > 0.0:
 		queue_redraw()
 		return
 	if swing_timer > 0.0:
@@ -169,6 +169,7 @@ func _add_pip() -> void:
 	if pips >= MAX_PIPS:
 		pips = 0
 		stuffed_timer = STUFFED_TIME
+		player.set("devour_stuffed_timer", STUFFED_TIME)
 		player.emit_signal("status_changed", "TOO MUCH. STUFFED FOR A MOMENT.")
 		return
 	pips += 1
