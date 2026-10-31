@@ -670,6 +670,8 @@ func save_state() -> Dictionary:
 # Puts Slumber Hollow back the way a save left it: the Dreamer at rest.
 func apply_save(d: Dictionary) -> void:
 	has_hourglass = bool(d.get("has_hourglass", false))
+	if has_hourglass and is_instance_valid(player) and not player.unlocked_styles.has("tempo"):
+		player.unlocked_styles.append("tempo")
 	has_dusk_key = bool(d.get("has_dusk_key", false))
 	has_snail_grips = bool(d.get("has_snail_grips", false))
 	for id in d.get("seals", []):
@@ -893,6 +895,7 @@ func _on_dreamer_defeated() -> void:
 			return
 	has_hourglass = true
 	has_dusk_key = true
+	player.call("unlock_style", "tempo")
 	if not has_snail_grips:
 		_grant_grips()
 	_open_dream_exit()

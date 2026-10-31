@@ -122,6 +122,7 @@ func _hazard() -> Node2D:
 func _throw_snack(player: Node2D) -> void:
 	var h := _hazard()
 	h.set("kind", "snack")
+	h.add_to_group("enemy_projectile")   # Devour Style can swallow snacks
 	h.global_position = global_position + Vector2(-70, -30)
 	var to: Vector2 = player.global_position - h.global_position
 	var flight := clampf(to.length() / 420.0, 0.5, 1.4)

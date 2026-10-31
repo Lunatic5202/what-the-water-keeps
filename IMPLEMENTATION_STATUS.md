@@ -70,3 +70,4 @@ The repository has been updated through source changes, but the game has **not**
 
 ### The Endless Table (Gluttony)
 - Region, Fullness and Stuffed, three enemy types, Cutlery Knight mini-boss, seal gate, The Host (3 phases), Hungry Wind Scarf, bench saves and hub unlock (headless and screenshot tested only). Devour Style (Hollow Spoon) is not built.
+- Devour Style (Scoop, Gulp, Spit, Open Wide, Taste Pips) and Tempo Style wired to the player and unlocked by The Host and the Dreamer. Slurp Drop, Chomp Dash and the Overture are not built (headless-tested only).

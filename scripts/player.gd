@@ -43,6 +43,7 @@ var attack_shape: CollisionShape2D
 
 # Fighting styles (bible 4.3 and 4.4). Lantern Swing is the default.
 const MAX_GLOW := 100.0
+const STYLE_NAMES := {"lantern": "LANTERN SWING", "open_hand": "OPEN HAND", "tempo": "TEMPO", "devour": "DEVOUR"}
 var style := "lantern"
 var unlocked_styles: Array[String] = ["lantern"]
 var glow := 0.0
@@ -89,6 +90,14 @@ func _ready() -> void:
 	hand.name = "OpenHand"
 	hand.set_script(load("res://scripts/open_hand.gd"))
 	add_child(hand)
+	var tempo := Node2D.new()
+	tempo.name = "TempoStyle"
+	tempo.set_script(load("res://scripts/tempo_style.gd"))
+	add_child(tempo)
+	var devour := Node2D.new()
+	devour.name = "DevourStyle"
+	devour.set_script(load("res://scripts/devour_style.gd"))
+	add_child(devour)
 	var kit := Node2D.new()
 	kit.name = "LanternKit"
 	kit.set_script(load("res://scripts/lantern_kit.gd"))
@@ -278,7 +287,7 @@ func _on_attack_body_entered(body: Node2D) -> void:
 func take_damage(amount: int) -> void:
 	if hurt_cooldown > 0.0:
 		return
-	for node_name in ["OpenHand", "LanternKit"]:
+	for node_name in ["OpenHand", "TempoStyle", "LanternKit"]:
 		var kit := get_node_or_null(node_name)
 		if kit != null and kit.call("block_hit"):
 			hurt_cooldown = 0.2
@@ -346,14 +355,14 @@ func unlock_style(style_name: String) -> void:
 	if not unlocked_styles.has(style_name):
 		unlocked_styles.append(style_name)
 	style = style_name
-	status_changed.emit("OPEN HAND EQUIPPED. TAB SWAPS STYLES.")
+	status_changed.emit("%s EQUIPPED. TAB SWAPS STYLES." % STYLE_NAMES.get(style_name, "STYLE"))
 
 func _cycle_style() -> void:
 	if unlocked_styles.size() < 2:
 		return
 	var next := (unlocked_styles.find(style) + 1) % unlocked_styles.size()
 	style = unlocked_styles[next]
-	status_changed.emit("STYLE: " + ("OPEN HAND" if style == "open_hand" else "LANTERN SWING"))
+	status_changed.emit("STYLE: " + STYLE_NAMES.get(style, "LANTERN SWING"))
 
 func _heal() -> void:
 	if heal_blocked:

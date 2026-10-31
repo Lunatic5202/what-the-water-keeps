@@ -1779,5 +1779,5 @@ These are prototype adaptations, not decisions. Say if the bible should win.
 
 ### Prototype notes, Gluttony
 
-- The Host has 420 HP in the prototype (bible: 900). Phase 3 uses jaw walls and a gaping window instead of weak-spot hits. Cutlery Knight, the Pantry Loft, the Syrup Cellar and the two-seal gate are prototype additions. The Hollow Spoon (Devour Style) is held as a flag only.
+- The Host has 420 HP in the prototype (bible: 900). Phase 3 uses jaw walls and a gaping window instead of weak-spot hits. Cutlery Knight, the Pantry Loft, the Syrup Cellar and the two-seal gate are prototype additions. Devour Style is playable in a trimmed form (no Slurp Drop, Chomp Dash or Overture).
 - The hub line after the Host omits the Reflection beat by design.

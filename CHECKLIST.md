@@ -104,3 +104,4 @@
 - [ ] Playtest seal gates: collect both seals in each region in either order, then the boss fight starts.
 - [ ] Playtest Gluttony: Fullness and Stuffed, both seals, the Host's three phases, the Table Exit.
 - [ ] Build Devour Style for the Hollow Spoon.
+- [ ] Playtest Devour and Tempo styles: Tab swap, Scoop/Gulp/Spit/Open Wide, Tempo beat timing and guard.

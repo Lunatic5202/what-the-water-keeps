@@ -406,8 +406,9 @@ func _grant_rewards() -> void:
 	has_spoon = true
 	has_honey_key = true
 	has_scarf = true
+	player.call("unlock_style", "devour")
 	player.set("can_super_dash", true)
-	_show_status("HUNGRY WIND SCARF: YOUR DASH GOES FURTHER. (THE HOLLOW SPOON IS HELD; DEVOUR STYLE IS NOT BUILT YET.)")
+	_show_status("HUNGRY WIND SCARF: YOUR DASH GOES FURTHER. TAB SWAPS TO DEVOUR STYLE.")
 
 func _open_table_exit() -> void:
 	table_exit = _make_interactable("TABLE EXIT\n[E] RETURN", Vector2(2680, 245), Color(0.9, 1.0, 0.92))
@@ -428,6 +429,8 @@ func save_state() -> Dictionary:
 
 func apply_save(d: Dictionary) -> void:
 	has_spoon = bool(d.get("has_spoon", false))
+	if has_spoon and is_instance_valid(player) and not player.unlocked_styles.has("devour"):
+		player.unlocked_styles.append("devour")
 	has_scarf = bool(d.get("has_scarf", false))
 	has_honey_key = bool(d.get("has_honey_key", false))
 	for id in d.get("seals", []):
