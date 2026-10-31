@@ -211,10 +211,10 @@ func _draw() -> void:
 		draw_circle(c, 5.0, Color(TASTE, 1.0) if i < pips else Color(0.2, 0.3, 0.28, 0.45))
 		draw_arc(c, 5.0, 0.0, TAU, 12, Color(0.12, 0.22, 0.2), 1.5)
 	if guard_timer > 0.0:
-		var facing := float(player.get("facing"))
+		var facing := float(player.call("attack_facing"))
 		draw_arc(Vector2(16.0 * facing, -8.0), 26.0, -1.0, 1.0, 12, TASTE, 3.0) if facing > 0.0 else draw_arc(Vector2(16.0 * facing, -8.0), 26.0, PI - 1.0, PI + 1.0, 12, TASTE, 3.0)
 	if holding and hold_time > 0.1:
-		draw_circle(Vector2(30.0 * float(player.get("facing")), -6.0), 10.0 + minf(hold_time / GULP_HOLD, 1.0) * 14.0, Color(TASTE, 0.4))
+		draw_circle(Vector2(30.0 * float(player.call("attack_facing")), -6.0), 10.0 + minf(hold_time / GULP_HOLD, 1.0) * 14.0, Color(TASTE, 0.4))
 	if stuffed_timer > 0.0:
 		draw_string(ThemeDB.fallback_font, Vector2(-14, -70), "...", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, TASTE)
 	for s in shots:
