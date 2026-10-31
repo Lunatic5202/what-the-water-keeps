@@ -206,7 +206,7 @@ func _tick_effects(delta: float) -> void:
 func _draw() -> void:
 	if not _active():
 		return
-	var lantern := Vector2(19.0 * int(player.get("facing")), -7.0)
+	var lantern := Vector2(19.0 * int(player.call("attack_facing")), -7.0)
 	var beat_strength := 1.0 - clampf(minf(beat_time, BEAT_PERIOD - beat_time) / BEAT_WINDOW, 0.0, 1.0)
 	draw_arc(lantern, 12.0 + beat_strength * 8.0, 0.0, TAU, 32, Color(PEARL, 0.35 + beat_strength * 0.65), 2.0)
 	draw_arc(lantern, 20.0 + beat_strength * 10.0, 0.0, TAU, 32, Color(PEARL, 0.18 + beat_strength * 0.35), 1.0)
