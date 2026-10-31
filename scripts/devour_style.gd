@@ -162,7 +162,9 @@ func _absorb_in_reach(center: Vector2, radius: float, limit := 3) -> void:
 			proj.queue_free()
 			_add_pip()
 			taken += 1
-			if taken >= limit:
+			# The fourth Pip overflows into Stuffed. Stop absorbing immediately;
+			# any remaining projectiles stay in the world for a later attempt.
+			if float(player.get("devour_stuffed_timer")) > 0.0 or taken >= limit:
 				return
 
 func _add_pip() -> void:
@@ -170,6 +172,15 @@ func _add_pip() -> void:
 		pips = 0
 		stuffed_timer = STUFFED_TIME
 		player.set("devour_stuffed_timer", STUFFED_TIME)
+		# Overflow cancels the action that produced it; don't resume a stale
+		# Scoop or leave its Area2D monitoring while Lumi cannot act.
+		swing_timer = 0.0
+		recover_timer = 0.0
+		holding = false
+		hold_time = 0.0
+		guard_timer = 0.0
+		area.set_deferred("monitoring", false)
+		hit_ids.clear()
 		player.emit_signal("status_changed", "TOO MUCH. STUFFED FOR A MOMENT.")
 		return
 	pips += 1
