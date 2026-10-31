@@ -116,7 +116,8 @@ func _start_swing(kind: String) -> void:
 	if on_beat:
 		damage = int(ceil(float(damage) * 1.3))
 	swing_damage = damage
-	swing_timer = 0.18 if kind != "heavy" else 0.28
+	var attack_speed := maxf(0.01, float(player.get("attack_speed_mod")))
+	swing_timer = (0.18 if kind != "heavy" else 0.28) / attack_speed
 	area_shape.radius = 46.0 if kind == "heavy" else 38.0
 	if kind == "air":
 		area.position = Vector2(0, 26)
