@@ -57,6 +57,7 @@ func _physics_process(delta: float) -> void:
 	combo_timer = maxf(0.0, combo_timer - delta)
 	recover_timer = maxf(0.0, recover_timer - delta)
 	guard_cooldown = maxf(0.0, guard_cooldown - delta)
+	stuffed_timer = maxf(0.0, stuffed_timer - delta)
 	for i in range(shots.size() - 1, -1, -1):
 		shots[i]["t"] += delta
 		if shots[i]["t"] >= shots[i]["dur"]:
@@ -67,8 +68,7 @@ func _physics_process(delta: float) -> void:
 		guard_timer = 0.0
 		queue_redraw()
 		return
-	if stuffed_timer > 0.0:
-		stuffed_timer -= delta
+	if stuffed_timer > 0.0 or float(player.get("devour_stuffed_timer")) > 0.0:
 		queue_redraw()
 		return
 	if swing_timer > 0.0:
@@ -113,7 +113,7 @@ func _scoop() -> void:
 	var facing := int(player.call("attack_facing"))
 	hit_ids.clear()
 	swing_damage = COMBO_DAMAGE[combo_step - 1]
-	swing_timer = 0.16
+	swing_timer = 0.16 / maxf(0.01, float(player.get("attack_speed_mod")))
 	area_shape.radius = 30.0
 	area.position = Vector2(30.0 * facing, -6.0)
 	area.set_deferred("monitoring", true)
@@ -169,6 +169,7 @@ func _add_pip() -> void:
 	if pips >= MAX_PIPS:
 		pips = 0
 		stuffed_timer = STUFFED_TIME
+		player.set("devour_stuffed_timer", STUFFED_TIME)
 		player.emit_signal("status_changed", "TOO MUCH. STUFFED FOR A MOMENT.")
 		return
 	pips += 1
@@ -187,9 +188,15 @@ func _spit() -> void:
 	var reach := 520.0 if pips >= 3 else 380.0
 	var width := 44.0 if pips >= 3 else 18.0
 	var box := Rect2(origin.x if facing > 0 else origin.x - reach, origin.y - width / 2.0, reach, width)
+	hit_ids.clear()
 	for body in get_tree().get_nodes_in_group("enemy") + get_tree().get_nodes_in_group("boss"):
-		if is_instance_valid(body) and body.has_method("take_damage") and box.has_point(body.global_position):
-			body.call("take_damage", damage)
+		if not is_instance_valid(body) or not body.has_method("take_damage"):
+			continue
+		var id := body.get_instance_id()
+		if hit_ids.has(id) or not box.has_point(body.global_position):
+			continue
+		hit_ids[id] = true
+		body.call("take_damage", damage)
 	shots.append({"from": origin, "to": origin + Vector2(reach * facing, 0.0), "t": 0.0, "dur": 0.3, "width": width})
 	player.emit_signal("status_changed", "SPIT: %d DAMAGE." % damage)
 	pips = 0
@@ -205,10 +212,10 @@ func _draw() -> void:
 		draw_circle(c, 5.0, Color(TASTE, 1.0) if i < pips else Color(0.2, 0.3, 0.28, 0.45))
 		draw_arc(c, 5.0, 0.0, TAU, 12, Color(0.12, 0.22, 0.2), 1.5)
 	if guard_timer > 0.0:
-		var facing := float(player.get("facing"))
+		var facing := float(player.call("attack_facing"))
 		draw_arc(Vector2(16.0 * facing, -8.0), 26.0, -1.0, 1.0, 12, TASTE, 3.0) if facing > 0.0 else draw_arc(Vector2(16.0 * facing, -8.0), 26.0, PI - 1.0, PI + 1.0, 12, TASTE, 3.0)
 	if holding and hold_time > 0.1:
-		draw_circle(Vector2(30.0 * float(player.get("facing")), -6.0), 10.0 + minf(hold_time / GULP_HOLD, 1.0) * 14.0, Color(TASTE, 0.4))
+		draw_circle(Vector2(30.0 * float(player.call("attack_facing")), -6.0), 10.0 + minf(hold_time / GULP_HOLD, 1.0) * 14.0, Color(TASTE, 0.4))
 	if stuffed_timer > 0.0:
 		draw_string(ThemeDB.fallback_font, Vector2(-14, -70), "...", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, TASTE)
 	for s in shots:

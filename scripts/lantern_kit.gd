@@ -57,7 +57,7 @@ func _physics_process(delta: float) -> void:
 			guard_cooldown = GUARD_COOLDOWN
 	if not _busy():
 		if Input.is_action_just_pressed("heavy") and player.is_on_floor():
-			windup = HEAVY_WINDUP
+			windup = HEAVY_WINDUP / maxf(0.01, float(player.get("attack_speed_mod")))
 			player.emit_signal("status_changed", "HEAVY SWING...")
 		elif Input.is_action_just_pressed("skill"):
 			_flash()
@@ -88,7 +88,7 @@ func _push(body: Node2D, dir: float, amount: float) -> void:
 		body.global_position.x += dir * amount
 
 func _heavy_hit() -> void:
-	var f := float(player.get("facing"))
+	var f := float(player.call("attack_facing"))
 	var at: Vector2 = player.global_position + Vector2(52.0 * f, -8.0)
 	for body in _bodies_near(at, 62.0):
 		body.take_damage(HEAVY_DAMAGE)
@@ -99,7 +99,7 @@ func _heavy_hit() -> void:
 			feedback.call("apply_hit_freeze", 8)
 			feedback.call("screenshake", 0.9, 0.12)
 	effects.append({"pos": to_local(at), "t": 0.0, "dur": 0.25, "max": 62.0})
-	recover = HEAVY_RECOVER
+	recover = HEAVY_RECOVER / maxf(0.01, float(player.get("attack_speed_mod")))
 
 func _flash() -> void:
 	if not player.call("spend_glow", FLASH_COST):
@@ -132,7 +132,7 @@ func block_hit() -> bool:
 	if guard_age <= PERFECT_WINDOW and not perfect_used:
 		perfect_used = true
 		player.call("add_glow", 10.0)
-		effects.append({"pos": Vector2(20.0 * float(player.get("facing")), -10.0), "t": 0.0, "dur": 0.3, "max": 40.0})
+		effects.append({"pos": Vector2(20.0 * float(player.call("attack_facing")), -10.0), "t": 0.0, "dur": 0.3, "max": 40.0})
 		player.emit_signal("status_changed", "PERFECT GUARD.")
 	return true
 
@@ -154,7 +154,7 @@ func _draw() -> void:
 		draw_arc(Vector2(0, -10), 12.0 + c * 22.0, 0.0, TAU, 24, Color(WARM, 0.4 + 0.5 * c), 3.0)
 	if guard_timer > 0.0:
 		var bright := 1.0 if guard_age <= PERFECT_WINDOW else 0.55
-		var f := int(player.get("facing"))
+		var f := int(player.call("attack_facing"))
 		var a := Vector2(-0.9, 0.9) if f > 0 else Vector2(PI - 0.9, PI + 0.9)
 		draw_arc(Vector2(18.0 * f, -10.0), 24.0, a.x, a.y, 14, Color(WARM, bright), 6.0)
 	for e in effects:

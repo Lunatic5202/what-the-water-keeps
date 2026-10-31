@@ -166,7 +166,7 @@ func _read_input(delta: float) -> void:
 func _start_swing(kind: String) -> void:
 	var f := _facing()
 	var purse := _coins_held()
-	var speed := EMPTY_PURSE_SPEED if purse == 0 else 1.0
+	var speed := (EMPTY_PURSE_SPEED if purse == 0 else 1.0) / maxf(0.01, float(player.get("attack_speed_mod")))
 	swing_kind = kind
 	swing_total = SWING_TIME * speed
 	swing_timer = swing_total

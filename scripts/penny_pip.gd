@@ -11,9 +11,13 @@ var contact_cooldown := 0.0
 var dissolve_time := 0.0
 var dissolving := false
 var facing := -1.0
+var stun_time := 0.0
 
 func _ready() -> void:
 	add_to_group("enemy")
+
+func stun(seconds: float) -> void:
+	stun_time = maxf(stun_time, seconds)
 
 func _physics_process(delta: float) -> void:
 	if dissolving:
@@ -23,6 +27,10 @@ func _physics_process(delta: float) -> void:
 			queue_free()
 		return
 	if dead:
+		return
+	if stun_time > 0.0:
+		stun_time = maxf(0.0, stun_time - delta)
+		queue_redraw()
 		return
 
 	var player := get_tree().get_first_node_in_group("player") as Node2D
