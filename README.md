@@ -292,3 +292,12 @@ The route platforms use the same shapes for collision and drawing. Their landing
 - `scripts/devour_style.gd` (Hollow Spoon, from the bible's Devour Style). Unlocked by The Host and equipped with Tab. Built: Scoop (J x3, 9/9/13, the third pulls enemies in), Gulp (hold K 0.4s, 26 damage, swallows enemies under 20 HP as a Pip), Spit (L, 15 Glow, fires Pips: 12 each, 3 Pips = one 45 damage beam), Open Wide (I, absorbs projectiles, no melee block) and absorbing projectiles with the Scoop. Taste: up to 3 Pips, a fourth makes Lumi Stuffed for 1.5s. The Host's snacks join the `enemy_projectile` group so Devour can swallow them instead of being fed. **Not built:** Slurp Drop, Chomp Dash, the Overture.
 - **Fix:** `tempo_style.gd` (Hourglass Shard) was never attached to the player or unlocked. `player.gd` now creates `TempoStyle` and `DevourStyle`, Tempo's guard goes through `take_damage`, and defeating the Dreamer calls `unlock_style("tempo")`. Saves restore both styles from the saved style list, and old saves with the hourglass get Tempo back. Style names for the Tab status line live in `STYLE_NAMES` in `player.gd`.
 - Headless-tested: both styles load and unlock, Scoop absorbs projectiles into Pips, the fourth Pip Stuffs, and Spit's beam does 45. Gulp, Open Wide, Tempo's moves and all feel are untested. Not played in the editor.
+
+
+## Implementation status — documentation cross-check
+
+The detailed implementation inventory is maintained in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md), with additional design and contributor constraints in `AGENTS.md`, `CLAUDE.md`, `CHECKLIST.md` and `docs/`. Read those files before changing regions, bosses, controls or progression.
+
+The current prototype covers the Wake, Still Pond hub and portions of the region work. Some implementation inventory entries are explicitly marked headless-tested or not yet launched in Godot; do not describe those as fully playtested. `project.godot` advertises Godot 4.7 or newer, so confirm the installed engine version before opening or exporting.
+
+Preserve the established rules: sign dialogue opens with E and closes when Lumi walks away; mechanics use debuffs rather than buffs; keep the storybook tone and maintain readable text and contrast. Scripts or headless checks passing does not replace launching and playing the relevant scene in Godot.
