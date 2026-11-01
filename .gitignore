@@ -8,3 +8,11 @@ Thumbs.db
 *.bak
 /build/
 /dist/
+
+# Local environment and editor files
+.env
+.env.*
+!.env.example
+!.env.template
+.vscode/
+.idea/
