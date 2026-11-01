@@ -301,3 +301,7 @@ The detailed implementation inventory is maintained in [IMPLEMENTATION_STATUS.md
 The current prototype covers the Wake, Still Pond hub and portions of the region work. Some implementation inventory entries are explicitly marked headless-tested or not yet launched in Godot; do not describe those as fully playtested. `project.godot` advertises Godot 4.7 or newer, so confirm the installed engine version before opening or exporting.
 
 Preserve the established rules: sign dialogue opens with E and closes when Lumi walks away; mechanics use debuffs rather than buffs; keep the storybook tone and maintain readable text and contrast. Scripts or headless checks passing does not replace launching and playing the relevant scene in Godot.
+
+## License
+
+Original source code and project documentation are licensed under the [MIT License](LICENSE). Third-party libraries, datasets, fonts, media, and other separately licensed materials are excluded and remain under their respective terms.
